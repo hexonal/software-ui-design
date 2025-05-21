@@ -2,7 +2,17 @@ import { api } from '@/lib/api/client'
 import { mockResponse, useMock } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
-// 获取地理空间数据库列表
+/**
+ * @openapi
+ * /database/geospatial:
+ *   get:
+ *     summary: 获取地理空间数据库列表
+ *     tags:
+ *       - Geospatial
+ *     responses:
+ *       200:
+ *         description: 地理空间数据库列表
+ */
 export const getGeospatialDatabases = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟地理空间数据库列表
@@ -18,7 +28,23 @@ export const getGeospatialDatabases = async (params?: QueryParams): Promise<ApiR
   return api.get('/database/geospatial', { params })
 }
 
-// 获取地理空间数据库详情
+/**
+ * @openapi
+ * /database/geospatial/{id}:
+ *   get:
+ *     summary: 获取地理空间数据库详情
+ *     tags:
+ *       - Geospatial
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 地理空间数据库详情
+ */
 export const getGeospatialDatabaseById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     const databases = [
@@ -39,7 +65,23 @@ export const getGeospatialDatabaseById = async (id: string): Promise<ApiResponse
   return api.get(`/database/geospatial/${id}`)
 }
 
-// 创建地理空间数据库
+/**
+ * @openapi
+ * /database/geospatial:
+ *   post:
+ *     summary: 创建地理空间数据库
+ *     tags:
+ *       - Geospatial
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createGeospatialDatabase = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟创建地理空间数据库
@@ -56,7 +98,23 @@ export const createGeospatialDatabase = async (data: any): Promise<ApiResponse<a
   return api.post('/database/geospatial', data)
 }
 
-// 获取空间表列表
+/**
+ * @openapi
+ * /database/geospatial/{databaseId}/tables:
+ *   get:
+ *     summary: 获取空间表列表
+ *     tags:
+ *       - Geospatial
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 空间表列表
+ */
 export const getGeospatialTables = async (databaseId: string, params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟空间表列表
@@ -74,7 +132,29 @@ export const getGeospatialTables = async (databaseId: string, params?: QueryPara
   return api.get(`/database/geospatial/${databaseId}/tables`, { params })
 }
 
-// 创建空间表
+/**
+ * @openapi
+ * /database/geospatial/{databaseId}/tables:
+ *   post:
+ *     summary: 创建空间表
+ *     tags:
+ *       - Geospatial
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createGeospatialTable = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟创建空间表
@@ -90,7 +170,32 @@ export const createGeospatialTable = async (databaseId: string, data: any): Prom
   return api.post(`/database/geospatial/${databaseId}/tables`, data)
 }
 
-// 执行空间查询
+/**
+ * @openapi
+ * /database/geospatial/{databaseId}/query:
+ *   post:
+ *     summary: 执行空间查询
+ *     tags:
+ *       - Geospatial
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 查询结果
+ */
 export const executeGeospatialQuery = async (databaseId: string, query: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟查询结果
@@ -118,7 +223,28 @@ export const executeGeospatialQuery = async (databaseId: string, query: string):
   return api.post(`/database/geospatial/${databaseId}/query`, { query })
 }
 
-// 获取地图可视化数据
+/**
+ * @openapi
+ * /database/geospatial/{databaseId}/visualization/{tableName}:
+ *   get:
+ *     summary: 获取地图可视化数据
+ *     tags:
+ *       - Geospatial
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 地图可视化数据
+ */
 export const getMapVisualizationData = async (databaseId: string, tableName: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟地图可视化数据

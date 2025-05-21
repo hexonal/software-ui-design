@@ -2,7 +2,17 @@ import { api } from '@/lib/api/client'
 import { mockResponse, useMock } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
-// 获取时序数据库列表
+/**
+ * @openapi
+ * /database/timeseries:
+ *   get:
+ *     summary: 获取时序数据库列表
+ *     tags:
+ *       - Timeseries
+ *     responses:
+ *       200:
+ *         description: 时序数据库列表
+ */
 export const getTimeseriesDatabases = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟时序数据库列表
@@ -19,7 +29,23 @@ export const getTimeseriesDatabases = async (params?: QueryParams): Promise<ApiR
   return api.get('/database/timeseries', { params })
 }
 
-// 获取时序数据库详情
+/**
+ * @openapi
+ * /database/timeseries/{id}:
+ *   get:
+ *     summary: 获取时序数据库详情
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 时序数据库详情
+ */
 export const getTimeseriesDatabaseById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     const databases = [
@@ -41,7 +67,23 @@ export const getTimeseriesDatabaseById = async (id: string): Promise<ApiResponse
   return api.get(`/database/timeseries/${id}`)
 }
 
-// 创建时序数据库
+/**
+ * @openapi
+ * /database/timeseries:
+ *   post:
+ *     summary: 创建时序数据库
+ *     tags:
+ *       - Timeseries
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createTimeseriesDatabase = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟创建时序数据库
@@ -58,7 +100,23 @@ export const createTimeseriesDatabase = async (data: any): Promise<ApiResponse<a
   return api.post('/database/timeseries', data)
 }
 
-// 获取时间序列列表
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/series:
+ *   get:
+ *     summary: 获取时间序列列表
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 时间序列列表
+ */
 export const getTimeseries = async (databaseId: string, params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟时间序列列表
@@ -76,7 +134,92 @@ export const getTimeseries = async (databaseId: string, params?: QueryParams): P
   return api.get(`/database/timeseries/${databaseId}/series`, { params })
 }
 
-// 执行时序查询
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/series:
+ *   post:
+ *     summary: 创建时间序列
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
+export const createTimeseries = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
+  if (useMock()) {
+    // ... existing code ...
+    return mockResponse(newSeries)
+  }
+  return api.post(`/database/timeseries/${databaseId}/series`, data)
+}
+
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/series/{seriesName}:
+ *   delete:
+ *     summary: 删除时间序列
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: seriesName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
+export const deleteTimeseries = async (databaseId: string, seriesName: string): Promise<ApiResponse<boolean>> => {
+  if (useMock()) {
+    return mockResponse(true)
+  }
+  return api.delete(`/database/timeseries/${databaseId}/series/${seriesName}`)
+}
+
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/query:
+ *   post:
+ *     summary: 执行时序查询
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 查询结果
+ */
 export const executeTimeseriesQuery = async (databaseId: string, query: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟查询结果
@@ -106,7 +249,29 @@ export const executeTimeseriesQuery = async (databaseId: string, query: string):
   return api.post(`/database/timeseries/${databaseId}/query`, { query })
 }
 
-// 创建保留策略
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/retention-policies:
+ *   post:
+ *     summary: 创建保留策略
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createRetentionPolicy = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({
@@ -120,7 +285,23 @@ export const createRetentionPolicy = async (databaseId: string, data: any): Prom
   return api.post(`/database/timeseries/${databaseId}/retention-policies`, data)
 }
 
-// 获取保留策略列表
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/retention-policies:
+ *   get:
+ *     summary: 获取保留策略列表
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 保留策略列表
+ */
 export const getRetentionPolicies = async (databaseId: string): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟保留策略列表
@@ -134,4 +315,34 @@ export const getRetentionPolicies = async (databaseId: string): Promise<ApiRespo
   }
   
   return api.get(`/database/timeseries/${databaseId}/retention-policies`)
+}
+
+/**
+ * @openapi
+ * /database/timeseries/{databaseId}/metrics:
+ *   get:
+ *     summary: 获取时序数据库性能指标
+ *     tags:
+ *       - Timeseries
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: timeRange
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 性能指标
+ */
+export const getTimeseriesDatabaseMetrics = async (databaseId: string, timeRange: string = "24h"): Promise<ApiResponse<any>> => {
+  if (useMock()) {
+    // ... existing code ...
+    return mockResponse(metrics)
+  }
+  return api.get(`/database/timeseries/${databaseId}/metrics`, { params: { timeRange } })
 }

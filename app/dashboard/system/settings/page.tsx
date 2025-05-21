@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API
 import { systemApi } from "@/api"
+import { createManualBackup } from "@/api/monitoring"
 
 export default function SystemSettingsPage() {
   const [passwordChanged, setPasswordChanged] = useState(false)
@@ -438,11 +439,10 @@ export default function SystemSettingsPage() {
               <CardFooter className="flex justify-between">
                 <Button variant="outline" type="button" onClick={async () => {
                   try {
-                    const response = await systemApi.createManualBackup({
+                    const response = await createManualBackup({
                       name: "手动备份",
                       type: "完整"
                     })
-                    
                     if (!response.success) {
                       setError(response.message)
                     }

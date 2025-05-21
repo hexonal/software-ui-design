@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge"
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -45,6 +45,34 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarNav } from "@/components/dashboard/sidebar-nav"
+import { getSidebarNavItems } from "@/api/system"
+
+const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  Activity,
+  Database,
+  HardDrive,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Clock,
+  Vector,
+  Map,
+  Server,
+  Layers,
+  Table,
+  Upload,
+  Users,
+  Shield,
+  BarChart,
+  Save,
+  FolderTree,
+  Package,
+  HardDisk,
+  FileText,
+  Bell,
+  Key,
+}
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -59,158 +87,29 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     setOpenItems((current) => (current.includes(index) ? current.filter((i) => i !== index) : [...current, index]))
   }
 
-  const navItems = [
-    {
-      title: "总览",
-      href: "/dashboard",
-      icon: Activity,
-      exact: true,
-    },
-    {
-      title: "数据库管理",
-      icon: Database,
-      items: [
-        {
-          title: "数据库总览",
-          href: "/dashboard/database",
-          icon: Database,
-          exact: true,
-        },
-        {
-          title: "关系型数据库",
-          href: "/dashboard/database/relational",
-          icon: Table,
-        },
-        {
-          title: "时序数据库",
-          href: "/dashboard/database/timeseries",
-          icon: Clock,
-        },
-        {
-          title: "向量数据库",
-          href: "/dashboard/database/vector",
-          icon: Vector,
-        },
-        {
-          title: "地理空间数据库",
-          href: "/dashboard/database/geospatial",
-          icon: Map,
-        },
-      ],
-    },
-    {
-      title: "集群管理",
-      icon: Server,
-      items: [
-        {
-          title: "节点管理",
-          href: "/dashboard/cluster/nodes",
-          icon: Server,
-        },
-        {
-          title: "分片管理",
-          href: "/dashboard/cluster/shards",
-          icon: Layers,
-        },
-      ],
-    },
-    {
-      title: "数据模型管理",
-      icon: Table,
-      items: [
-        {
-          title: "表结构管理",
-          href: "/dashboard/data-model/tables",
-          icon: Table,
-        },
-        {
-          title: "数据导入导出",
-          href: "/dashboard/data-model/import-export",
-          icon: Upload,
-        },
-      ],
-    },
-    {
-      title: "安全管理",
-      icon: Shield,
-      items: [
-        {
-          title: "用户权限管理",
-          href: "/dashboard/security/users",
-          icon: Users,
-        },
-        {
-          title: "访问控制",
-          href: "/dashboard/security/access-control",
-          icon: Key,
-        },
-      ],
-    },
-    {
-      title: "监控与维护",
-      icon: BarChart,
-      items: [
-        {
-          title: "性能监控",
-          href: "/dashboard/monitoring/performance",
-          icon: BarChart,
-        },
-        {
-          title: "备份管理",
-          href: "/dashboard/monitoring/backup",
-          icon: Save,
-        },
-      ],
-    },
-    {
-      title: "存储管理",
-      icon: HardDrive,
-      items: [
-        {
-          title: "存储总览",
-          href: "/dashboard/storage",
-          icon: HardDrive,
-          exact: true,
-        },
-        {
-          title: "文件存储",
-          href: "/dashboard/storage/file",
-          icon: FolderTree,
-        },
-        {
-          title: "对象存储",
-          href: "/dashboard/storage/object",
-          icon: Package,
-        },
-        {
-          title: "块存储",
-          href: "/dashboard/storage/block",
-          icon: HardDisk,
-        },
-      ],
-    },
-    {
-      title: "系统管理",
-      icon: Settings,
-      items: [
-        {
-          title: "系统设置",
-          href: "/dashboard/system/settings",
-          icon: Settings,
-        },
-        {
-          title: "日志管理",
-          href: "/dashboard/system/logs",
-          icon: FileText,
-        },
-        {
-          title: "告警管理",
-          href: "/dashboard/system/alerts",
-          icon: Bell,
-        },
-      ],
-    },
-  ]
+  const [navItems, setNavItems] = useState<any[]>([])
+
+  useEffect(() => {
+    async function fetchNavItems() {
+      try {
+        const res = await getSidebarNavItems()
+        if (res.success) {
+          // 递归替换 icon 字段为组件
+          type NavItem = { icon?: string; items?: NavItem[] } & Record<string, any>
+          const mapIcons = (items: NavItem[]): any[] =>
+            items.map((item) => ({
+              ...item,
+              icon: item.icon ? iconMap[item.icon as string] : undefined,
+              items: item.items ? mapIcons(item.items) : undefined,
+            }))
+          setNavItems(mapIcons(res.data))
+        }
+      } catch (e) {
+        // 可根据需要处理错误
+      }
+    }
+    fetchNavItems()
+  }, [])
 
   return (
     <div className="flex min-h-screen bg-gray-50">

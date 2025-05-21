@@ -3,17 +3,43 @@ import { mockResponse, useMock, getMockData } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 import { BackupHistory, BackupSchedule } from '@/mock/dashboard/types'
 
-// 获取备份历史
+/**
+ * @openapi
+ * /monitoring/backup/history:
+ *   get:
+ *     summary: 获取备份历史
+ *     tags:
+ *       - Monitoring
+ *     responses:
+ *       200:
+ *         description: 备份历史列表
+ */
 export const getBackupHistory = async (params?: QueryParams): Promise<ApiResponse<BackupHistory[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('backupHistory'))
+    return mockResponse(getMockData('backupHistory') as BackupHistory[])
   }
   
   return api.get('/monitoring/backup/history', { params })
 }
 
-// 获取备份历史详情
-export const getBackupHistoryById = async (id: string): Promise<ApiResponse<BackupHistory>> => {
+/**
+ * @openapi
+ * /monitoring/backup/history/{id}:
+ *   get:
+ *     summary: 获取备份历史详情
+ *     tags:
+ *       - Monitoring
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 备份历史详情
+ */
+export const getBackupHistoryById = async (id: string): Promise<ApiResponse<BackupHistory | null>> => {
   if (useMock()) {
     const history = getMockData('backupHistory') as BackupHistory[]
     const backup = history.find(b => b.id === id)
@@ -28,17 +54,43 @@ export const getBackupHistoryById = async (id: string): Promise<ApiResponse<Back
   return api.get(`/monitoring/backup/history/${id}`)
 }
 
-// 获取备份计划
+/**
+ * @openapi
+ * /monitoring/backup/schedules:
+ *   get:
+ *     summary: 获取备份计划
+ *     tags:
+ *       - Monitoring
+ *     responses:
+ *       200:
+ *         description: 备份计划列表
+ */
 export const getBackupSchedules = async (params?: QueryParams): Promise<ApiResponse<BackupSchedule[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('backupSchedules'))
+    return mockResponse(getMockData('backupSchedules') as BackupSchedule[])
   }
   
   return api.get('/monitoring/backup/schedules', { params })
 }
 
-// 获取备份计划详情
-export const getBackupScheduleById = async (id: string): Promise<ApiResponse<BackupSchedule>> => {
+/**
+ * @openapi
+ * /monitoring/backup/schedules/{id}:
+ *   get:
+ *     summary: 获取备份计划详情
+ *     tags:
+ *       - Monitoring
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 备份计划详情
+ */
+export const getBackupScheduleById = async (id: string): Promise<ApiResponse<BackupSchedule | null>> => {
   if (useMock()) {
     const schedules = getMockData('backupSchedules') as BackupSchedule[]
     const schedule = schedules.find(s => s.id === id)
@@ -53,7 +105,23 @@ export const getBackupScheduleById = async (id: string): Promise<ApiResponse<Bac
   return api.get(`/monitoring/backup/schedules/${id}`)
 }
 
-// 创建备份计划
+/**
+ * @openapi
+ * /monitoring/backup/schedules:
+ *   post:
+ *     summary: 创建备份计划
+ *     tags:
+ *       - Monitoring
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BackupSchedule'
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createBackupSchedule = async (data: Omit<BackupSchedule, 'id'>): Promise<ApiResponse<BackupSchedule>> => {
   if (useMock()) {
     // 模拟创建备份计划
@@ -67,7 +135,29 @@ export const createBackupSchedule = async (data: Omit<BackupSchedule, 'id'>): Pr
   return api.post('/monitoring/backup/schedules', data)
 }
 
-// 更新备份计划
+/**
+ * @openapi
+ * /monitoring/backup/schedules/{id}:
+ *   put:
+ *     summary: 更新备份计划
+ *     tags:
+ *       - Monitoring
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/BackupSchedule'
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
 export const updateBackupSchedule = async (id: string, data: Partial<BackupSchedule>): Promise<ApiResponse<BackupSchedule>> => {
   if (useMock()) {
     const schedules = getMockData('backupSchedules') as BackupSchedule[]
@@ -84,7 +174,23 @@ export const updateBackupSchedule = async (id: string, data: Partial<BackupSched
   return api.put(`/monitoring/backup/schedules/${id}`, data)
 }
 
-// 删除备份计划
+/**
+ * @openapi
+ * /monitoring/backup/schedules/{id}:
+ *   delete:
+ *     summary: 删除备份计划
+ *     tags:
+ *       - Monitoring
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const deleteBackupSchedule = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
@@ -93,7 +199,28 @@ export const deleteBackupSchedule = async (id: string): Promise<ApiResponse<bool
   return api.delete(`/monitoring/backup/schedules/${id}`)
 }
 
-// 执行手动备份
+/**
+ * @openapi
+ * /monitoring/backup/manual:
+ *   post:
+ *     summary: 执行手动备份
+ *     tags:
+ *       - Monitoring
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 备份任务
+ */
 export const createManualBackup = async (data: { name: string, type: string }): Promise<ApiResponse<BackupHistory>> => {
   if (useMock()) {
     // 模拟创建手动备份
@@ -113,7 +240,23 @@ export const createManualBackup = async (data: { name: string, type: string }): 
   return api.post('/monitoring/backup/manual', data)
 }
 
-// 获取性能数据
+/**
+ * @openapi
+ * /monitoring/performance:
+ *   get:
+ *     summary: 获取性能数据
+ *     tags:
+ *       - Monitoring
+ *     parameters:
+ *       - name: timeRange
+ *         in: query
+ *         required: false
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 性能数据
+ */
 export const getPerformanceData = async (params?: { timeRange?: string }): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse(getMockData('performanceData'))

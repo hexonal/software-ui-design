@@ -2,7 +2,28 @@ import { api } from '@/lib/api/client'
 import { mockResponse, useMock, getMockData } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
-// 获取表结构
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}/structure:
+ *   get:
+ *     summary: 获取表结构
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 表结构
+ */
 export const getTableStructure = async (databaseId: string, tableName: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 根据表名返回不同的结构
@@ -40,7 +61,29 @@ export const getTableStructure = async (databaseId: string, tableName: string): 
   return api.get(`/data-model/tables/${databaseId}/${tableName}/structure`)
 }
 
-// 创建表
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}:
+ *   post:
+ *     summary: 创建表
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createTable = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({ success: true, tableName: data.name })
@@ -49,7 +92,34 @@ export const createTable = async (databaseId: string, data: any): Promise<ApiRes
   return api.post(`/data-model/tables/${databaseId}`, data)
 }
 
-// 修改表结构
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}:
+ *   put:
+ *     summary: 修改表结构
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 修改成功
+ */
 export const alterTable = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({ success: true })
@@ -58,7 +128,28 @@ export const alterTable = async (databaseId: string, tableName: string, data: an
   return api.put(`/data-model/tables/${databaseId}/${tableName}`, data)
 }
 
-// 删除表
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}:
+ *   delete:
+ *     summary: 删除表
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const dropTable = async (databaseId: string, tableName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
@@ -67,7 +158,28 @@ export const dropTable = async (databaseId: string, tableName: string): Promise<
   return api.delete(`/data-model/tables/${databaseId}/${tableName}`)
 }
 
-// 获取表索引
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}/indexes:
+ *   get:
+ *     summary: 获取表索引
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 索引列表
+ */
 export const getTableIndexes = async (databaseId: string, tableName: string): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟索引数据
@@ -83,7 +195,34 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
   return api.get(`/data-model/tables/${databaseId}/${tableName}/indexes`)
 }
 
-// 创建索引
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}/indexes:
+ *   post:
+ *     summary: 创建索引
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createIndex = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({ success: true, indexName: data.name })
@@ -92,7 +231,33 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
   return api.post(`/data-model/tables/${databaseId}/${tableName}/indexes`, data)
 }
 
-// 删除索引
+/**
+ * @openapi
+ * /data-model/tables/{databaseId}/{tableName}/indexes/{indexName}:
+ *   delete:
+ *     summary: 删除索引
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: indexName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const dropIndex = async (databaseId: string, tableName: string, indexName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
@@ -101,7 +266,34 @@ export const dropIndex = async (databaseId: string, tableName: string, indexName
   return api.delete(`/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
 }
 
-// 导入数据
+/**
+ * @openapi
+ * /data-model/import/{databaseId}/{tableName}:
+ *   post:
+ *     summary: 导入数据
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 导入任务
+ */
 export const importData = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟导入任务
@@ -121,7 +313,29 @@ export const importData = async (databaseId: string, tableName: string, data: an
   return api.post(`/data-model/import/${databaseId}/${tableName}`, data)
 }
 
-// 导出数据
+/**
+ * @openapi
+ * /data-model/export/{databaseId}:
+ *   post:
+ *     summary: 导出数据
+ *     tags:
+ *       - DataModel
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 导出任务
+ */
 export const exportData = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟导出任务
@@ -141,7 +355,17 @@ export const exportData = async (databaseId: string, data: any): Promise<ApiResp
   return api.post(`/data-model/export/${databaseId}`, data)
 }
 
-// 获取导入/导出任务状态
+/**
+ * @openapi
+ * /data-model/tasks:
+ *   get:
+ *     summary: 获取导入/导出任务状态
+ *     tags:
+ *       - DataModel
+ *     responses:
+ *       200:
+ *         description: 任务列表
+ */
 export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟导入导出任务列表
@@ -206,7 +430,7 @@ export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
       },
     ]
     
-    return mockResponse([...importTasks, ...exportTasks])
+    return mockResponse([...importTasks, ...exportTasks] as any[])
   }
   
   return api.get('/data-model/tasks')

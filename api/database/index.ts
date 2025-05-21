@@ -6,17 +6,43 @@ import { Database, Table } from '@/mock/dashboard/types'
 // 导入子模块
 import * as relationalApi from './relational'
 
-// 获取所有数据库
+/**
+ * @openapi
+ * /database:
+ *   get:
+ *     summary: 获取所有数据库
+ *     tags:
+ *       - Database
+ *     responses:
+ *       200:
+ *         description: 数据库列表
+ */
 export const getDatabases = async (params?: QueryParams): Promise<ApiResponse<Database[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('databases'))
+    return mockResponse(getMockData('databases') as Database[])
   }
   
   return api.get('/database', { params })
 }
 
-// 获取数据库详情
-export const getDatabaseById = async (id: string): Promise<ApiResponse<Database>> => {
+/**
+ * @openapi
+ * /database/{id}:
+ *   get:
+ *     summary: 获取数据库详情
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 数据库详情
+ */
+export const getDatabaseById = async (id: string): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
     const database = databases.find(db => db.id === id)
@@ -31,7 +57,23 @@ export const getDatabaseById = async (id: string): Promise<ApiResponse<Database>
   return api.get(`/database/${id}`)
 }
 
-// 创建数据库
+/**
+ * @openapi
+ * /database:
+ *   post:
+ *     summary: 创建数据库
+ *     tags:
+ *       - Database
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Database'
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createDatabase = async (data: Omit<Database, 'id'>): Promise<ApiResponse<Database>> => {
   if (useMock()) {
     // 模拟创建数据库
@@ -45,8 +87,30 @@ export const createDatabase = async (data: Omit<Database, 'id'>): Promise<ApiRes
   return api.post('/database', data)
 }
 
-// 更新数据库
-export const updateDatabase = async (id: string, data: Partial<Database>): Promise<ApiResponse<Database>> => {
+/**
+ * @openapi
+ * /database/{id}:
+ *   put:
+ *     summary: 更新数据库
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Database'
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
+export const updateDatabase = async (id: string, data: Partial<Database>): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
     const databaseIndex = databases.findIndex(db => db.id === id)
@@ -62,7 +126,23 @@ export const updateDatabase = async (id: string, data: Partial<Database>): Promi
   return api.put(`/database/${id}`, data)
 }
 
-// 删除数据库
+/**
+ * @openapi
+ * /database/{id}:
+ *   delete:
+ *     summary: 删除数据库
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const deleteDatabase = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
@@ -71,17 +151,48 @@ export const deleteDatabase = async (id: string): Promise<ApiResponse<boolean>> 
   return api.delete(`/database/${id}`)
 }
 
-// 获取所有表
+/**
+ * @openapi
+ * /database/tables:
+ *   get:
+ *     summary: 获取所有表
+ *     tags:
+ *       - Database
+ *     responses:
+ *       200:
+ *         description: 表列表
+ */
 export const getTables = async (params?: QueryParams): Promise<ApiResponse<Table[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('tables'))
+    return mockResponse(getMockData('tables') as Table[])
   }
   
   return api.get('/database/tables', { params })
 }
 
-// 获取表详情
-export const getTableByName = async (databaseId: string, tableName: string): Promise<ApiResponse<Table>> => {
+/**
+ * @openapi
+ * /database/{databaseId}/tables/{tableName}:
+ *   get:
+ *     summary: 获取表详情
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 表详情
+ */
+export const getTableByName = async (databaseId: string, tableName: string): Promise<ApiResponse<Table | null>> => {
   if (useMock()) {
     const tables = getMockData('tables') as Table[]
     const table = tables.find(t => t.database === databaseId && t.name === tableName)
@@ -96,7 +207,29 @@ export const getTableByName = async (databaseId: string, tableName: string): Pro
   return api.get(`/database/${databaseId}/tables/${tableName}`)
 }
 
-// 创建表
+/**
+ * @openapi
+ * /database/{databaseId}/tables:
+ *   post:
+ *     summary: 创建表
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Table'
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createTable = async (databaseId: string, data: Omit<Table, 'database'>): Promise<ApiResponse<Table>> => {
   if (useMock()) {
     // 模拟创建表
@@ -110,7 +243,34 @@ export const createTable = async (databaseId: string, data: Omit<Table, 'databas
   return api.post(`/database/${databaseId}/tables`, data)
 }
 
-// 更新表
+/**
+ * @openapi
+ * /database/{databaseId}/tables/{tableName}:
+ *   put:
+ *     summary: 更新表
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Table'
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
 export const updateTable = async (databaseId: string, tableName: string, data: Partial<Table>): Promise<ApiResponse<Table>> => {
   if (useMock()) {
     const tables = getMockData('tables') as Table[]
@@ -121,22 +281,74 @@ export const updateTable = async (databaseId: string, tableName: string, data: P
     }
     
     const updatedTable = { ...tables[tableIndex], ...data }
+    tables[tableIndex] = updatedTable
     return mockResponse(updatedTable)
   }
   
   return api.put(`/database/${databaseId}/tables/${tableName}`, data)
 }
 
-// 删除表
+/**
+ * @openapi
+ * /database/{databaseId}/tables/{tableName}:
+ *   delete:
+ *     summary: 删除表
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: tableName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const deleteTable = async (databaseId: string, tableName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
+    const tables = getMockData('tables') as Table[]
+    const tableIndex = tables.findIndex(t => t.database === databaseId && t.name === tableName)
+    if (tableIndex !== -1) {
+      tables.splice(tableIndex, 1)
+    }
     return mockResponse(true)
   }
   
   return api.delete(`/database/${databaseId}/tables/${tableName}`)
 }
 
-// 执行 SQL 查询
+/**
+ * @openapi
+ * /database/{databaseId}/query:
+ *   post:
+ *     summary: 执行 SQL 查询
+ *     tags:
+ *       - Database
+ *     parameters:
+ *       - name: databaseId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 查询结果
+ */
 export const executeQuery = async (databaseId: string, query: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟查询结果

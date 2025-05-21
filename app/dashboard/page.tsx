@@ -16,10 +16,10 @@ import { systemApi } from "@/api"
 export default function DashboardPage() {
   const [alerts, setAlerts] = useState<any[]>([])
   const [systemStatus, setSystemStatus] = useState({
-    health: { value: "良好", description: "所有系统正常运行", status: "success" },
-    storage: { value: "42%", description: "已使用 4.2TB / 10TB", status: "warning" },
-    nodes: { value: "18/20", description: "18 个节点在线", status: "success" },
-    databases: { value: "12/15", description: "3 个实例需要注意", status: "warning" }
+    health: { value: "-", description: "加载中", status: "default" },
+    storage: { value: "-", description: "加载中", status: "default" },
+    nodes: { value: "-", description: "加载中", status: "default" },
+    databases: { value: "-", description: "加载中", status: "default" }
   })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -32,7 +32,7 @@ export default function DashboardPage() {
         if (response.success) {
           setAlerts(response.data)
         } else {
-          setError(response.message)
+          setError('获取告警数据失败')
         }
       } catch (err) {
         setError('获取告警数据失败')
@@ -41,8 +41,18 @@ export default function DashboardPage() {
         setLoading(false)
       }
     }
-
+    const fetchStatus = async () => {
+      try {
+        const res = await systemApi.getSystemStatus()
+        if (res.success) {
+          setSystemStatus(res.data)
+        }
+      } catch (err) {
+        // 可根据需要处理错误
+      }
+    }
     fetchAlerts()
+    fetchStatus()
   }, [])
 
   // Get the 5 most recent alerts

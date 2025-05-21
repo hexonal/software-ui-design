@@ -49,6 +49,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API
 import { systemApi } from "@/api"
+// 新增导入
+const { getAlertRules, getAlertChannels } = systemApi
 
 // Alert severity types with corresponding colors and icons
 const severityConfig = {
@@ -114,6 +116,28 @@ export default function AlertsPage() {
   const [alertHistory, setAlertHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // 新增规则和渠道的 state
+  const [rules, setRules] = useState<any[]>([])
+  const [channels, setChannels] = useState<any[]>([])
+  const [rulesLoading, setRulesLoading] = useState(true)
+  const [channelsLoading, setChannelsLoading] = useState(true)
+  const [rulesError, setRulesError] = useState<string | null>(null)
+  const [channelsError, setChannelsError] = useState<string | null>(null)
+  // 规则弹窗相关 state
+  const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
+  const [ruleDialogMode, setRuleDialogMode] = useState<'add' | 'edit'>('add')
+  const [editingRule, setEditingRule] = useState<any | null>(null)
+  const [ruleForm, setRuleForm] = useState<any>({
+    name: '',
+    description: '',
+    condition: '',
+    severity: 'medium',
+    enabled: true,
+    target: '',
+    notificationChannels: [],
+  })
+  const [ruleDeleteId, setRuleDeleteId] = useState<string | null>(null)
+  const [ruleSubmitting, setRuleSubmitting] = useState(false)
 
   // 获取告警数据
   useEffect(() => {
@@ -125,7 +149,7 @@ export default function AlertsPage() {
           setAlerts(response.data)
           setAlertHistory(response.data)
         } else {
-          setError(response.message)
+          setError('未知错误')
         }
       } catch (err) {
         setError('获取告警数据失败')
@@ -136,6 +160,48 @@ export default function AlertsPage() {
     }
 
     fetchAlerts()
+  }, [])
+
+  // 获取规则数据
+  useEffect(() => {
+    const fetchRules = async () => {
+      try {
+        setRulesLoading(true)
+        const response = await getAlertRules()
+        if (response.success) {
+          setRules(response.data)
+        } else {
+          setRulesError('未知错误')
+        }
+      } catch (err) {
+        setRulesError('获取规则数据失败')
+        console.error(err)
+      } finally {
+        setRulesLoading(false)
+      }
+    }
+    fetchRules()
+  }, [])
+
+  // 获取渠道数据
+  useEffect(() => {
+    const fetchChannels = async () => {
+      try {
+        setChannelsLoading(true)
+        const response = await getAlertChannels()
+        if (response.success) {
+          setChannels(response.data)
+        } else {
+          setChannelsError('未知错误')
+        }
+      } catch (err) {
+        setChannelsError('获取渠道数据失败')
+        console.error(err)
+      } finally {
+        setChannelsLoading(false)
+      }
+    }
+    fetchChannels()
   }, [])
 
   // Filter alerts based on search query and severity filter
@@ -174,7 +240,7 @@ export default function AlertsPage() {
           alert.id === alertId ? { ...alert, acknowledged: true } : alert
         ))
       } else {
-        setError(response.message)
+        setError('操作失败')
       }
     } catch (err) {
       setError('确认告警失败')
@@ -202,11 +268,69 @@ export default function AlertsPage() {
         ))
         setShowAlertDetails(false)
       } else {
-        setError(response.message)
+        setError('操作失败')
       }
     } catch (err) {
       setError('解决告警失败')
       console.error(err)
+    }
+  }
+
+  // 打开新增规则弹窗
+  const openAddRuleDialog = () => {
+    setRuleDialogMode('add')
+    setRuleForm({
+      name: '',
+      description: '',
+      condition: '',
+      severity: 'medium',
+      enabled: true,
+      target: '',
+      notificationChannels: [],
+    })
+    setEditingRule(null)
+    setRuleDialogOpen(true)
+  }
+
+  // 打开编辑规则弹窗
+  const openEditRuleDialog = (rule: any) => {
+    setRuleDialogMode('edit')
+    setRuleForm({ ...rule })
+    setEditingRule(rule)
+    setRuleDialogOpen(true)
+  }
+
+  // 提交规则表单
+  const handleRuleSubmit = async () => {
+    setRuleSubmitting(true)
+    try {
+      if (ruleDialogMode === 'add') {
+        await systemApi.addAlertRule(ruleForm)
+      } else if (ruleDialogMode === 'edit' && editingRule) {
+        await systemApi.updateAlertRule(ruleForm)
+      }
+      setRuleDialogOpen(false)
+      // 重新拉取规则
+      const response = await getAlertRules()
+      if (response.success) setRules(response.data)
+    } catch (err) {
+      alert('操作失败')
+    } finally {
+      setRuleSubmitting(false)
+    }
+  }
+
+  // 删除规则
+  const handleDeleteRule = async () => {
+    if (!ruleDeleteId) return
+    try {
+      await systemApi.deleteAlertRule(ruleDeleteId)
+      setRuleDeleteId(null)
+      // 重新拉取规则
+      const response = await getAlertRules()
+      if (response.success) setRules(response.data)
+    } catch (err) {
+      alert('删除失败')
     }
   }
 
@@ -458,7 +582,7 @@ export default function AlertsPage() {
                                 <TableCell>{formatDate(alert.timestamp)}</TableCell>
                                 <TableCell>
                                   {alert.resolved ? (
-                                    <Badge variant="success">已解决</Badge>
+                                    <Badge variant="secondary">已解决</Badge>
                                   ) : alert.acknowledged ? (
                                     <Badge variant="secondary">已确认</Badge>
                                   ) : (
@@ -492,7 +616,7 @@ export default function AlertsPage() {
                       <h3 className="text-lg font-medium">告警规则配置</h3>
                       <p className="text-sm text-muted-foreground">配置系统监控的告警触发条件和响应操作</p>
                     </div>
-                    <Button>
+                    <Button onClick={openAddRuleDialog}>
                       <Plus className="mr-2 h-4 w-4" />
                       添加规则
                     </Button>
@@ -511,7 +635,7 @@ export default function AlertsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {loading ? (
+                        {rulesLoading ? (
                           <TableRow>
                             <TableCell colSpan={7} className="text-center py-8">
                               <div className="flex flex-col items-center justify-center">
@@ -520,59 +644,17 @@ export default function AlertsPage() {
                               </div>
                             </TableCell>
                           </TableRow>
+                        ) : rules.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8">
+                              <div className="flex flex-col items-center justify-center">
+                                <Info className="h-8 w-8 text-muted-foreground mb-2" />
+                                <p className="text-muted-foreground">没有规则数据</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ) : (
-                          [
-                            {
-                              id: "rule-001",
-                              name: "CPU使用率监控",
-                              description: "当CPU使用率超过阈值时触发告警",
-                              condition: "CPU使用率 > 90% 持续 5分钟",
-                              severity: "critical",
-                              enabled: true,
-                              target: "所有节点",
-                              notificationChannels: ["邮件", "短信", "系统通知"],
-                            },
-                            {
-                              id: "rule-002",
-                              name: "磁盘空间监控",
-                              description: "当磁盘可用空间低于阈值时触发告警",
-                              condition: "可用空间 < 10%",
-                              severity: "high",
-                              enabled: true,
-                              target: "存储节点",
-                              notificationChannels: ["邮件", "系统通知"],
-                            },
-                            {
-                              id: "rule-003",
-                              name: "数据库连接监控",
-                              description: "当数据库连接数接近上限时触发告警",
-                              condition: "连接数 > 配置上限的 80%",
-                              severity: "medium",
-                              enabled: true,
-                              target: "数据库实例",
-                              notificationChannels: ["系统通知"],
-                            },
-                            {
-                              id: "rule-004",
-                              name: "备份任务监控",
-                              description: "当备份任务失败时触发告警",
-                              condition: "备份任务状态 = 失败",
-                              severity: "high",
-                              enabled: true,
-                              target: "备份系统",
-                              notificationChannels: ["邮件", "短信", "系统通知"],
-                            },
-                            {
-                              id: "rule-005",
-                              name: "节点状态监控",
-                              description: "当节点离线时触发告警",
-                              condition: "节点状态 = 离线 持续 1分钟",
-                              severity: "critical",
-                              enabled: true,
-                              target: "所有节点",
-                              notificationChannels: ["邮件", "短信", "系统通知"],
-                            },
-                          ].map((rule) => {
+                          rules.map((rule) => {
                             const SeverityIcon = severityConfig[rule.severity as keyof typeof severityConfig].icon
                             return (
                               <TableRow key={rule.id}>
@@ -596,7 +678,7 @@ export default function AlertsPage() {
                                 <TableCell>{rule.target}</TableCell>
                                 <TableCell>
                                   <div className="flex flex-wrap gap-1">
-                                    {rule.notificationChannels.map((channel, idx) => (
+                                    {rule.notificationChannels.map((channel: string, idx: number) => (
                                       <Badge key={idx} variant="outline">
                                         {channel}
                                       </Badge>
@@ -608,10 +690,10 @@ export default function AlertsPage() {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" onClick={() => openEditRuleDialog(rule)}>
                                       <Settings className="h-4 w-4" />
                                     </Button>
-                                    <Button variant="ghost" size="icon">
+                                    <Button variant="ghost" size="icon" onClick={() => setRuleDeleteId(rule.id)}>
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   </div>
@@ -648,7 +730,7 @@ export default function AlertsPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {loading ? (
+                        {channelsLoading ? (
                           <TableRow>
                             <TableCell colSpan={5} className="text-center py-8">
                               <div className="flex flex-col items-center justify-center">
@@ -657,37 +739,17 @@ export default function AlertsPage() {
                               </div>
                             </TableCell>
                           </TableRow>
+                        ) : channels.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-8">
+                              <div className="flex flex-col items-center justify-center">
+                                <Info className="h-8 w-8 text-muted-foreground mb-2" />
+                                <p className="text-muted-foreground">没有渠道数据</p>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         ) : (
-                          [
-                            {
-                              id: "channel-001",
-                              name: "系统管理员邮件组",
-                              type: "邮件",
-                              recipients: "admin@example.com, sysops@example.com",
-                              enabled: true,
-                            },
-                            {
-                              id: "channel-002",
-                              name: "运维团队短信",
-                              type: "短信",
-                              recipients: "+86 13800138000, +86 13900139000",
-                              enabled: true,
-                            },
-                            {
-                              id: "channel-003",
-                              name: "系统内通知",
-                              type: "系统通知",
-                              recipients: "所有管理员用户",
-                              enabled: true,
-                            },
-                            {
-                              id: "channel-004",
-                              name: "Webhook集成",
-                              type: "Webhook",
-                              recipients: "https://api.example.com/alerts",
-                              enabled: false,
-                            },
-                          ].map((channel) => (
+                          channels.map((channel) => (
                             <TableRow key={channel.id}>
                               <TableCell>
                                 <div className="font-medium">{channel.name}</div>
@@ -752,7 +814,7 @@ export default function AlertsPage() {
                     <h4 className="text-sm font-medium text-muted-foreground mb-1">状态</h4>
                     <p>
                       {selectedAlert.resolved ? (
-                        <Badge variant="success">已解决</Badge>
+                        <Badge variant="secondary">已解决</Badge>
                       ) : selectedAlert.acknowledged ? (
                         <Badge variant="secondary">已确认</Badge>
                       ) : (
@@ -794,6 +856,76 @@ export default function AlertsPage() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 规则新增/编辑弹窗 */}
+      <Dialog open={ruleDialogOpen} onOpenChange={setRuleDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{ruleDialogMode === 'add' ? '添加规则' : '编辑规则'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">规则名称</label>
+              <Input value={ruleForm.name} onChange={e => setRuleForm((f: any) => ({ ...f, name: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">描述</label>
+              <Input value={ruleForm.description} onChange={e => setRuleForm((f: any) => ({ ...f, description: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">条件</label>
+              <Input value={ruleForm.condition} onChange={e => setRuleForm((f: any) => ({ ...f, condition: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">严重程度</label>
+              <Select value={ruleForm.severity} onValueChange={v => setRuleForm((f: any) => ({ ...f, severity: v }))}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">严重</SelectItem>
+                  <SelectItem value="high">高危</SelectItem>
+                  <SelectItem value="medium">中等</SelectItem>
+                  <SelectItem value="low">低危</SelectItem>
+                  <SelectItem value="info">信息</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">目标</label>
+              <Input value={ruleForm.target} onChange={e => setRuleForm((f: any) => ({ ...f, target: e.target.value }))} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">通知渠道（逗号分隔）</label>
+              <Input value={ruleForm.notificationChannels.join(',')} onChange={e => setRuleForm((f: any) => ({ ...f, notificationChannels: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} />
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={ruleForm.enabled} onCheckedChange={v => setRuleForm((f: any) => ({ ...f, enabled: v }))} />
+              <span>启用</span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleRuleSubmit} disabled={ruleSubmitting}>
+              {ruleSubmitting && <span className="animate-spin mr-2 inline-block w-4 h-4 border-2 border-t-transparent border-current rounded-full align-[-0.125em]"></span>}
+              {ruleDialogMode === 'add' ? '添加' : '保存'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 删除规则确认弹窗 */}
+      <Dialog open={!!ruleDeleteId} onOpenChange={v => { if (!v) setRuleDeleteId(null) }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>确认删除</DialogTitle>
+          </DialogHeader>
+          <div>确定要删除该规则吗？</div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRuleDeleteId(null)}>取消</Button>
+            <Button variant="destructive" onClick={handleDeleteRule}>删除</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

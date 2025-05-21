@@ -2,7 +2,17 @@ import { api } from '@/lib/api/client'
 import { mockResponse, useMock } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
-// 获取向量集合列表
+/**
+ * @openapi
+ * /database/vector/collections:
+ *   get:
+ *     summary: 获取向量集合列表
+ *     tags:
+ *       - Vector
+ *     responses:
+ *       200:
+ *         description: 向量集合列表
+ */
 export const getVectorCollections = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟向量集合数据
@@ -19,7 +29,23 @@ export const getVectorCollections = async (params?: QueryParams): Promise<ApiRes
   return api.get('/database/vector/collections', { params })
 }
 
-// 获取向量集合详情
+/**
+ * @openapi
+ * /database/vector/collections/{id}:
+ *   get:
+ *     summary: 获取向量集合详情
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 向量集合详情
+ */
 export const getVectorCollectionById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     const collections = [
@@ -41,7 +67,23 @@ export const getVectorCollectionById = async (id: string): Promise<ApiResponse<a
   return api.get(`/database/vector/collections/${id}`)
 }
 
-// 创建向量集合
+/**
+ * @openapi
+ * /database/vector/collections:
+ *   post:
+ *     summary: 创建向量集合
+ *     tags:
+ *       - Vector
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 创建成功
+ */
 export const createVectorCollection = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟创建向量集合
@@ -55,7 +97,29 @@ export const createVectorCollection = async (data: any): Promise<ApiResponse<any
   return api.post('/database/vector/collections', data)
 }
 
-// 更新向量集合
+/**
+ * @openapi
+ * /database/vector/collections/{id}:
+ *   put:
+ *     summary: 更新向量集合
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
 export const updateVectorCollection = async (id: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({
@@ -67,7 +131,23 @@ export const updateVectorCollection = async (id: string, data: any): Promise<Api
   return api.put(`/database/vector/collections/${id}`, data)
 }
 
-// 删除向量集合
+/**
+ * @openapi
+ * /database/vector/collections/{id}:
+ *   delete:
+ *     summary: 删除向量集合
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
 export const deleteVectorCollection = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
@@ -76,7 +156,23 @@ export const deleteVectorCollection = async (id: string): Promise<ApiResponse<bo
   return api.delete(`/database/vector/collections/${id}`)
 }
 
-// 获取向量索引配置
+/**
+ * @openapi
+ * /database/vector/collections/{collectionId}/index:
+ *   get:
+ *     summary: 获取向量索引配置
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: collectionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 索引配置
+ */
 export const getVectorIndexConfig = async (collectionId: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
     // 模拟索引配置
@@ -93,7 +189,29 @@ export const getVectorIndexConfig = async (collectionId: string): Promise<ApiRes
   return api.get(`/database/vector/collections/${collectionId}/index`)
 }
 
-// 更新向量索引配置
+/**
+ * @openapi
+ * /database/vector/collections/{collectionId}/index:
+ *   put:
+ *     summary: 更新向量索引配置
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: collectionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ */
 export const updateVectorIndexConfig = async (collectionId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
     return mockResponse({
@@ -105,7 +223,32 @@ export const updateVectorIndexConfig = async (collectionId: string, data: any): 
   return api.put(`/database/vector/collections/${collectionId}/index`, data)
 }
 
-// 向量搜索
+/**
+ * @openapi
+ * /database/vector/collections/{collectionId}/search:
+ *   post:
+ *     summary: 向量搜索
+ *     tags:
+ *       - Vector
+ *     parameters:
+ *       - name: collectionId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               query:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: 搜索结果
+ */
 export const searchVectors = async (collectionId: string, query: string, options?: any): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
     // 模拟搜索结果
