@@ -12,6 +12,34 @@ import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
  *     responses:
  *       200:
  *         description: 向量集合列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   dimensions:
+ *                     type: integer
+ *                   vectors:
+ *                     type: integer
+ *                   indexType:
+ *                     type: string
+ *             example:
+ *               - id: "product-embeddings"
+ *                 name: "产品向量"
+ *                 dimensions: 1536
+ *                 vectors: 125000
+ *                 indexType: "HNSW"
+ *               - id: "document-embeddings"
+ *                 name: "文档向量"
+ *                 dimensions: 768
+ *                 vectors: 85000
+ *                 indexType: "HNSW"
  */
 export const getVectorCollections = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -45,6 +73,15 @@ export const getVectorCollections = async (params?: QueryParams): Promise<ApiRes
  *     responses:
  *       200:
  *         description: 向量集合详情
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "product-embeddings"
+ *               name: "产品向量"
+ *               dimensions: 1536
+ *               vectors: 125000
+ *               indexType: "HNSW"
+ *               description: "产品描述和特征的向量表示"
  */
 export const getVectorCollectionById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -80,9 +117,28 @@ export const getVectorCollectionById = async (id: string): Promise<ApiResponse<a
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               dimensions:
+ *                 type: integer
+ *               indexType:
+ *                 type: string
+ *           example:
+ *             name: "new-collection"
+ *             dimensions: 768
+ *             indexType: "HNSW"
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "collection-1678886400000"
+ *               name: "new-collection"
+ *               dimensions: 768
+ *               vectors: 0
+ *               indexType: "HNSW"
  */
 export const createVectorCollection = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -116,9 +172,23 @@ export const createVectorCollection = async (data: any): Promise<ApiResponse<any
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *           example:
+ *             name: "updated-collection-name"
+ *             description: "updated-description"
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "collection-1678886400000"
+ *               name: "updated-collection-name"
+ *               description: "updated-description"
  */
 export const updateVectorCollection = async (id: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -147,6 +217,10 @@ export const updateVectorCollection = async (id: string, data: any): Promise<Api
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const deleteVectorCollection = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -172,6 +246,14 @@ export const deleteVectorCollection = async (id: string): Promise<ApiResponse<bo
  *     responses:
  *       200:
  *         description: 索引配置
+ *         content:
+ *           application/json:
+ *             example:
+ *               type: "HNSW"
+ *               parameters:
+ *                 M: 16
+ *                 efConstruction: 128
+ *                 efSearch: 64
  */
 export const getVectorIndexConfig = async (collectionId: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -208,9 +290,24 @@ export const getVectorIndexConfig = async (collectionId: string): Promise<ApiRes
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               type:
+ *                 type: string
+ *               parameters:
+ *                 type: object
+ *           example:
+ *             type: "IVF"
+ *             parameters:
+ *               nlist: 128
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               type: "IVF"
+ *               parameters:
+ *                 nlist: 128
  */
 export const updateVectorIndexConfig = async (collectionId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -245,9 +342,25 @@ export const updateVectorIndexConfig = async (collectionId: string, data: any): 
  *             properties:
  *               query:
  *                 type: string
+ *               topK:
+ *                 type: integer
+ *           example:
+ *             query: "高性能笔记本"
+ *             topK: 3
  *     responses:
  *       200:
  *         description: 搜索结果
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: "prod-1234"
+ *                 name: "超能开发者笔记本 Pro"
+ *                 score: 0.92
+ *                 description: "高性能开发者笔记本，搭载最新处理器和独立显卡，适合编程和游戏"
+ *               - id: "prod-2345"
+ *                 name: "游戏战神笔记本 X1"
+ *                 score: 0.87
+ *                 description: "专业游戏笔记本，高刷新率屏幕，强劲散热系统，畅玩各类大型游戏"
  */
 export const searchVectors = async (collectionId: string, query: string, options?: any): Promise<ApiResponse<any[]>> => {
   if (useMock()) {

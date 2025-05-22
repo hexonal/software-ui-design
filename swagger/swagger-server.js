@@ -1,6 +1,7 @@
 const express = require('express');
 const swaggerUi = require('swagger-ui-express');
 const swaggerJSDoc = require('swagger-jsdoc');
+const cors = require('cors');
 const swaggerDefinition = require('../swaggerDef'); // 你的 swaggerDef.js 路径
 
 const options = {
@@ -11,6 +12,7 @@ const options = {
 const swaggerSpec = swaggerJSDoc(options);
 
 const app = express();
+app.use(cors());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 const PORT = 3001;

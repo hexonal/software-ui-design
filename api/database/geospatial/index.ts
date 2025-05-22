@@ -12,6 +12,39 @@ import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
  *     responses:
  *       200:
  *         description: 地理空间数据库列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   tables:
+ *                     type: integer
+ *                   size:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *             example:
+ *               - id: "geo-analytics"
+ *                 name: "地理分析库"
+ *                 tables: 12
+ *                 size: "320 GB"
+ *                 status: "正常"
+ *               - id: "geo-locations"
+ *                 name: "位置数据库"
+ *                 tables: 8
+ *                 size: "180 GB"
+ *                 status: "正常"
+ *               - id: "geo-boundaries"
+ *                 name: "边界数据库"
+ *                 tables: 5
+ *                 size: "420 GB"
+ *                 status: "警告"
  */
 export const getGeospatialDatabases = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -44,6 +77,30 @@ export const getGeospatialDatabases = async (params?: QueryParams): Promise<ApiR
  *     responses:
  *       200:
  *         description: 地理空间数据库详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 tables:
+ *                   type: integer
+ *                 size:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *             example:
+ *               id: "geo-analytics"
+ *               name: "地理分析库"
+ *               tables: 12
+ *               size: "320 GB"
+ *               status: "正常"
+ *               description: "用于地理数据分析的数据库"
  */
 export const getGeospatialDatabaseById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -81,6 +138,27 @@ export const getGeospatialDatabaseById = async (id: string): Promise<ApiResponse
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 tables:
+ *                   type: integer
+ *                 size:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *             example:
+ *               id: "geo-analytics"
+ *               name: "地理分析库"
+ *               tables: 0
+ *               size: "0 GB"
+ *               status: "正常"
  */
 export const createGeospatialDatabase = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -114,6 +192,19 @@ export const createGeospatialDatabase = async (data: any): Promise<ApiResponse<a
  *     responses:
  *       200:
  *         description: 空间表列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - name: "cities"
+ *                 geometryType: "POINT"
+ *                 srid: "EPSG:4326"
+ *                 records: 1245
+ *                 indexType: "GIST"
+ *               - name: "roads"
+ *                 geometryType: "LINESTRING"
+ *                 srid: "EPSG:4326"
+ *                 records: 3782
+ *                 indexType: "GIST"
  */
 export const getGeospatialTables = async (databaseId: string, params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -151,9 +242,28 @@ export const getGeospatialTables = async (databaseId: string, params?: QueryPara
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               geometryType:
+ *                 type: string
+ *               srid:
+ *                 type: string
+ *           example:
+ *             name: "new_spatial_table"
+ *             geometryType: "POINT"
+ *             srid: "EPSG:4326"
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               name: "new_spatial_table"
+ *               geometryType: "POINT"
+ *               srid: "EPSG:4326"
+ *               records: 0
+ *               indexType: "GIST"
  */
 export const createGeospatialTable = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -192,9 +302,24 @@ export const createGeospatialTable = async (databaseId: string, data: any): Prom
  *             properties:
  *               query:
  *                 type: string
+ *           example:
+ *             query: "SELECT name, ST_AsText(geom) FROM cities WHERE ST_DWithin(geom, ST_GeomFromText('POINT(116 40)', 4326), 0.1);"
  *     responses:
  *       200:
  *         description: 查询结果
+ *         content:
+ *           application/json:
+ *             example:
+ *               columns: ["name", "type", "coordinates"]
+ *               rows:
+ *                 - name: "北京市"
+ *                   type: "POINT"
+ *                   coordinates: "116.4074, 39.9042"
+ *                 - name: "昌平区"
+ *                   type: "POINT"
+ *                   coordinates: "116.2312, 40.2207"
+ *               executionTime: "0.042 秒"
+ *               rowCount: 2
  */
 export const executeGeospatialQuery = async (databaseId: string, query: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -244,6 +369,17 @@ export const executeGeospatialQuery = async (databaseId: string, query: string):
  *     responses:
  *       200:
  *         description: 地图可视化数据
+ *         content:
+ *           application/json:
+ *             example:
+ *               type: "FeatureCollection"
+ *               features:
+ *                 - type: "Feature"
+ *                   properties: { name: "北京市", population: 21893095 }
+ *                   geometry: { type: "Point", coordinates: [116.4074, 39.9042] }
+ *                 - type: "Feature"
+ *                   properties: { name: "上海市", population: 24870895 }
+ *                   geometry: { type: "Point", coordinates: [121.4737, 31.2304] }
  */
 export const getMapVisualizationData = async (databaseId: string, tableName: string): Promise<ApiResponse<any>> => {
   if (useMock()) {

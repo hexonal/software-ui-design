@@ -23,6 +23,34 @@ import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
  *     responses:
  *       200:
  *         description: 表结构
+ *         content:
+ *           application/json:
+ *             example:
+ *               - name: "id"
+ *                 type: "integer"
+ *                 length: null
+ *                 nullable: false
+ *                 default: "自增"
+ *               - name: "username"
+ *                 type: "varchar"
+ *                 length: 50
+ *                 nullable: false
+ *                 default: null
+ *               - name: "email"
+ *                 type: "varchar"
+ *                 length: 100
+ *                 nullable: false
+ *                 default: null
+ *               - name: "password_hash"
+ *                 type: "varchar"
+ *                 length: 255
+ *                 nullable: false
+ *                 default: null
+ *               - name: "created_at"
+ *                 type: "timestamp"
+ *                 length: null
+ *                 nullable: false
+ *                 default: "CURRENT_TIMESTAMP"
  */
 export const getTableStructure = async (databaseId: string, tableName: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -80,9 +108,43 @@ export const getTableStructure = async (databaseId: string, tableName: string): 
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 表名
+ *               fields:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     name:
+ *                       type: string
+ *                     type:
+ *                       type: string
+ *                     length:
+ *                       type: integer
+ *                     nullable:
+ *                       type: boolean
+ *                     default:
+ *                       type: string
+ *           example:
+ *             name: "new_table"
+ *             fields:
+ *               - name: "id"
+ *                 type: "integer"
+ *                 nullable: false
+ *               - name: "column1"
+ *                 type: "varchar"
+ *                 length: 255
+ *                 nullable: true
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               tableName: "new_table"
  */
 export const createTable = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -116,9 +178,38 @@ export const createTable = async (databaseId: string, data: any): Promise<ApiRes
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               action:
+ *                 type: string
+ *                 enum: [ADD_COLUMN, MODIFY_COLUMN, DROP_COLUMN, RENAME_COLUMN]
+ *               column:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   length:
+ *                     type: integer
+ *                   nullable:
+ *                     type: boolean
+ *                   default:
+ *                     type: string
+ *                   newName:
+ *                     type: string
+ *           example:
+ *             action: "ADD_COLUMN"
+ *             column:
+ *               name: "new_column"
+ *               type: "text"
+ *               nullable: true
  *     responses:
  *       200:
  *         description: 修改成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const alterTable = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -149,6 +240,10 @@ export const alterTable = async (databaseId: string, tableName: string, data: an
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const dropTable = async (databaseId: string, tableName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -179,6 +274,21 @@ export const dropTable = async (databaseId: string, tableName: string): Promise<
  *     responses:
  *       200:
  *         description: 索引列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - name: "idx_users_email"
+ *                 columns: ["email"]
+ *                 type: "UNIQUE"
+ *                 method: "BTREE"
+ *               - name: "idx_users_username"
+ *                 columns: ["username"]
+ *                 type: "UNIQUE"
+ *                 method: "BTREE"
+ *               - name: "idx_users_created_at"
+ *                 columns: ["created_at"]
+ *                 type: "INDEX"
+ *                 method: "BTREE"
  */
 export const getTableIndexes = async (databaseId: string, tableName: string): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -219,9 +329,32 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               columns:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               type:
+ *                 type: string
+ *                 enum: [PRIMARY, UNIQUE, INDEX, FULLTEXT]
+ *               method:
+ *                 type: string
+ *                 enum: [BTREE, HASH, RTREE, GIN, GIST]
+ *           example:
+ *             name: "idx_new_column"
+ *             columns: ["new_column"]
+ *             type: "INDEX"
+ *             method: "BTREE"
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
+ *               indexName: "idx_new_column"
  */
 export const createIndex = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -257,6 +390,10 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const dropIndex = async (databaseId: string, tableName: string, indexName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -290,9 +427,32 @@ export const dropIndex = async (databaseId: string, tableName: string, indexName
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 任务名称
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: 导入文件
+ *           example:
+ *             name: "用户数据导入"
+ *             file: "users.csv"
  *     responses:
  *       200:
  *         description: 导入任务
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "import-1678886400000"
+ *               name: "用户数据导入"
+ *               source: "users.csv"
+ *               target: "users"
+ *               database: "postgres-main"
+ *               status: "进行中"
+ *               progress: 0
+ *               rows: 0
+ *               created: "2023-03-15 12:00:00"
  */
 export const importData = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -332,9 +492,35 @@ export const importData = async (databaseId: string, tableName: string, data: an
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 任务名称
+ *               source:
+ *                 type: string
+ *                 description: 导出源（表名/查询语句）
+ *               filename:
+ *                 type: string
+ *                 description: 导出文件名
+ *           example:
+ *             name: "用户数据导出"
+ *             source: "users"
+ *             filename: "users_export.csv"
  *     responses:
  *       200:
  *         description: 导出任务
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "export-1678886400000"
+ *               name: "用户数据导出"
+ *               source: "users"
+ *               target: "users_export.csv"
+ *               database: "postgres-main"
+ *               status: "进行中"
+ *               progress: 0
+ *               rows: 0
+ *               created: "2023-03-15 12:00:00"
  */
 export const exportData = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -365,6 +551,27 @@ export const exportData = async (databaseId: string, data: any): Promise<ApiResp
  *     responses:
  *       200:
  *         description: 任务列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: "import-001"
+ *                 name: "用户数据导入"
+ *                 source: "users.csv"
+ *                 target: "users"
+ *                 database: "postgres-main"
+ *                 status: "完成"
+ *                 progress: 100
+ *                 rows: 15420
+ *                 created: "2023-05-09 14:30:22"
+ *               - id: "export-001"
+ *                 name: "用户数据导出"
+ *                 source: "users"
+ *                 target: "users_backup.csv"
+ *                 database: "postgres-main"
+ *                 status: "完成"
+ *                 progress: 100
+ *                 rows: 15420
+ *                 created: "2023-05-07 11:20:15"
  */
 export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
   if (useMock()) {

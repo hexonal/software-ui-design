@@ -12,6 +12,38 @@ import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
  *     responses:
  *       200:
  *         description: 时序数据库列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   retention:
+ *                     type: string
+ *                   series:
+ *                     type: integer
+ *                   points:
+ *                     type: string
+ *                   status:
+ *                     type: string
+ *             example:
+ *               - id: "timeseries-01"
+ *                 name: "监控数据库"
+ *                 retention: "30天"
+ *                 series: 156
+ *                 points: "1.2B"
+ *                 status: "正常"
+ *               - id: "timeseries-02"
+ *                 name: "日志数据库"
+ *                 retention: "90天"
+ *                 series: 78
+ *                 points: "3.5B"
+ *                 status: "警告"
  */
 export const getTimeseriesDatabases = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -45,6 +77,33 @@ export const getTimeseriesDatabases = async (params?: QueryParams): Promise<ApiR
  *     responses:
  *       200:
  *         description: 时序数据库详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 retention:
+ *                   type: string
+ *                 series:
+ *                   type: integer
+ *                 points:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *             example:
+ *               id: "timeseries-01"
+ *               name: "监控数据库"
+ *               retention: "30天"
+ *               series: 156
+ *               points: "1.2B"
+ *               status: "正常"
+ *               description: "存储系统监控数据"
  */
 export const getTimeseriesDatabaseById = async (id: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -83,6 +142,27 @@ export const getTimeseriesDatabaseById = async (id: string): Promise<ApiResponse
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 name:
+ *                   type: string
+ *                 series:
+ *                   type: integer
+ *                 points:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *             example:
+ *               id: "timeseries-01"
+ *               name: "监控数据库"
+ *               series: 0
+ *               points: "0"
+ *               status: "正常"
  */
 export const createTimeseriesDatabase = async (data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -116,6 +196,17 @@ export const createTimeseriesDatabase = async (data: any): Promise<ApiResponse<a
  *     responses:
  *       200:
  *         description: 时间序列列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - name: "cpu_usage"
+ *                 tags: [{ key: "host", value: "server01" }, { key: "region", value: "cn-east" }]
+ *                 type: "float"
+ *                 points: "2.5M"
+ *               - name: "memory_usage"
+ *                 tags: [{ key: "host", value: "server01" }, { key: "region", value: "cn-east" }]
+ *                 type: "float"
+ *                 points: "2.5M"
  */
 export const getTimeseries = async (databaseId: string, params?: QueryParams): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -156,10 +247,45 @@ export const getTimeseries = async (databaseId: string, params?: QueryParams): P
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 name:
+ *                   type: string
+ *                 tags:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       key:
+ *                         type: string
+ *                       value:
+ *                         type: string
+ *                 type:
+ *                   type: string
+ *                 points:
+ *                   type: string
+ *             example:
+ *               name: "cpu_usage"
+ *               tags:
+ *                 - key: "host"
+ *                   value: "server01"
+ *                 - key: "region"
+ *                   value: "cn-east"
+ *               type: "float"
+ *               points: "0"
  */
 export const createTimeseries = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
-    // ... existing code ...
+    // 模拟创建时间序列
+    const newSeries = {
+      name: data.name,
+      tags: data.tags || [],
+      type: data.type || 'float',
+      points: "0"
+    }
     return mockResponse(newSeries)
   }
   return api.post(`/database/timeseries/${databaseId}/series`, data)
@@ -186,6 +312,10 @@ export const createTimeseries = async (databaseId: string, data: any): Promise<A
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const deleteTimeseries = async (databaseId: string, seriesName: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -216,9 +346,21 @@ export const deleteTimeseries = async (databaseId: string, seriesName: string): 
  *             properties:
  *               query:
  *                 type: string
+ *           example:
+ *             query: "SELECT mean(value) FROM cpu_usage WHERE host = 'server01' GROUP BY time(1h)"
  *     responses:
  *       200:
  *         description: 查询结果
+ *         content:
+ *           application/json:
+ *             example:
+ *               data:
+ *                 - time: "00:00"
+ *                   value: 42
+ *                 - time: "01:00"
+ *                   value: 38
+ *               executionTime: "0.034 秒"
+ *               pointCount: 2
  */
 export const executeTimeseriesQuery = async (databaseId: string, query: string): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -268,9 +410,30 @@ export const executeTimeseriesQuery = async (databaseId: string, query: string):
  *         application/json:
  *           schema:
  *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               duration:
+ *                 type: string
+ *               replication:
+ *                 type: integer
+ *               default:
+ *                 type: boolean
+ *           example:
+ *             name: "custom_policy"
+ *             duration: "7d"
+ *             replication: 1
+ *             default: false
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               name: "custom_policy"
+ *               duration: "7d"
+ *               replication: 1
+ *               default: false
  */
 export const createRetentionPolicy = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -301,6 +464,17 @@ export const createRetentionPolicy = async (databaseId: string, data: any): Prom
  *     responses:
  *       200:
  *         description: 保留策略列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - name: "autogen"
+ *                 duration: "30d"
+ *                 replication: 1
+ *                 default: true
+ *               - name: "monthly"
+ *                 duration: "90d"
+ *                 replication: 1
+ *                 default: false
  */
 export const getRetentionPolicies = async (databaseId: string): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
@@ -338,10 +512,90 @@ export const getRetentionPolicies = async (databaseId: string): Promise<ApiRespo
  *     responses:
  *       200:
  *         description: 性能指标
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 writePerformance:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       time:
+ *                         type: string
+ *                       value:
+ *                         type: integer
+ *                 readPerformance:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       time:
+ *                         type: string
+ *                       value:
+ *                         type: integer
+ *                 queryLatency:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       time:
+ *                         type: string
+ *                       value:
+ *                         type: integer
+ *                 memoryUsage:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       time:
+ *                         type: string
+ *                       value:
+ *                         type: integer
+ *             example:
+ *               writePerformance:
+ *                 - time: "00:00"
+ *                   value: 8500
+ *                 - time: "04:00"
+ *                   value: 5200
+ *               readPerformance:
+ *                 - time: "00:00"
+ *                   value: 12000
+ *                 - time: "04:00"
+ *                   value: 8000
+ *               queryLatency:
+ *                 - time: "00:00"
+ *                   value: 15
+ *                 - time: "04:00"
+ *                   value: 12
+ *               memoryUsage:
+ *                 - time: "00:00"
+ *                   value: 45
+ *                 - time: "04:00"
+ *                   value: 42
  */
 export const getTimeseriesDatabaseMetrics = async (databaseId: string, timeRange: string = "24h"): Promise<ApiResponse<any>> => {
   if (useMock()) {
-    // ... existing code ...
+    // 模拟性能指标数据
+    const metrics = {
+      writePerformance: [
+        { time: "00:00", value: 8500 },
+        { time: "04:00", value: 5200 }
+      ],
+      readPerformance: [
+        { time: "00:00", value: 12000 },
+        { time: "04:00", value: 8000 }
+      ],
+      queryLatency: [
+        { time: "00:00", value: 15 },
+        { time: "04:00", value: 12 }
+      ],
+      memoryUsage: [
+        { time: "00:00", value: 45 },
+        { time: "04:00", value: 42 }
+      ]
+    }
     return mockResponse(metrics)
   }
   return api.get(`/database/timeseries/${databaseId}/metrics`, { params: { timeRange } })

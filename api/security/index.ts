@@ -13,6 +13,37 @@ import { User, Role, AccessPolicy } from '@/mock/dashboard/types'
  *     responses:
  *       200:
  *         description: 用户列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/User'
+ *             example:
+ *               - id: "user-001"
+ *                 username: "admin"
+ *                 email: "admin@example.com"
+ *                 role: "管理员"
+ *                 status: "活跃"
+ *                 lastLogin: "2023-05-10 08:45:12"
+ *               - id: "user-002"
+ *                 username: "operator"
+ *                 email: "operator@example.com"
+ *                 role: "操作员"
+ *                 status: "活跃"
+ *                 lastLogin: "2023-05-09 16:30:45"
+ *               - id: "user-003"
+ *                 username: "analyst"
+ *                 email: "analyst@example.com"
+ *                 role: "分析师"
+ *                 status: "活跃"
+ *                 lastLogin: "2023-05-08 14:15:30"
+ *               - id: "user-004"
+ *                 username: "guest"
+ *                 email: "guest@example.com"
+ *                 role: "访客"
+ *                 status: "锁定"
+ *                 lastLogin: "2023-04-25 10:20:15"
  */
 export const getUsers = async (params?: QueryParams): Promise<ApiResponse<User[]>> => {
   if (useMock()) {
@@ -38,6 +69,17 @@ export const getUsers = async (params?: QueryParams): Promise<ApiResponse<User[]
  *     responses:
  *       200:
  *         description: 用户详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *             example:
+ *               id: "user-001"
+ *               username: "admin"
+ *               email: "admin@example.com"
+ *               role: "管理员"
+ *               status: "活跃"
+ *               lastLogin: "2023-05-10 08:45:12"
  */
 export const getUserById = async (id: string): Promise<ApiResponse<User | null>> => {
   if (useMock()) {
@@ -70,6 +112,17 @@ export const getUserById = async (id: string): Promise<ApiResponse<User | null>>
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *             example:
+ *               id: "user-001"
+ *               username: "admin"
+ *               email: "admin@example.com"
+ *               role: "管理员"
+ *               status: "活跃"
+ *               lastLogin: "2023-05-10 08:45:12"
  */
 export const createUser = async (data: Omit<User, 'id'>): Promise<ApiResponse<User>> => {
   if (useMock()) {
@@ -106,6 +159,17 @@ export const createUser = async (data: Omit<User, 'id'>): Promise<ApiResponse<Us
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *             example:
+ *               id: "user-001"
+ *               username: "admin"
+ *               email: "admin@example.com"
+ *               role: "管理员"
+ *               status: "活跃"
+ *               lastLogin: "2023-05-10 08:45:12"
  */
 export const updateUser = async (id: string, data: Partial<User>): Promise<ApiResponse<User | null>> => {
   if (useMock()) {
@@ -139,6 +203,16 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<ApiRe
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteUser = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -158,6 +232,33 @@ export const deleteUser = async (id: string): Promise<ApiResponse<boolean>> => {
  *     responses:
  *       200:
  *         description: 角色列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Role'
+ *             example:
+ *               - id: "role-001"
+ *                 name: "管理员"
+ *                 description: "系统管理员，拥有所有权限"
+ *                 users: 1
+ *                 permissions: "所有权限"
+ *               - id: "role-002"
+ *                 name: "操作员"
+ *                 description: "系统操作员，可以执行大部分操作"
+ *                 users: 1
+ *                 permissions: "读写权限，无管理权限"
+ *               - id: "role-003"
+ *                 name: "分析师"
+ *                 description: "数据分析师，主要进行数据查询和分析"
+ *                 users: 1
+ *                 permissions: "只读权限，可执行查询"
+ *               - id: "role-004"
+ *                 name: "访客"
+ *                 description: "系统访客，只能查看有限信息"
+ *                 users: 1
+ *                 permissions: "有限的只读权限"
  */
 export const getRoles = async (params?: QueryParams): Promise<ApiResponse<Role[]>> => {
   if (useMock()) {
@@ -183,6 +284,16 @@ export const getRoles = async (params?: QueryParams): Promise<ApiResponse<Role[]
  *     responses:
  *       200:
  *         description: 角色详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Role'
+ *             example:
+ *               id: "role-001"
+ *               name: "管理员"
+ *               description: "系统管理员，拥有所有权限"
+ *               users: 1
+ *               permissions: "所有权限"
  */
 export const getRoleById = async (id: string): Promise<ApiResponse<Role | null>> => {
   if (useMock()) {
@@ -215,6 +326,16 @@ export const getRoleById = async (id: string): Promise<ApiResponse<Role | null>>
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Role'
+ *             example:
+ *               id: "role-001"
+ *               name: "管理员"
+ *               description: "系统管理员，拥有所有权限"
+ *               users: 1
+ *               permissions: "所有权限"
  */
 export const createRole = async (data: Omit<Role, 'id'>): Promise<ApiResponse<Role>> => {
   if (useMock()) {
@@ -251,6 +372,16 @@ export const createRole = async (data: Omit<Role, 'id'>): Promise<ApiResponse<Ro
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Role'
+ *             example:
+ *               id: "role-001"
+ *               name: "管理员"
+ *               description: "系统管理员，拥有所有权限"
+ *               users: 1
+ *               permissions: "所有权限"
  */
 export const updateRole = async (id: string, data: Partial<Role>): Promise<ApiResponse<Role | null>> => {
   if (useMock()) {
@@ -284,6 +415,16 @@ export const updateRole = async (id: string, data: Partial<Role>): Promise<ApiRe
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteRole = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -303,6 +444,37 @@ export const deleteRole = async (id: string): Promise<ApiResponse<boolean>> => {
  *     responses:
  *       200:
  *         description: 访问策略列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AccessPolicy'
+ *             example:
+ *               - id: "policy-001"
+ *                 name: "数据库完全访问"
+ *                 type: "数据库"
+ *                 target: "postgres-main"
+ *                 role: "管理员"
+ *                 access: "完全访问"
+ *               - id: "policy-002"
+ *                 name: "数据库只读访问"
+ *                 type: "数据库"
+ *                 target: "postgres-main"
+ *                 role: "分析师"
+ *                 access: "只读"
+ *               - id: "policy-003"
+ *                 name: "存储管理访问"
+ *                 type: "存储"
+ *                 target: "文件存储"
+ *                 role: "操作员"
+ *                 access: "读写"
+ *               - id: "policy-004"
+ *                 name: "系统监控访问"
+ *                 type: "系统"
+ *                 target: "监控面板"
+ *                 role: "操作员"
+ *                 access: "只读"
  */
 export const getAccessPolicies = async (params?: QueryParams): Promise<ApiResponse<AccessPolicy[]>> => {
   if (useMock()) {
@@ -328,6 +500,17 @@ export const getAccessPolicies = async (params?: QueryParams): Promise<ApiRespon
  *     responses:
  *       200:
  *         description: 访问策略详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccessPolicy'
+ *             example:
+ *               id: "policy-001"
+ *               name: "数据库完全访问"
+ *               type: "数据库"
+ *               target: "postgres-main"
+ *               role: "管理员"
+ *               access: "完全访问"
  */
 export const getAccessPolicyById = async (id: string): Promise<ApiResponse<AccessPolicy | null>> => {
   if (useMock()) {
@@ -360,6 +543,17 @@ export const getAccessPolicyById = async (id: string): Promise<ApiResponse<Acces
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccessPolicy'
+ *             example:
+ *               id: "policy-001"
+ *               name: "数据库完全访问"
+ *               type: "数据库"
+ *               target: "postgres-main"
+ *               role: "管理员"
+ *               access: "完全访问"
  */
 export const createAccessPolicy = async (data: Omit<AccessPolicy, 'id'>): Promise<ApiResponse<AccessPolicy>> => {
   if (useMock()) {
@@ -396,6 +590,17 @@ export const createAccessPolicy = async (data: Omit<AccessPolicy, 'id'>): Promis
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AccessPolicy'
+ *             example:
+ *               id: "policy-001"
+ *               name: "数据库完全访问"
+ *               type: "数据库"
+ *               target: "postgres-main"
+ *               role: "管理员"
+ *               access: "完全访问"
  */
 export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>): Promise<ApiResponse<AccessPolicy | null>> => {
   if (useMock()) {
@@ -429,6 +634,16 @@ export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteAccessPolicy = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {

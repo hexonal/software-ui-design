@@ -13,6 +13,33 @@ import { Volume, Snapshot } from '@/mock/dashboard/types'
  *     responses:
  *       200:
  *         description: 卷列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Volume'
+ *             example:
+ *               - id: "vol-1234567890abcdef0"
+ *                 name: "data-volume-01"
+ *                 size: 500
+ *                 type: "SSD"
+ *                 status: "attached"
+ *                 attachedTo: "node-01"
+ *                 createdAt: "2023-06-15T00:00:00.000Z"
+ *                 iops: 3000
+ *                 throughput: "250 MB/s"
+ *                 usedSpace: 320
+ *               - id: "vol-0987654321fedcba0"
+ *                 name: "backup-volume-01"
+ *                 size: 1000
+ *                 type: "HDD"
+ *                 status: "available"
+ *                 attachedTo: null
+ *                 createdAt: "2023-07-01T00:00:00.000Z"
+ *                 iops: 1000
+ *                 throughput: "100 MB/s"
+ *                 usedSpace: 120
  */
 export const getVolumes = async (params?: QueryParams): Promise<ApiResponse<Volume[]>> => {
   if (useMock()) {
@@ -38,6 +65,21 @@ export const getVolumes = async (params?: QueryParams): Promise<ApiResponse<Volu
  *     responses:
  *       200:
  *         description: 卷详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Volume'
+ *             example:
+ *               id: "vol-1234567890abcdef0"
+ *               name: "data-volume-01"
+ *               size: 500
+ *               type: "SSD"
+ *               status: "attached"
+ *               attachedTo: "node-01"
+ *               createdAt: "2023-06-15T00:00:00.000Z"
+ *               iops: 3000
+ *               throughput: "250 MB/s"
+ *               usedSpace: 320
  */
 export const getVolumeById = async (id: string): Promise<ApiResponse<Volume | null>> => {
   if (useMock()) {
@@ -70,6 +112,21 @@ export const getVolumeById = async (id: string): Promise<ApiResponse<Volume | nu
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Volume'
+ *             example:
+ *               id: "vol-1234567890abcdef0"
+ *               name: "data-volume-01"
+ *               size: 500
+ *               type: "SSD"
+ *               status: "attached"
+ *               attachedTo: "node-01"
+ *               createdAt: "2023-06-15T00:00:00.000Z"
+ *               iops: 3000
+ *               throughput: "250 MB/s"
+ *               usedSpace: 320
  */
 export const createVolume = async (data: Omit<Volume, 'id' | 'createdAt'>): Promise<ApiResponse<Volume>> => {
   if (useMock()) {
@@ -107,6 +164,21 @@ export const createVolume = async (data: Omit<Volume, 'id' | 'createdAt'>): Prom
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Volume'
+ *             example:
+ *               id: "vol-1234567890abcdef0"
+ *               name: "data-volume-01"
+ *               size: 500
+ *               type: "SSD"
+ *               status: "attached"
+ *               attachedTo: "node-01"
+ *               createdAt: "2023-06-15T00:00:00.000Z"
+ *               iops: 3000
+ *               throughput: "250 MB/s"
+ *               usedSpace: 320
  */
 export const updateVolume = async (id: string, data: Partial<Volume>): Promise<ApiResponse<Volume>> => {
   if (useMock()) {
@@ -140,6 +212,16 @@ export const updateVolume = async (id: string, data: Partial<Volume>): Promise<A
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteVolume = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -159,6 +241,27 @@ export const deleteVolume = async (id: string): Promise<ApiResponse<boolean>> =>
  *     responses:
  *       200:
  *         description: 快照列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Snapshot'
+ *             example:
+ *               - id: "snap-0987654321fedcba0"
+ *                 volumeId: "vol-1234567890abcdef0"
+ *                 volumeName: "data-volume-01"
+ *                 description: "Daily backup"
+ *                 size: 320
+ *                 status: "completed"
+ *                 createdAt: "2023-10-01T00:00:00.000Z"
+ *               - id: "snap-0987654321fedcba1"
+ *                 volumeId: "vol-1234567890abcdef1"
+ *                 volumeName: "data-volume-02"
+ *                 description: "Pre-update snapshot"
+ *                 size: 750
+ *                 status: "completed"
+ *                 createdAt: "2023-10-02T00:00:00.000Z"
  */
 export const getSnapshots = async (params?: QueryParams): Promise<ApiResponse<Snapshot[]>> => {
   if (useMock()) {
@@ -184,6 +287,18 @@ export const getSnapshots = async (params?: QueryParams): Promise<ApiResponse<Sn
  *     responses:
  *       200:
  *         description: 快照详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Snapshot'
+ *             example:
+ *               id: "snap-0987654321fedcba0"
+ *               volumeId: "vol-1234567890abcdef0"
+ *               volumeName: "data-volume-01"
+ *               description: "Daily backup"
+ *               size: 320
+ *               status: "completed"
+ *               createdAt: "2023-10-01T00:00:00.000Z"
  */
 export const getSnapshotById = async (id: string): Promise<ApiResponse<Snapshot | null>> => {
   if (useMock()) {
@@ -216,6 +331,18 @@ export const getSnapshotById = async (id: string): Promise<ApiResponse<Snapshot 
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Snapshot'
+ *             example:
+ *               id: "snap-0987654321fedcba0"
+ *               volumeId: "vol-1234567890abcdef0"
+ *               volumeName: "data-volume-01"
+ *               description: "Daily backup"
+ *               size: 320
+ *               status: "completed"
+ *               createdAt: "2023-10-01T00:00:00.000Z"
  */
 export const createSnapshot = async (data: Omit<Snapshot, 'id' | 'createdAt'>): Promise<ApiResponse<Snapshot>> => {
   if (useMock()) {
@@ -247,6 +374,16 @@ export const createSnapshot = async (data: Omit<Snapshot, 'id' | 'createdAt'>): 
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteSnapshot = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -272,10 +409,42 @@ export const deleteSnapshot = async (id: string): Promise<ApiResponse<boolean>> 
  *     responses:
  *       200:
  *         description: 文件列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   type:
+ *                     type: string
+ *                   size:
+ *                     type: string
+ *                   items:
+ *                     type: string
+ *                   modified:
+ *                     type: string
+ *             example:
+ *               - id: "folder-001"
+ *                 name: "文档"
+ *                 type: "folder"
+ *                 size: "-"
+ *                 items: 8
+ *                 modified: "2023-05-08 14:30:22"
+ *               - id: "file-001"
+ *                 name: "系统架构.pdf"
+ *                 type: "file"
+ *                 size: "2.4 MB"
+ *                 items: "-"
+ *                 modified: "2023-05-10 09:12:33"
  */
 export const getFiles = async (path: string = '/'): Promise<ApiResponse<any[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('files'))
+    return mockResponse(getMockData('files') as any[])
   }
   
   return api.get('/storage/files', { params: { path } })
@@ -303,6 +472,21 @@ export const getFiles = async (path: string = '/'): Promise<ApiResponse<any[]>> 
  *     responses:
  *       200:
  *         description: 上传成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 path:
+ *                   type: string
+ *                 fileName:
+ *                   type: string
+ *             example:
+ *               success: true
+ *               path: "/some/path"
+ *               fileName: "example.txt"
  */
 export const uploadFile = async (path: string, file: File): Promise<ApiResponse<any>> => {
   if (useMock()) {
@@ -337,6 +521,16 @@ export const uploadFile = async (path: string, file: File): Promise<ApiResponse<
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteFile = async (path: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {

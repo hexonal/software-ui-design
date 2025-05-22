@@ -13,6 +13,49 @@ import { Node, Shard } from '@/mock/dashboard/types'
  *     responses:
  *       200:
  *         description: 节点列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: "node-01"
+ *                 name: "节点 1"
+ *                 ip: "192.168.1.101"
+ *                 role: "主节点"
+ *                 status: "在线"
+ *                 cpu: 45
+ *                 memory: 62
+ *                 disk: 38
+ *               - id: "node-02"
+ *                 name: "节点 2"
+ *                 ip: "192.168.1.102"
+ *                 role: "主节点"
+ *                 status: "在线"
+ *                 cpu: 32
+ *                 memory: 48
+ *                 disk: 55
+ *               - id: "node-03"
+ *                 name: "节点 3"
+ *                 ip: "192.168.1.103"
+ *                 role: "数据节点"
+ *                 status: "在线"
+ *                 cpu: 78
+ *                 memory: 85
+ *                 disk: 72
+ *               - id: "node-04"
+ *                 name: "节点 4"
+ *                 ip: "192.168.1.104"
+ *                 role: "数据节点"
+ *                 status: "在线"
+ *                 cpu: 25
+ *                 memory: 42
+ *                 disk: 30
+ *               - id: "node-05"
+ *                 name: "节点 5"
+ *                 ip: "192.168.1.105"
+ *                 role: "数据节点"
+ *                 status: "离线"
+ *                 cpu: 0
+ *                 memory: 0
+ *                 disk: 0
  */
 export const getNodes = async (params?: QueryParams): Promise<ApiResponse<Node[]>> => {
   if (useMock()) {
@@ -38,6 +81,17 @@ export const getNodes = async (params?: QueryParams): Promise<ApiResponse<Node[]
  *     responses:
  *       200:
  *         description: 节点详情
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "node-01"
+ *               name: "节点 1"
+ *               ip: "192.168.1.101"
+ *               role: "主节点"
+ *               status: "在线"
+ *               cpu: 45
+ *               memory: 62
+ *               disk: 38
  */
 export const getNodeById = async (id: string): Promise<ApiResponse<Node | null>> => {
   if (useMock()) {
@@ -158,6 +212,44 @@ export const deleteNode = async (id: string): Promise<ApiResponse<boolean>> => {
  *     responses:
  *       200:
  *         description: 分片列表
+ *         content:
+ *           application/json:
+ *             example:
+ *               - id: "shard-01"
+ *                 range: "0-1023"
+ *                 nodeId: "node-01"
+ *                 status: "活跃"
+ *                 size: "245 GB"
+ *                 usage: 62
+ *                 replicas: 2
+ *               - id: "shard-02"
+ *                 range: "1024-2047"
+ *                 nodeId: "node-02"
+ *                 status: "活跃"
+ *                 size: "312 GB"
+ *                 usage: 78
+ *                 replicas: 2
+ *               - id: "shard-03"
+ *                 range: "2048-3071"
+ *                 nodeId: "node-03"
+ *                 status: "活跃"
+ *                 size: "178 GB"
+ *                 usage: 45
+ *                 replicas: 2
+ *               - id: "shard-04"
+ *                 range: "3072-4095"
+ *                 nodeId: "node-04"
+ *                 status: "活跃"
+ *                 size: "203 GB"
+ *                 usage: 51
+ *                 replicas: 2
+ *               - id: "shard-05"
+ *                 range: "4096-5119"
+ *                 nodeId: "node-01"
+ *                 status: "活跃"
+ *                 size: "267 GB"
+ *                 usage: 67
+ *                 replicas: 2
  */
 export const getShards = async (params?: QueryParams): Promise<ApiResponse<Shard[]>> => {
   if (useMock()) {
@@ -183,6 +275,16 @@ export const getShards = async (params?: QueryParams): Promise<ApiResponse<Shard
  *     responses:
  *       200:
  *         description: 分片详情
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: "shard-01"
+ *               range: "0-1023"
+ *               nodeId: "node-01"
+ *               status: "活跃"
+ *               size: "245 GB"
+ *               usage: 62
+ *               replicas: 2
  */
 export const getShardById = async (id: string): Promise<ApiResponse<Shard | null>> => {
   if (useMock()) {
@@ -212,6 +314,13 @@ export const getShardById = async (id: string): Promise<ApiResponse<Shard | null
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/Shard'
+ *           example:
+ *             range: "0-1023"
+ *             nodeId: "node-01"
+ *             status: "活跃"
+ *             size: "245 GB"
+ *             usage: 62
+ *             replicas: 2
  *     responses:
  *       200:
  *         description: 创建成功
@@ -248,6 +357,13 @@ export const createShard = async (data: Omit<Shard, 'id'>): Promise<ApiResponse<
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/Shard'
+ *           example:
+ *             range: "0-1023"
+ *             nodeId: "node-01"
+ *             status: "活跃"
+ *             size: "245 GB"
+ *             usage: 62
+ *             replicas: 2
  *     responses:
  *       200:
  *         description: 更新成功
@@ -284,6 +400,10 @@ export const updateShard = async (id: string, data: Partial<Shard>): Promise<Api
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             example:
+ *               success: true
  */
 export const deleteShard = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {

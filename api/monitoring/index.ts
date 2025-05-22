@@ -13,6 +13,29 @@ import { BackupHistory, BackupSchedule } from '@/mock/dashboard/types'
  *     responses:
  *       200:
  *         description: 备份历史列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/BackupHistory'
+ *             example:
+ *               - id: "backup-001"
+ *                 name: "每日自动备份"
+ *                 type: "自动"
+ *                 status: "成功"
+ *                 size: "2.4 GB"
+ *                 startTime: "2023-05-10 00:00:00"
+ *                 endTime: "2023-05-10 00:45:22"
+ *                 duration: "45分钟"
+ *               - id: "backup-002"
+ *                 name: "每周完整备份"
+ *                 type: "自动"
+ *                 status: "成功"
+ *                 size: "8.7 GB"
+ *                 startTime: "2023-05-07 01:00:00"
+ *                 endTime: "2023-05-07 02:35:15"
+ *                 duration: "1小时35分钟"
  */
 export const getBackupHistory = async (params?: QueryParams): Promise<ApiResponse<BackupHistory[]>> => {
   if (useMock()) {
@@ -38,6 +61,19 @@ export const getBackupHistory = async (params?: QueryParams): Promise<ApiRespons
  *     responses:
  *       200:
  *         description: 备份历史详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BackupHistory'
+ *             example:
+ *               id: "backup-001"
+ *               name: "每日自动备份"
+ *               type: "自动"
+ *               status: "成功"
+ *               size: "2.4 GB"
+ *               startTime: "2023-05-10 00:00:00"
+ *               endTime: "2023-05-10 00:45:22"
+ *               duration: "45分钟"
  */
 export const getBackupHistoryById = async (id: string): Promise<ApiResponse<BackupHistory | null>> => {
   if (useMock()) {
@@ -64,6 +100,31 @@ export const getBackupHistoryById = async (id: string): Promise<ApiResponse<Back
  *     responses:
  *       200:
  *         description: 备份计划列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/BackupSchedule'
+ *             example:
+ *               - id: "schedule-001"
+ *                 name: "每日增量备份"
+ *                 type: "增量"
+ *                 schedule: "每天 00:00"
+ *                 target: "所有数据库"
+ *                 retention: "7天"
+ *                 status: "启用"
+ *                 lastRun: "2023-05-10 00:00:00"
+ *                 nextRun: "2023-05-11 00:00:00"
+ *               - id: "schedule-002"
+ *                 name: "每周完整备份"
+ *                 type: "完整"
+ *                 schedule: "每周日 01:00"
+ *                 target: "所有数据库"
+ *                 retention: "4周"
+ *                 status: "启用"
+ *                 lastRun: "2023-05-07 01:00:00"
+ *                 nextRun: "2023-05-14 01:00:00"
  */
 export const getBackupSchedules = async (params?: QueryParams): Promise<ApiResponse<BackupSchedule[]>> => {
   if (useMock()) {
@@ -89,6 +150,20 @@ export const getBackupSchedules = async (params?: QueryParams): Promise<ApiRespo
  *     responses:
  *       200:
  *         description: 备份计划详情
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BackupSchedule'
+ *             example:
+ *               id: "schedule-001"
+ *               name: "每日增量备份"
+ *               type: "增量"
+ *               schedule: "每天 00:00"
+ *               target: "所有数据库"
+ *               retention: "7天"
+ *               status: "启用"
+ *               lastRun: "2023-05-10 00:00:00"
+ *               nextRun: "2023-05-11 00:00:00"
  */
 export const getBackupScheduleById = async (id: string): Promise<ApiResponse<BackupSchedule | null>> => {
   if (useMock()) {
@@ -121,6 +196,20 @@ export const getBackupScheduleById = async (id: string): Promise<ApiResponse<Bac
  *     responses:
  *       200:
  *         description: 创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BackupSchedule'
+ *             example:
+ *               id: "schedule-001"
+ *               name: "每日增量备份"
+ *               type: "增量"
+ *               schedule: "每天 00:00"
+ *               target: "所有数据库"
+ *               retention: "7天"
+ *               status: "启用"
+ *               lastRun: "2023-05-10 00:00:00"
+ *               nextRun: "2023-05-11 00:00:00"
  */
 export const createBackupSchedule = async (data: Omit<BackupSchedule, 'id'>): Promise<ApiResponse<BackupSchedule>> => {
   if (useMock()) {
@@ -157,6 +246,20 @@ export const createBackupSchedule = async (data: Omit<BackupSchedule, 'id'>): Pr
  *     responses:
  *       200:
  *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BackupSchedule'
+ *             example:
+ *               id: "schedule-001"
+ *               name: "每日增量备份"
+ *               type: "增量"
+ *               schedule: "每天 00:00"
+ *               target: "所有数据库"
+ *               retention: "7天"
+ *               status: "启用"
+ *               lastRun: "2023-05-10 00:00:00"
+ *               nextRun: "2023-05-11 00:00:00"
  */
 export const updateBackupSchedule = async (id: string, data: Partial<BackupSchedule>): Promise<ApiResponse<BackupSchedule>> => {
   if (useMock()) {
@@ -190,6 +293,16 @@ export const updateBackupSchedule = async (id: string, data: Partial<BackupSched
  *     responses:
  *       200:
  *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *             example:
+ *               success: true
  */
 export const deleteBackupSchedule = async (id: string): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
@@ -220,6 +333,19 @@ export const deleteBackupSchedule = async (id: string): Promise<ApiResponse<bool
  *     responses:
  *       200:
  *         description: 备份任务
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BackupHistory'
+ *             example:
+ *               id: "backup-006"
+ *               name: "手动备份"
+ *               type: "手动"
+ *               status: "成功"
+ *               size: "3.2 GB"
+ *               startTime: "2023-05-11 10:00:00"
+ *               endTime: "2023-05-11 10:30:00"
+ *               duration: "30分钟"
  */
 export const createManualBackup = async (data: { name: string, type: string }): Promise<ApiResponse<BackupHistory>> => {
   if (useMock()) {
@@ -256,6 +382,34 @@ export const createManualBackup = async (data: { name: string, type: string }): 
  *     responses:
  *       200:
  *         description: 性能数据
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   cpu:
+ *                     type: integer
+ *                   memory:
+ *                     type: integer
+ *                   disk:
+ *                     type: integer
+ *                   network:
+ *                     type: integer
+ *             example:
+ *               - name: "00:00"
+ *                 cpu: 65
+ *                 memory: 55
+ *                 disk: 40
+ *                 network: 70
+ *               - name: "01:00"
+ *                 cpu: 70
+ *                 memory: 60
+ *                 disk: 45
+ *                 network: 65
  */
 export const getPerformanceData = async (params?: { timeRange?: string }): Promise<ApiResponse<any>> => {
   if (useMock()) {
