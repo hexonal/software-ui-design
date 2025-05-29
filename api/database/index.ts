@@ -102,7 +102,7 @@ export const getDatabaseById = async (id: string): Promise<ApiResponse<Database 
     return mockResponse(database)
   }
   
-  return api.get(`/database/${id}`)
+  return api.get(`/dfm/database/${id}`)
 }
 
 /**
@@ -328,7 +328,7 @@ export const getTableByName = async (databaseId: string, tableName: string): Pro
     return mockResponse(table)
   }
   
-  return api.get(`/database/${databaseId}/tables/${tableName}`)
+  return api.get(`/dfm/database/${databaseId}/tables/${tableName}`)
 }
 
 /**

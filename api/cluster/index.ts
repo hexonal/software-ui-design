@@ -62,7 +62,7 @@ export const getNodes = async (params?: QueryParams): Promise<ApiResponse<Node[]
     return mockResponse(getMockData('nodes') as Node[])
   }
   
-  return api.get('/cluster/nodes', { params })
+  return api.get('/dfm/cluster/nodes', { params })
 }
 
 /**
@@ -105,7 +105,7 @@ export const getNodeById = async (id: string): Promise<ApiResponse<Node | null>>
     return mockResponse(node)
   }
   
-  return api.get(`/cluster/nodes/${id}`)
+  return api.get(`/dfm/cluster/nodes/${id}`)
 }
 
 /**
@@ -256,7 +256,7 @@ export const getShards = async (params?: QueryParams): Promise<ApiResponse<Shard
     return mockResponse(getMockData('shards') as Shard[])
   }
   
-  return api.get('/cluster/shards', { params })
+  return api.get('/dfm/cluster/shards', { params })
 }
 
 /**
@@ -298,7 +298,7 @@ export const getShardById = async (id: string): Promise<ApiResponse<Shard | null
     return mockResponse(shard)
   }
   
-  return api.get(`/cluster/shards/${id}`)
+  return api.get(`/dfm/cluster/shards/${id}`)
 }
 
 /**

@@ -42,7 +42,7 @@ export const getBackupHistory = async (params?: QueryParams): Promise<ApiRespons
     return mockResponse(getMockData('backupHistory') as BackupHistory[])
   }
   
-  return api.get('/monitoring/backup/history', { params })
+  return api.get('/dfm/monitoring/backup/history', { params })
 }
 
 /**
@@ -131,7 +131,7 @@ export const getBackupSchedules = async (params?: QueryParams): Promise<ApiRespo
     return mockResponse(getMockData('backupSchedules') as BackupSchedule[])
   }
   
-  return api.get('/monitoring/backup/schedules', { params })
+  return api.get('/dfm/monitoring/backup/schedules', { params })
 }
 
 /**
@@ -416,5 +416,5 @@ export const getPerformanceData = async (params?: { timeRange?: string }): Promi
     return mockResponse(getMockData('performanceData'))
   }
   
-  return api.get('/monitoring/performance', { params })
+  return api.get('/dfm/monitoring/performance', { params })
 }

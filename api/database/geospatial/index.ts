@@ -58,7 +58,7 @@ export const getGeospatialDatabases = async (params?: QueryParams): Promise<ApiR
     return mockResponse(databases)
   }
   
-  return api.get('/database/geospatial', { params })
+  return api.get('/dfm/database/geospatial', { params })
 }
 
 /**
@@ -119,7 +119,7 @@ export const getGeospatialDatabaseById = async (id: string): Promise<ApiResponse
     return mockResponse(database)
   }
   
-  return api.get(`/database/geospatial/${id}`)
+  return api.get(`/dfm/database/geospatial/${id}`)
 }
 
 /**
@@ -173,7 +173,7 @@ export const createGeospatialDatabase = async (data: any): Promise<ApiResponse<a
     return mockResponse(newDatabase)
   }
   
-  return api.post('/database/geospatial', data)
+  return api.post('/dfm/database/geospatial', data)
 }
 
 /**
@@ -220,7 +220,7 @@ export const getGeospatialTables = async (databaseId: string, params?: QueryPara
     return mockResponse(tables)
   }
   
-  return api.get(`/database/geospatial/${databaseId}/tables`, { params })
+  return api.get(`/dfm/database/geospatial/${databaseId}/tables`, { params })
 }
 
 /**
@@ -277,7 +277,7 @@ export const createGeospatialTable = async (databaseId: string, data: any): Prom
     })
   }
   
-  return api.post(`/database/geospatial/${databaseId}/tables`, data)
+  return api.post(`/dfm/database/geospatial/${databaseId}/tables`, data)
 }
 
 /**
@@ -345,7 +345,7 @@ export const executeGeospatialQuery = async (databaseId: string, query: string):
     }
   }
   
-  return api.post(`/database/geospatial/${databaseId}/query`, { query })
+  return api.post(`/dfm/database/geospatial/${databaseId}/query`, { query })
 }
 
 /**
@@ -411,5 +411,5 @@ export const getMapVisualizationData = async (databaseId: string, tableName: str
     })
   }
   
-  return api.get(`/database/geospatial/${databaseId}/visualization/${tableName}`)
+  return api.get(`/dfm/database/geospatial/${databaseId}/visualization/${tableName}`)
 }

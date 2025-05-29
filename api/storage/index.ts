@@ -46,7 +46,7 @@ export const getVolumes = async (params?: QueryParams): Promise<ApiResponse<Volu
     return mockResponse(getMockData('volumes') as Volume[])
   }
   
-  return api.get('/storage/volumes', { params })
+  return api.get('/dfm/storage/volumes', { params })
 }
 
 /**
@@ -93,7 +93,7 @@ export const getVolumeById = async (id: string): Promise<ApiResponse<Volume | nu
     return mockResponse(volume)
   }
   
-  return api.get(`/storage/volumes/${id}`)
+  return api.get(`/dfm/storage/volumes/${id}`)
 }
 
 /**
@@ -268,7 +268,7 @@ export const getSnapshots = async (params?: QueryParams): Promise<ApiResponse<Sn
     return mockResponse(getMockData('snapshots') as Snapshot[])
   }
   
-  return api.get('/storage/snapshots', { params })
+  return api.get('/dfm/storage/snapshots', { params })
 }
 
 /**
@@ -312,7 +312,7 @@ export const getSnapshotById = async (id: string): Promise<ApiResponse<Snapshot 
     return mockResponse(snapshot)
   }
   
-  return api.get(`/storage/snapshots/${id}`)
+  return api.get(`/dfm/storage/snapshots/${id}`)
 }
 
 /**
@@ -447,7 +447,7 @@ export const getFiles = async (path: string = '/'): Promise<ApiResponse<any[]>> 
     return mockResponse(getMockData('files') as any[])
   }
   
-  return api.get('/storage/files', { params: { path } })
+  return api.get('/dfm/storage/files', { params: { path } })
 }
 
 /**

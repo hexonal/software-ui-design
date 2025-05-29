@@ -29,7 +29,7 @@ export const getSystemSettings = async (): Promise<ApiResponse<any>> => {
     })
   }
   
-  return api.get('/system/settings')
+  return api.get('/dfm/system/settings')
 }
 
 // 更新系统设置
@@ -69,7 +69,7 @@ export const getSystemLogs = async (params?: QueryParams): Promise<ApiResponse<a
     return mockResponse(filteredLogs)
   }
   
-  return api.get('/system/logs', { params })
+  return api.get('/dfm/system/logs', { params })
 }
 
 // 获取系统告警
@@ -100,7 +100,7 @@ export const getSystemAlerts = async (params?: QueryParams): Promise<ApiResponse
     return mockResponse(filteredAlerts)
   }
   
-  return api.get('/system/alerts', { params })
+  return api.get('/dfm/system/alerts', { params })
 }
 
 // 确认告警
@@ -117,7 +117,7 @@ export const acknowledgeAlert = async (id: string): Promise<ApiResponse<boolean>
     return mockResponse(true)
   }
   
-  return api.put(`/system/alerts/${id}/acknowledge`)
+  return api.put(`/dfm/system/alerts/${id}/acknowledge`)
 }
 
 // 解决告警
@@ -135,7 +135,7 @@ export const resolveAlert = async (id: string): Promise<ApiResponse<boolean>> =>
     return mockResponse(true)
   }
   
-  return api.put(`/system/alerts/${id}/resolve`)
+  return api.put(`/dfm/system/alerts/${id}/resolve`)
 }
 
 // 获取系统性能数据
@@ -145,5 +145,28 @@ export const getSystemPerformance = async (timeRange?: string): Promise<ApiRespo
     return mockResponse(getMockData('performanceData'))
   }
   
-  return api.get('/system/performance', { params: { timeRange } })
+  return api.get('/dfm/system/performance', { params: { timeRange } })
+}
+
+export const getSystemStatus = async (): Promise<ApiResponse<any>> => {
+  if (useMock()) {
+    return mockResponse({
+      health: { value: "良好", description: "所有系统正常运行", status: "success" },
+      storage: { value: "42%", description: "已使用 4.2TB / 10TB", status: "warning" },
+      nodes: { value: "18/20", description: "18 个节点在线", status: "success" },
+      databases: { value: "12/15", description: "3 个实例需要注意", status: "warning" }
+    })
+  }
+  return api.get('/dfm/system/status')
+}
+
+export const getSidebarNavItems = async (): Promise<ApiResponse<any[]>> => {
+  if (useMock()) {
+    // 这里直接返回原 navItems 结构
+    return mockResponse([
+      // ... existing code ...
+    ])
+  }
+  // 真实 API 可根据实际后端实现调整
+  return api.get('/dfm/system/sidebar-nav')
 }

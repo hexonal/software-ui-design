@@ -86,7 +86,7 @@ export const getTableStructure = async (databaseId: string, tableName: string): 
     return mockResponse(structure)
   }
   
-  return api.get(`/data-model/tables/${databaseId}/${tableName}/structure`)
+  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/structure`)
 }
 
 /**
@@ -302,7 +302,7 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
     return mockResponse(indexes)
   }
   
-  return api.get(`/data-model/tables/${databaseId}/${tableName}/indexes`)
+  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`)
 }
 
 /**
@@ -361,7 +361,7 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
     return mockResponse({ success: true, indexName: data.name })
   }
   
-  return api.post(`/data-model/tables/${databaseId}/${tableName}/indexes`, data)
+  return api.post(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`, data)
 }
 
 /**
@@ -400,7 +400,7 @@ export const dropIndex = async (databaseId: string, tableName: string, indexName
     return mockResponse(true)
   }
   
-  return api.delete(`/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
+  return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
 }
 
 /**
@@ -470,7 +470,7 @@ export const importData = async (databaseId: string, tableName: string, data: an
     })
   }
   
-  return api.post(`/data-model/import/${databaseId}/${tableName}`, data)
+  return api.post(`/dfm/data-model/import/${databaseId}/${tableName}`, data)
 }
 
 /**
@@ -538,7 +538,7 @@ export const exportData = async (databaseId: string, data: any): Promise<ApiResp
     })
   }
   
-  return api.post(`/data-model/export/${databaseId}`, data)
+  return api.post(`/dfm/data-model/export/${databaseId}`, data)
 }
 
 /**
@@ -640,5 +640,5 @@ export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
     return mockResponse([...importTasks, ...exportTasks] as any[])
   }
   
-  return api.get('/data-model/tasks')
+  return api.get('/dfm/data-model/tasks')
 }

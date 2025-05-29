@@ -58,7 +58,7 @@ export const getTimeseriesDatabases = async (params?: QueryParams): Promise<ApiR
     return mockResponse(databases)
   }
   
-  return api.get('/database/timeseries', { params })
+  return api.get('/dfm/database/timeseries', { params })
 }
 
 /**

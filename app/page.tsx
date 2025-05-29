@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 
 // 导入配置
 import { config } from "@/config"
+import { login } from "@/lib/api/user"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -21,22 +22,19 @@ export default function LoginPage() {
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError("")
-
-    // 模拟登录验证
-    setTimeout(() => {
-      if (username === "admin" && password === "admin") {
-        // 设置 token
-        localStorage.setItem('token', 'mock-jwt-token')
-        router.push("/dashboard")
-      } else {
-        setError("用户名或密码错误")
-      }
+    try {
+      const token = await login(username, password)
+      localStorage.setItem('token', token)
+      router.push("/dashboard")
+    } catch (err) {
+      setError("用户名或密码错误")
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   return (

@@ -40,7 +40,7 @@ export const getSystemSettings = async (): Promise<ApiResponse<any>> => {
     })
   }
   
-  return api.get('/system/settings')
+  return api.get('/dfm/system/settings')
 }
 
 /**
@@ -65,7 +65,7 @@ export const updateSystemSettings = async (data: any): Promise<ApiResponse<any>>
     return mockResponse(data)
   }
   
-  return api.put('/system/settings', data)
+  return api.put('/dfm/system/settings', data)
 }
 
 /**
@@ -112,7 +112,7 @@ export const getSystemLogs = async (params?: QueryParams): Promise<ApiResponse<a
     return mockResponse(filteredLogs)
   }
   
-  return api.get('/system/logs', { params })
+  return api.get('/dfm/system/logs', { params })
 }
 
 /**
@@ -159,7 +159,7 @@ export const getSystemAlerts = async (params?: QueryParams): Promise<ApiResponse
     return mockResponse(filteredAlerts)
   }
   
-  return api.get('/system/alerts', { params })
+  return api.get('/dfm/system/alerts', { params })
 }
 
 // 获取告警规则
@@ -173,15 +173,21 @@ export const getAlertChannels = async () => {
 }
 
 // 确认告警
-export const acknowledgeAlert = async (id: string) => {
-  // 这里暂时直接返回 true，后续可在 mock 层实现状态变更
-  return Promise.resolve({ success: true })
+export const acknowledgeAlert = async (id: string): Promise<ApiResponse<boolean>> => {
+  if (useMock()) {
+    // 这里暂时直接返回 true，后续可在 mock 层实现状态变更
+    return mockResponse(true)
+  }
+  return api.put(`/dfm/system/alerts/${id}/acknowledge`)
 }
 
 // 解决告警
-export const resolveAlert = async (id: string) => {
-  // 这里暂时直接返回 true，后续可在 mock 层实现状态变更
-  return Promise.resolve({ success: true })
+export const resolveAlert = async (id: string): Promise<ApiResponse<boolean>> => {
+  if (useMock()) {
+    // 这里暂时直接返回 true，后续可在 mock 层实现状态变更
+    return mockResponse(true)
+  }
+  return api.put(`/dfm/system/alerts/${id}/resolve`)
 }
 
 /**
@@ -225,7 +231,7 @@ export const getSystemPerformance = async (timeRange?: string): Promise<ApiRespo
     })
   }
   
-  return api.get('/system/performance', { params: { timeRange } })
+  return api.get('/dfm/system/performance', { params: { timeRange } })
 }
 
 export const addAlertRule = mockAlertsApi.addAlertRule
@@ -322,7 +328,7 @@ export const getSidebarNavItems = async (): Promise<ApiResponse<any[]>> => {
     ])
   }
   // 真实 API 可根据实际后端实现调整
-  return api.get('/system/sidebar-nav')
+  return api.get('/dfm/system/sidebar-nav')
 }
 
 /**
@@ -345,5 +351,5 @@ export const getSystemStatus = async (): Promise<ApiResponse<any>> => {
       databases: { value: "12/15", description: "3 个实例需要注意", status: "warning" }
     })
   }
-  return api.get('/system/status')
+  return api.get('/dfm/system/status')
 }
