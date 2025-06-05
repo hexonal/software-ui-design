@@ -59,7 +59,7 @@ export const getDatabases = async (params?: QueryParams): Promise<ApiResponse<Da
     return mockResponse(getMockData('databases') as Database[])
   }
   
-  return api.get('/database', { params })
+  return api.get('/dfm/database', { params })
 }
 
 /**
@@ -90,10 +90,10 @@ export const getDatabases = async (params?: QueryParams): Promise<ApiResponse<Da
  *               size: "1.2 TB"
  *               tables: 42
  */
-export const getDatabaseById = async (id: string): Promise<ApiResponse<Database | null>> => {
+export const getDatabaseById = async (id: number): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
-    const database = databases.find(db => db.id === id)
+    const database = databases.find(db => db.id === id.toString())
     
     if (!database) {
       return mockResponse(null, true, 404)
@@ -143,7 +143,7 @@ export const createDatabase = async (data: Omit<Database, 'id'>): Promise<ApiRes
     return mockResponse(newDatabase)
   }
   
-  return api.post('/database', data)
+  return api.post('/dfm/database', data)
 }
 
 /**
@@ -180,10 +180,10 @@ export const createDatabase = async (data: Omit<Database, 'id'>): Promise<ApiRes
  *               size: "1.2 TB"
  *               tables: 42
  */
-export const updateDatabase = async (id: string, data: Partial<Database>): Promise<ApiResponse<Database | null>> => {
+export const updateDatabase = async (id: number, data: Partial<Database>): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
-    const databaseIndex = databases.findIndex(db => db.id === id)
+    const databaseIndex = databases.findIndex(db => db.id === id.toString())
     
     if (databaseIndex === -1) {
       return mockResponse(null, true, 404)
@@ -193,7 +193,7 @@ export const updateDatabase = async (id: string, data: Partial<Database>): Promi
     return mockResponse(updatedDatabase)
   }
   
-  return api.put(`/database/${id}`, data)
+  return api.put(`/dfm/database/${id}`, data)
 }
 
 /**
@@ -213,12 +213,12 @@ export const updateDatabase = async (id: string, data: Partial<Database>): Promi
  *       200:
  *         description: 删除成功
  */
-export const deleteDatabase = async (id: string): Promise<ApiResponse<boolean>> => {
+export const deleteDatabase = async (id: number): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
   }
   
-  return api.delete(`/database/${id}`)
+  return api.delete(`/dfm/database/${id}`)
 }
 
 /**
@@ -279,7 +279,7 @@ export const getTables = async (params?: QueryParams): Promise<ApiResponse<Table
     return mockResponse(getMockData('tables') as Table[])
   }
   
-  return api.get('/database/tables', { params })
+  return api.get('/dfm/database/tables', { params })
 }
 
 /**
@@ -376,7 +376,7 @@ export const createTable = async (databaseId: string, data: Omit<Table, 'databas
     return mockResponse(newTable)
   }
   
-  return api.post(`/database/${databaseId}/tables`, data)
+  return api.post(`/dfm/database/${databaseId}/tables`, data)
 }
 
 /**
@@ -419,7 +419,7 @@ export const createTable = async (databaseId: string, data: Omit<Table, 'databas
  *               size: "245 MB"
  *               indexes: 3
  */
-export const updateTable = async (databaseId: string, tableName: string, data: Partial<Table>): Promise<ApiResponse<Table>> => {
+export const updateTable = async (databaseId: string, tableName: string, data: Partial<Table>): Promise<ApiResponse<Table | null>> => {
   if (useMock()) {
     const tables = getMockData('tables') as Table[]
     const tableIndex = tables.findIndex(t => t.database === databaseId && t.name === tableName)
@@ -433,7 +433,7 @@ export const updateTable = async (databaseId: string, tableName: string, data: P
     return mockResponse(updatedTable)
   }
   
-  return api.put(`/database/${databaseId}/tables/${tableName}`, data)
+  return api.put(`/dfm/database/${databaseId}/tables/${tableName}`, data)
 }
 
 /**
@@ -478,7 +478,7 @@ export const deleteTable = async (databaseId: string, tableName: string): Promis
     return mockResponse(true)
   }
   
-  return api.delete(`/database/${databaseId}/tables/${tableName}`)
+  return api.delete(`/dfm/database/${databaseId}/tables/${tableName}`)
 }
 
 /**
@@ -575,7 +575,7 @@ export const executeQuery = async (databaseId: string, query: string): Promise<A
     }
   }
   
-  return api.post(`/database/${databaseId}/query`, { query })
+  return api.post(`/dfm/database/${databaseId}/query`, { query })
 }
 
 // 导出子模块

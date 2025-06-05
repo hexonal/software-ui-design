@@ -1,40 +1,93 @@
 import { api } from './client'
-import { config } from '../../config'
+import { ApiResponse, LoginRequest, LoginResponse } from './types'
 
+/**
+ * 用户登录
+ * @param username 用户名
+ * @param password 密码
+ * @returns JWT Token
+ */
 export async function login(username: string, password: string): Promise<string> {
-  console.log('[login] baseUrl:', config.api.baseUrl);
-  console.log('[login] 请求参数:', { username, password });
-  // 构造完整的 UserBO 请求体
-  const reqBody = {
-    createDate: '',
-    createdBy: '',
-    email: '',
-    id: 0,
-    lastLogin: '',
-    password,
-    role: '',
-    roleId: 0,
-    status: '',
-    updateDate: '',
-    updatedBy: '',
-    username
-  };
   try {
-    const res = await api.post('/dfm/user/login', reqBody);
-    console.log('[login] 响应:', res);
-    // 兼容后端返回的 result 字段
-    if (res && res.result) {
-      return res.result;
+    // 构造完整的UserBO请求体，匹配后端期望的格式
+    const userBO = {
+      username,
+      password,
+      // 其他字段可以为null或默认值，后端只会使用username和password
+      id: null,
+      email: null,
+      roleId: null,
+      role: null,
+      status: null,
+      lastLogin: null,
+      createDate: null,
+      updateDate: null,
+      createdBy: null,
+      updatedBy: null
     }
-    if (typeof res === 'string') {
-      return res;
+
+    const response = await api.post<ApiResponse<string>>('/dfm/user/login', userBO)
+    const result = response.data
+    
+    if (result.success && result.data) {
+      // 保存token到localStorage
+      localStorage.setItem('auth_token', result.data)
+      return result.data
+    } else {
+      throw new Error(result.message || '登录失败')
     }
-    if (res && res.data) {
-      return res.data;
+  } catch (error: any) {
+    // 处理具体的错误信息
+    if (error.code === 20004) {
+      throw new Error('用户不存在')
+    } else if (error.code === 20002) {
+      throw new Error('账号不存在或密码错误')
+    } else if (error.message) {
+      throw new Error(error.message)
+    } else {
+      throw new Error('登录失败，请稍后重试')
     }
-    throw new Error(res?.message || '登录失败');
-  } catch (err) {
-    console.error('[login] 请求异常:', err);
-    throw err;
   }
+}
+
+/**
+ * 用户登出
+ */
+export async function logout(): Promise<void> {
+  localStorage.removeItem('auth_token')
+  // 如果需要调用后端登出接口，可以在这里添加
+  // await api.post('/user/logout')
+}
+
+/**
+ * 获取当前登录用户信息
+ * @param username 用户名
+ */
+export async function getUserInfo(username: string): Promise<ApiResponse<any>> {
+  return api.get(`/dfm/user/info/${username}`)
+}
+
+/**
+ * 检查token是否有效
+ */
+export function isTokenValid(): boolean {
+  const token = localStorage.getItem('auth_token')
+  if (!token) return false
+  
+  try {
+    // 简单的JWT token解析（不验证签名，仅检查格式和过期时间）
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    const now = Date.now() / 1000
+    
+    return payload.exp > now
+  } catch {
+    return false
+  }
+}
+
+/**
+ * 获取当前token
+ */
+export function getToken(): string | null {
+  return localStorage.getItem('auth_token')
 } 

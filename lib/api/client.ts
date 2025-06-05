@@ -1,8 +1,9 @@
-import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios'
-import { config } from '@/config'
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios'
+import { ApiResponse } from './types'
+import { config } from '../config'
 
 // 创建 axios 实例
-const apiClient = axios.create({
+export const api = axios.create({
   baseURL: config.api.baseUrl,
   timeout: config.api.timeout,
   headers: {
@@ -11,10 +12,10 @@ const apiClient = axios.create({
 })
 
 // 请求拦截器
-apiClient.interceptors.request.use(
+api.interceptors.request.use(
   (config) => {
-    // 可以在这里添加认证信息等
-    const token = localStorage.getItem('token')
+    // 添加认证 token
+    const token = localStorage.getItem('auth_token')
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -25,41 +26,57 @@ apiClient.interceptors.request.use(
   }
 )
 
-// 响应拦截器
-apiClient.interceptors.response.use(
-  (response) => {
-    return response
-  },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean }
+// 响应拦截器 - 处理Java后端的Result<T>结构
+api.interceptors.response.use(
+  (response: AxiosResponse): AxiosResponse<ApiResponse<any>> => {
+    const data = response.data
     
-    // 处理 401 错误（未授权）
-    if (error.response?.status === 401) {
-      // 可以在这里处理 token 刷新逻辑
-      // 如果已经尝试过刷新 token，则不再尝试
-      if (!originalRequest._retry) {
-        originalRequest._retry = true
-        try {
-          // 刷新 token 的逻辑
-          // const refreshToken = localStorage.getItem('refreshToken')
-          // const response = await apiClient.post('/auth/refresh', { refreshToken })
-          // localStorage.setItem('token', response.data.token)
-          
-          // 使用新 token 重试原请求
-          // if (originalRequest.headers) {
-          //   originalRequest.headers.Authorization = `Bearer ${response.data.token}`
-          // }
-          // return apiClient(originalRequest)
-        } catch (refreshError) {
-          // 刷新 token 失败，可能需要重新登录
-          // window.location.href = '/login'
-          return Promise.reject(refreshError)
-        }
-      }
+    // 如果后端返回的是标准的Result<T>结构
+    if (data && typeof data === 'object' && 'code' in data && 'message' in data) {
+      // 计算success字段：code为200表示成功
+      data.success = data.code === 200
+      return response
     }
     
-    // 处理其他错误
-    return Promise.reject(error)
+    // 如果不是标准结构，包装为标准结构
+    response.data = {
+      code: 200,
+      message: 'success',
+      data: data,
+      success: true
+    }
+    
+    return response
+  },
+  (error) => {
+    // 处理错误响应
+    const response = error.response
+    if (response) {
+      const errorData: ApiResponse<null> = {
+        code: response.status,
+        message: response.data?.message || error.message || '请求失败',
+        data: null,
+        success: false
+      }
+      
+      // 401 未授权，清除token并跳转到登录页
+      if (response.status === 401) {
+        localStorage.removeItem('auth_token')
+        // 如果在浏览器环境，跳转到登录页
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
+      }
+      
+      return Promise.reject(errorData)
+    }
+    
+    return Promise.reject({
+      code: 0,
+      message: error.message || '网络错误',
+      data: null,
+      success: false
+    })
   }
 )
 
@@ -68,15 +85,21 @@ export const request = async <T = any>(
   config: AxiosRequestConfig
 ): Promise<T> => {
   try {
-    const response: AxiosResponse<T> = await apiClient(config)
-    return response.data
+    const response = await api(config)
+    const result = response.data as ApiResponse<T>
+    
+    if (!result.success) {
+      throw result
+    }
+    
+    return result.data as T
   } catch (error) {
-    return Promise.reject(error)
+    throw error
   }
 }
 
 // 导出常用方法
-export const api = {
+export const apiClient = {
   get: <T = any>(url: string, config?: AxiosRequestConfig) => 
     request<T>({ ...config, method: 'GET', url }),
   

@@ -87,7 +87,7 @@ export const getBackupHistoryById = async (id: string): Promise<ApiResponse<Back
     return mockResponse(backup)
   }
   
-  return api.get(`/monitoring/backup/history/${id}`)
+  return api.get(`/dfm/monitoring/backup/history/${id}`)
 }
 
 /**
@@ -177,7 +177,7 @@ export const getBackupScheduleById = async (id: string): Promise<ApiResponse<Bac
     return mockResponse(schedule)
   }
   
-  return api.get(`/monitoring/backup/schedules/${id}`)
+  return api.get(`/dfm/monitoring/backup/schedules/${id}`)
 }
 
 /**
@@ -221,7 +221,7 @@ export const createBackupSchedule = async (data: Omit<BackupSchedule, 'id'>): Pr
     return mockResponse(newSchedule)
   }
   
-  return api.post('/monitoring/backup/schedules', data)
+  return api.post('/dfm/monitoring/backup/schedules', data)
 }
 
 /**
@@ -274,7 +274,7 @@ export const updateBackupSchedule = async (id: string, data: Partial<BackupSched
     return mockResponse(updatedSchedule)
   }
   
-  return api.put(`/monitoring/backup/schedules/${id}`, data)
+  return api.put(`/dfm/monitoring/backup/schedules/${id}`, data)
 }
 
 /**
@@ -309,7 +309,7 @@ export const deleteBackupSchedule = async (id: string): Promise<ApiResponse<bool
     return mockResponse(true)
   }
   
-  return api.delete(`/monitoring/backup/schedules/${id}`)
+  return api.delete(`/dfm/monitoring/backup/schedules/${id}`)
 }
 
 /**
@@ -363,7 +363,7 @@ export const createManualBackup = async (data: { name: string, type: string }): 
     return mockResponse(newBackup)
   }
   
-  return api.post('/monitoring/backup/manual', data)
+  return api.post('/dfm/monitoring/backup/manual', data)
 }
 
 /**

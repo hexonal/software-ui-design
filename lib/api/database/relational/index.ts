@@ -15,7 +15,7 @@ export const getRelationalDatabases = async (params?: QueryParams): Promise<ApiR
     return mockResponse(relationalDatabases)
   }
   
-  return api.get('/database/relational', { params })
+  return api.get('/dfm/database/relational', { params })
 }
 
 // 获取关系型数据库详情
@@ -31,7 +31,7 @@ export const getRelationalDatabaseById = async (id: string): Promise<ApiResponse
     return mockResponse(database)
   }
   
-  return api.get(`/database/relational/${id}`)
+  return api.get(`/dfm/database/relational/${id}`)
 }
 
 // 创建关系型数据库
@@ -57,7 +57,7 @@ export const createRelationalDatabase = async (data: any): Promise<ApiResponse<a
     return mockResponse(newDatabase)
   }
   
-  return api.post('/database/relational', data)
+  return api.post('/dfm/database/relational', data)
 }
 
 // 执行 SQL 查询
@@ -85,7 +85,7 @@ export const executeSQLQuery = async (databaseId: string, query: string): Promis
     }
   }
   
-  return api.post(`/database/relational/${databaseId}/query`, { query })
+  return api.post(`/dfm/database/relational/${databaseId}/query`, { query })
 }
 
 // 获取关系型数据库表列表
@@ -97,7 +97,7 @@ export const getRelationalTables = async (databaseId: string, params?: QueryPara
     return mockResponse(databaseTables)
   }
   
-  return api.get(`/database/relational/${databaseId}/tables`, { params })
+  return api.get(`/dfm/database/relational/${databaseId}/tables`, { params })
 }
 
 // 创建关系型数据库表
@@ -122,11 +122,11 @@ export const createRelationalTable = async (databaseId: string, data: any): Prom
     const databases = getMockData('databases') as Database[];
     const dbIndex = databases.findIndex(db => db.id === databaseId);
     if (dbIndex !== -1) {
-      databases[dbIndex].tables += 1;
+      databases[dbIndex].tables = (databases[dbIndex].tables || 0) + 1;
     }
     
     return mockResponse(newTable)
   }
   
-  return api.post(`/database/relational/${databaseId}/tables`, data)
+  return api.post(`/dfm/database/relational/${databaseId}/tables`, data)
 }

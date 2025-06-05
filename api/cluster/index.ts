@@ -93,10 +93,10 @@ export const getNodes = async (params?: QueryParams): Promise<ApiResponse<Node[]
  *               memory: 62
  *               disk: 38
  */
-export const getNodeById = async (id: string): Promise<ApiResponse<Node | null>> => {
+export const getNodeById = async (id: number): Promise<ApiResponse<Node | null>> => {
   if (useMock()) {
     const nodes = getMockData('nodes') as Node[]
-    const node = nodes.find(n => n.id === id)
+    const node = nodes.find(n => n.id === id.toString())
     
     if (!node) {
       return mockResponse(null, true, 404)
@@ -135,7 +135,7 @@ export const createNode = async (data: Omit<Node, 'id'>): Promise<ApiResponse<No
     return mockResponse(newNode)
   }
   
-  return api.post('/cluster/nodes', data)
+  return api.post('/dfm/cluster/nodes', data)
 }
 
 /**
@@ -161,10 +161,10 @@ export const createNode = async (data: Omit<Node, 'id'>): Promise<ApiResponse<No
  *       200:
  *         description: 更新成功
  */
-export const updateNode = async (id: string, data: Partial<Node>): Promise<ApiResponse<Node | null>> => {
+export const updateNode = async (id: number, data: Partial<Node>): Promise<ApiResponse<Node | null>> => {
   if (useMock()) {
     const nodes = getMockData('nodes') as Node[]
-    const nodeIndex = nodes.findIndex(n => n.id === id)
+    const nodeIndex = nodes.findIndex(n => n.id === id.toString())
     
     if (nodeIndex === -1) {
       return mockResponse(null, true, 404)
@@ -174,7 +174,7 @@ export const updateNode = async (id: string, data: Partial<Node>): Promise<ApiRe
     return mockResponse(updatedNode)
   }
   
-  return api.put(`/cluster/nodes/${id}`, data)
+  return api.put(`/dfm/cluster/nodes/${id}`, data)
 }
 
 /**
@@ -194,12 +194,12 @@ export const updateNode = async (id: string, data: Partial<Node>): Promise<ApiRe
  *       200:
  *         description: 删除成功
  */
-export const deleteNode = async (id: string): Promise<ApiResponse<boolean>> => {
+export const deleteNode = async (id: number): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
   }
   
-  return api.delete(`/cluster/nodes/${id}`)
+  return api.delete(`/dfm/cluster/nodes/${id}`)
 }
 
 /**
@@ -286,10 +286,10 @@ export const getShards = async (params?: QueryParams): Promise<ApiResponse<Shard
  *               usage: 62
  *               replicas: 2
  */
-export const getShardById = async (id: string): Promise<ApiResponse<Shard | null>> => {
+export const getShardById = async (id: number): Promise<ApiResponse<Shard | null>> => {
   if (useMock()) {
     const shards = getMockData('shards') as Shard[]
-    const shard = shards.find(s => s.id === id)
+    const shard = shards.find(s => s.id === id.toString())
     
     if (!shard) {
       return mockResponse(null, true, 404)
@@ -335,7 +335,7 @@ export const createShard = async (data: Omit<Shard, 'id'>): Promise<ApiResponse<
     return mockResponse(newShard)
   }
   
-  return api.post('/cluster/shards', data)
+  return api.post('/dfm/cluster/shards', data)
 }
 
 /**
@@ -368,10 +368,10 @@ export const createShard = async (data: Omit<Shard, 'id'>): Promise<ApiResponse<
  *       200:
  *         description: 更新成功
  */
-export const updateShard = async (id: string, data: Partial<Shard>): Promise<ApiResponse<Shard | null>> => {
+export const updateShard = async (id: number, data: Partial<Shard>): Promise<ApiResponse<Shard | null>> => {
   if (useMock()) {
     const shards = getMockData('shards') as Shard[]
-    const shardIndex = shards.findIndex(s => s.id === id)
+    const shardIndex = shards.findIndex(s => s.id === id.toString())
     
     if (shardIndex === -1) {
       return mockResponse(null, true, 404)
@@ -381,7 +381,7 @@ export const updateShard = async (id: string, data: Partial<Shard>): Promise<Api
     return mockResponse(updatedShard)
   }
   
-  return api.put(`/cluster/shards/${id}`, data)
+  return api.put(`/dfm/cluster/shards/${id}`, data)
 }
 
 /**
@@ -405,10 +405,10 @@ export const updateShard = async (id: string, data: Partial<Shard>): Promise<Api
  *             example:
  *               success: true
  */
-export const deleteShard = async (id: string): Promise<ApiResponse<boolean>> => {
+export const deleteShard = async (id: number): Promise<ApiResponse<boolean>> => {
   if (useMock()) {
     return mockResponse(true)
   }
   
-  return api.delete(`/cluster/shards/${id}`)
+  return api.delete(`/dfm/cluster/shards/${id}`)
 }

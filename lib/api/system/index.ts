@@ -38,7 +38,7 @@ export const updateSystemSettings = async (data: any): Promise<ApiResponse<any>>
     return mockResponse(data)
   }
   
-  return api.put('/system/settings', data)
+  return api.put('/dfm/system/settings', data)
 }
 
 // 获取系统日志

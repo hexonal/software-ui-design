@@ -139,7 +139,7 @@ export const createVolume = async (data: Omit<Volume, 'id' | 'createdAt'>): Prom
     return mockResponse(newVolume)
   }
   
-  return api.post('/storage/volumes', data)
+  return api.post('/dfm/storage/volumes', data)
 }
 
 /**
@@ -193,7 +193,7 @@ export const updateVolume = async (id: string, data: Partial<Volume>): Promise<A
     return mockResponse(updatedVolume)
   }
   
-  return api.put(`/storage/volumes/${id}`, data)
+  return api.put(`/dfm/storage/volumes/${id}`, data)
 }
 
 /**
@@ -228,7 +228,7 @@ export const deleteVolume = async (id: string): Promise<ApiResponse<boolean>> =>
     return mockResponse(true)
   }
   
-  return api.delete(`/storage/volumes/${id}`)
+  return api.delete(`/dfm/storage/volumes/${id}`)
 }
 
 /**
@@ -355,7 +355,7 @@ export const createSnapshot = async (data: Omit<Snapshot, 'id' | 'createdAt'>): 
     return mockResponse(newSnapshot)
   }
   
-  return api.post('/storage/snapshots', data)
+  return api.post('/dfm/storage/snapshots', data)
 }
 
 /**
@@ -390,7 +390,7 @@ export const deleteSnapshot = async (id: string): Promise<ApiResponse<boolean>> 
     return mockResponse(true)
   }
   
-  return api.delete(`/storage/snapshots/${id}`)
+  return api.delete(`/dfm/storage/snapshots/${id}`)
 }
 
 /**
@@ -498,7 +498,7 @@ export const uploadFile = async (path: string, file: File): Promise<ApiResponse<
   formData.append('file', file)
   formData.append('path', path)
   
-  return api.post('/storage/files/upload', formData, {
+  return api.post('/dfm/storage/files/upload', formData, {
     headers: {
       'Content-Type': 'multipart/form-data'
     }
@@ -537,5 +537,5 @@ export const deleteFile = async (path: string): Promise<ApiResponse<boolean>> =>
     return mockResponse(true)
   }
   
-  return api.delete('/storage/files', { params: { path } })
+  return api.delete('/dfm/storage/files', { params: { path } })
 }

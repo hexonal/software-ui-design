@@ -50,7 +50,7 @@ export const getUsers = async (params?: QueryParams): Promise<ApiResponse<User[]
     return mockResponse(getMockData('users') as User[])
   }
   
-  return api.get('/security/users', { params })
+  return api.get('/dfm/security/users', { params })
 }
 
 /**
@@ -93,7 +93,7 @@ export const getUserById = async (id: string): Promise<ApiResponse<User | null>>
     return mockResponse(user)
   }
   
-  return api.get(`/security/users/${id}`)
+  return api.get(`/dfm/security/users/${id}`)
 }
 
 /**
@@ -134,7 +134,7 @@ export const createUser = async (data: Omit<User, 'id'>): Promise<ApiResponse<Us
     return mockResponse(newUser)
   }
   
-  return api.post('/security/users', data)
+  return api.post('/dfm/security/users', data)
 }
 
 /**
@@ -184,7 +184,7 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<ApiRe
     return mockResponse(updatedUser)
   }
   
-  return api.put(`/security/users/${id}`, data)
+  return api.put(`/dfm/security/users/${id}`, data)
 }
 
 /**
@@ -219,7 +219,7 @@ export const deleteUser = async (id: string): Promise<ApiResponse<boolean>> => {
     return mockResponse(true)
   }
   
-  return api.delete(`/security/users/${id}`)
+  return api.delete(`/dfm/security/users/${id}`)
 }
 
 /**
@@ -265,7 +265,7 @@ export const getRoles = async (params?: QueryParams): Promise<ApiResponse<Role[]
     return mockResponse(getMockData('roles') as Role[])
   }
   
-  return api.get('/security/roles', { params })
+  return api.get('/dfm/security/roles', { params })
 }
 
 /**
@@ -307,7 +307,7 @@ export const getRoleById = async (id: string): Promise<ApiResponse<Role | null>>
     return mockResponse(role)
   }
   
-  return api.get(`/security/roles/${id}`)
+  return api.get(`/dfm/security/roles/${id}`)
 }
 
 /**
@@ -347,7 +347,7 @@ export const createRole = async (data: Omit<Role, 'id'>): Promise<ApiResponse<Ro
     return mockResponse(newRole)
   }
   
-  return api.post('/security/roles', data)
+  return api.post('/dfm/security/roles', data)
 }
 
 /**
@@ -396,7 +396,7 @@ export const updateRole = async (id: string, data: Partial<Role>): Promise<ApiRe
     return mockResponse(updatedRole)
   }
   
-  return api.put(`/security/roles/${id}`, data)
+  return api.put(`/dfm/security/roles/${id}`, data)
 }
 
 /**
@@ -431,7 +431,7 @@ export const deleteRole = async (id: string): Promise<ApiResponse<boolean>> => {
     return mockResponse(true)
   }
   
-  return api.delete(`/security/roles/${id}`)
+  return api.delete(`/dfm/security/roles/${id}`)
 }
 
 /**
@@ -481,7 +481,7 @@ export const getAccessPolicies = async (params?: QueryParams): Promise<ApiRespon
     return mockResponse(getMockData('accessPolicies') as AccessPolicy[])
   }
   
-  return api.get('/security/access-policies', { params })
+  return api.get('/dfm/security/access-policies', { params })
 }
 
 /**
@@ -524,7 +524,7 @@ export const getAccessPolicyById = async (id: string): Promise<ApiResponse<Acces
     return mockResponse(policy)
   }
   
-  return api.get(`/security/access-policies/${id}`)
+  return api.get(`/dfm/security/access-policies/${id}`)
 }
 
 /**
@@ -565,7 +565,7 @@ export const createAccessPolicy = async (data: Omit<AccessPolicy, 'id'>): Promis
     return mockResponse(newPolicy)
   }
   
-  return api.post('/security/access-policies', data)
+  return api.post('/dfm/security/access-policies', data)
 }
 
 /**
@@ -615,7 +615,7 @@ export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>
     return mockResponse(updatedPolicy)
   }
   
-  return api.put(`/security/access-policies/${id}`, data)
+  return api.put(`/dfm/security/access-policies/${id}`, data)
 }
 
 /**
@@ -650,5 +650,5 @@ export const deleteAccessPolicy = async (id: string): Promise<ApiResponse<boolea
     return mockResponse(true)
   }
   
-  return api.delete(`/security/access-policies/${id}`)
+  return api.delete(`/dfm/security/access-policies/${id}`)
 }

@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录API测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .config {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d4fc;
+            color: #0c5460;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DFMS 登录API测试</h1>
+        
+        <div class="result config">
+            <strong>当前配置:</strong><br>
+            API地址: <span id="apiUrl"></span><br>
+            Mock模式: <span id="mockMode"></span>
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">用户名:</label>
+                <input type="text" id="username" name="username" value="admin" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">密码:</label>
+                <input type="password" id="password" name="password" value="admin" required>
+            </div>
+            
+            <button type="submit">登录测试</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE_URL = 'http://localhost:8080';
+        const USE_MOCK = false;
+        
+        // 显示当前配置
+        document.getElementById('apiUrl').textContent = API_BASE_URL;
+        document.getElementById('mockMode').textContent = USE_MOCK ? '开启' : '关闭';
+        
+        // 模拟登录API调用
+        async function login(username, password) {
+            // 构造完整的UserBO请求体，匹配后端期望的格式
+            const userBO = {
+                username: username,
+                password: password,
+                // 其他字段可以为null，后端只会使用username和password
+                id: null,
+                email: null,
+                roleId: null,
+                role: null,
+                status: null,
+                lastLogin: null,
+                createDate: null,
+                updateDate: null,
+                createdBy: null,
+                updatedBy: null
+            };
+
+            const response = await fetch(`${API_BASE_URL}/user/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(userBO)
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${data.message || '请求失败'}`);
+            }
+            
+            return data;
+        }
+        
+        // 处理表单提交
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            
+            resultDiv.innerHTML = '<div class="result">登录中...</div>';
+            
+            try {
+                const result = await login(username, password);
+                
+                let displayResult = `登录成功！\n\n响应数据:\n${JSON.stringify(result, null, 2)}`;
+                
+                if (result.data) {
+                    localStorage.setItem('auth_token', result.data);
+                    displayResult += '\n\nToken已保存到 localStorage';
+                }
+                
+                resultDiv.innerHTML = `<div class="result success">${displayResult}</div>`;
+                
+            } catch (error) {
+                const errorMessage = `登录失败！\n\n错误信息:\n${error.message}\n\n详细信息:\n${JSON.stringify(error, null, 2)}`;
+                resultDiv.innerHTML = `<div class="result error">${errorMessage}</div>`;
+            }
+        });
+        
+        // 检查已存在的token
+        window.addEventListener('load', () => {
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = `<div class="result success">已存在Token: ${token}</div>`;
+            }
+        });
+    </script>
+</body>
+</html> 

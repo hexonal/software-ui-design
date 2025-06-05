@@ -44,7 +44,7 @@ export const getRelationalDatabases = async (params?: QueryParams): Promise<ApiR
     return mockResponse(databases)
   }
   
-  return api.get('/database/relational', { params })
+  return api.get('/dfm/database/relational', { params })
 }
 
 // 获取关系型数据库详情

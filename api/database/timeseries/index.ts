@@ -177,7 +177,7 @@ export const createTimeseriesDatabase = async (data: any): Promise<ApiResponse<a
     return mockResponse(newDatabase)
   }
   
-  return api.post('/database/timeseries', data)
+  return api.post('/dfm/database/timeseries', data)
 }
 
 /**

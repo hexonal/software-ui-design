@@ -37,7 +37,7 @@ export const getTableStructure = async (databaseId: string, tableName: string): 
     return mockResponse(structure)
   }
   
-  return api.get(`/data-model/tables/${databaseId}/${tableName}/structure`)
+  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/structure`)
 }
 
 // 创建表
@@ -62,7 +62,7 @@ export const createTable = async (databaseId: string, data: any): Promise<ApiRes
     return mockResponse({ success: true, tableName: data.name, table: newTable })
   }
   
-  return api.post(`/data-model/tables/${databaseId}`, data)
+  return api.post(`/dfm/data-model/tables/${databaseId}`, data)
 }
 
 // 修改表结构
@@ -81,7 +81,7 @@ export const alterTable = async (databaseId: string, tableName: string, data: an
     return mockResponse({ success: true })
   }
   
-  return api.put(`/data-model/tables/${databaseId}/${tableName}`, data)
+  return api.put(`/dfm/data-model/tables/${databaseId}/${tableName}`, data)
 }
 
 // 删除表
@@ -98,7 +98,7 @@ export const dropTable = async (databaseId: string, tableName: string): Promise<
     return mockResponse(true)
   }
   
-  return api.delete(`/data-model/tables/${databaseId}/${tableName}`)
+  return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}`)
 }
 
 // 获取表索引
@@ -132,7 +132,7 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
     return mockResponse(indexes)
   }
   
-  return api.get(`/data-model/tables/${databaseId}/${tableName}/indexes`)
+  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`)
 }
 
 // 创建索引
@@ -149,7 +149,7 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
     return mockResponse({ success: true, indexName: data.name, index: newIndex })
   }
   
-  return api.post(`/data-model/tables/${databaseId}/${tableName}/indexes`, data)
+  return api.post(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`, data)
 }
 
 // 删除索引
@@ -158,7 +158,7 @@ export const dropIndex = async (databaseId: string, tableName: string, indexName
     return mockResponse(true)
   }
   
-  return api.delete(`/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
+  return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
 }
 
 // 导入数据
@@ -178,7 +178,7 @@ export const importData = async (databaseId: string, tableName: string, data: an
     })
   }
   
-  return api.post(`/data-model/import/${databaseId}/${tableName}`, data)
+  return api.post(`/dfm/data-model/import/${databaseId}/${tableName}`, data)
 }
 
 // 导出数据
@@ -198,7 +198,7 @@ export const exportData = async (databaseId: string, data: any): Promise<ApiResp
     })
   }
   
-  return api.post(`/data-model/export/${databaseId}`, data)
+  return api.post(`/dfm/data-model/export/${databaseId}`, data)
 }
 
 // 获取导入/导出任务状态
@@ -269,5 +269,5 @@ export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
     return mockResponse([...importTasks, ...exportTasks])
   }
   
-  return api.get('/data-model/tasks')
+  return api.get('/dfm/data-model/tasks')
 }

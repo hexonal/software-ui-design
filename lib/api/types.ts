@@ -1,9 +1,29 @@
-// API 响应类型
+// API 响应类型 - 与Java后端Result<T>结构保持一致
 export interface ApiResponse<T> {
   code: number
   message: string
   data: T | null
-  success: boolean
+  success?: boolean // 可选字段，前端计算得出
+}
+
+// 登录请求参数
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+// 登录响应数据（JWT Token）
+export interface LoginResponse {
+  token: string
+  userInfo?: {
+    id: number
+    username: string
+    email: string
+    role: string
+    roleId: number
+    status: string
+    lastLogin: string
+  }
 }
 
 // 分页请求参数

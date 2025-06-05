@@ -9,14 +9,14 @@ import * as relationalApi from './relational'
 // 获取所有数据库
 export const getDatabases = async (params?: QueryParams): Promise<ApiResponse<Database[]>> => {
   if (useMock()) {
-    return mockResponse(getMockData('databases'))
+    return mockResponse(getMockData('databases') as Database[])
   }
   
-  return api.get('/database', { params })
+  return api.get('/dfm/database', { params })
 }
 
 // 获取数据库详情
-export const getDatabaseById = async (id: string): Promise<ApiResponse<Database>> => {
+export const getDatabaseById = async (id: string): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
     const database = databases.find(db => db.id === id)
@@ -28,7 +28,7 @@ export const getDatabaseById = async (id: string): Promise<ApiResponse<Database>
     return mockResponse(database)
   }
   
-  return api.get(`/database/${id}`)
+  return api.get(`/dfm/database/${id}`)
 }
 
 // 创建数据库
@@ -49,11 +49,11 @@ export const createDatabase = async (data: Omit<Database, 'id'>): Promise<ApiRes
     return mockResponse(newDatabase)
   }
   
-  return api.post('/database', data)
+  return api.post('/dfm/database', data)
 }
 
 // 更新数据库
-export const updateDatabase = async (id: string, data: Partial<Database>): Promise<ApiResponse<Database>> => {
+export const updateDatabase = async (id: string, data: Partial<Database>): Promise<ApiResponse<Database | null>> => {
   if (useMock()) {
     const databases = getMockData('databases') as Database[]
     const databaseIndex = databases.findIndex(db => db.id === id)
@@ -68,7 +68,7 @@ export const updateDatabase = async (id: string, data: Partial<Database>): Promi
     return mockResponse(updatedDatabase)
   }
   
-  return api.put(`/database/${id}`, data)
+  return api.put(`/dfm/database/${id}`, data)
 }
 
 // 删除数据库
@@ -92,27 +92,20 @@ export const deleteDatabase = async (id: string): Promise<ApiResponse<boolean>> 
     return mockResponse(true)
   }
   
-  return api.delete(`/database/${id}`)
+  return api.delete(`/dfm/database/${id}`)
 }
 
 // 获取所有表
 export const getTables = async (params?: QueryParams): Promise<ApiResponse<Table[]>> => {
   if (useMock()) {
-    let tables = getMockData('tables') as Table[];
-    
-    // 如果指定了数据库，则过滤表
-    if (params?.database) {
-      tables = tables.filter(table => table.database === params.database);
-    }
-    
-    return mockResponse(tables)
+    return mockResponse(getMockData('tables') as Table[])
   }
   
-  return api.get('/database/tables', { params })
+  return api.get('/dfm/database/tables', { params })
 }
 
 // 获取表详情
-export const getTableByName = async (databaseId: string, tableName: string): Promise<ApiResponse<Table>> => {
+export const getTableByName = async (databaseId: string, tableName: string): Promise<ApiResponse<Table | null>> => {
   if (useMock()) {
     const tables = getMockData('tables') as Table[]
     const table = tables.find(t => t.database === databaseId && t.name === tableName)
@@ -124,7 +117,7 @@ export const getTableByName = async (databaseId: string, tableName: string): Pro
     return mockResponse(table)
   }
   
-  return api.get(`/database/${databaseId}/tables/${tableName}`)
+  return api.get(`/dfm/database/${databaseId}/tables/${tableName}`)
 }
 
 // 创建表
@@ -138,11 +131,11 @@ export const createTable = async (databaseId: string, data: Omit<Table, 'databas
     return mockResponse(newTable)
   }
   
-  return api.post(`/database/${databaseId}/tables`, data)
+  return api.post(`/dfm/database/${databaseId}/tables`, data)
 }
 
 // 更新表
-export const updateTable = async (databaseId: string, tableName: string, data: Partial<Table>): Promise<ApiResponse<Table>> => {
+export const updateTable = async (databaseId: string, tableName: string, data: Partial<Table>): Promise<ApiResponse<Table | null>> => {
   if (useMock()) {
     const tables = getMockData('tables') as Table[]
     const tableIndex = tables.findIndex(t => t.database === databaseId && t.name === tableName)
@@ -152,12 +145,11 @@ export const updateTable = async (databaseId: string, tableName: string, data: P
     }
     
     const updatedTable = { ...tables[tableIndex], ...data }
-    tables[tableIndex] = updatedTable;
-    
+    tables[tableIndex] = updatedTable
     return mockResponse(updatedTable)
   }
   
-  return api.put(`/database/${databaseId}/tables/${tableName}`, data)
+  return api.put(`/dfm/database/${databaseId}/tables/${tableName}`, data)
 }
 
 // 删除表
@@ -173,7 +165,7 @@ export const deleteTable = async (databaseId: string, tableName: string): Promis
     return mockResponse(true)
   }
   
-  return api.delete(`/database/${databaseId}/tables/${tableName}`)
+  return api.delete(`/dfm/database/${databaseId}/tables/${tableName}`)
 }
 
 // 执行 SQL 查询
@@ -201,7 +193,7 @@ export const executeQuery = async (databaseId: string, query: string): Promise<A
     }
   }
   
-  return api.post(`/database/${databaseId}/query`, { query })
+  return api.post(`/dfm/database/${databaseId}/query`, { query })
 }
 
 // 导出子模块

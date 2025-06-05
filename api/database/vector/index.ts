@@ -54,7 +54,7 @@ export const getVectorCollections = async (params?: QueryParams): Promise<ApiRes
     return mockResponse(collections)
   }
   
-  return api.get('/database/vector/collections', { params })
+  return api.get('/dfm/database/vector/collections', { params })
 }
 
 /**
@@ -101,7 +101,7 @@ export const getVectorCollectionById = async (id: string): Promise<ApiResponse<a
     return mockResponse(collection)
   }
   
-  return api.get(`/database/vector/collections/${id}`)
+  return api.get(`/dfm/database/vector/collections/${id}`)
 }
 
 /**
@@ -150,7 +150,7 @@ export const createVectorCollection = async (data: any): Promise<ApiResponse<any
     return mockResponse(newCollection)
   }
   
-  return api.post('/database/vector/collections', data)
+  return api.post('/dfm/database/vector/collections', data)
 }
 
 /**
@@ -198,7 +198,7 @@ export const updateVectorCollection = async (id: string, data: any): Promise<Api
     })
   }
   
-  return api.put(`/database/vector/collections/${id}`, data)
+  return api.put(`/dfm/database/vector/collections/${id}`, data)
 }
 
 /**
@@ -227,7 +227,7 @@ export const deleteVectorCollection = async (id: string): Promise<ApiResponse<bo
     return mockResponse(true)
   }
   
-  return api.delete(`/database/vector/collections/${id}`)
+  return api.delete(`/dfm/database/vector/collections/${id}`)
 }
 
 /**
@@ -268,7 +268,7 @@ export const getVectorIndexConfig = async (collectionId: string): Promise<ApiRes
     })
   }
   
-  return api.get(`/database/vector/collections/${collectionId}/index`)
+  return api.get(`/dfm/database/vector/collections/${collectionId}/index`)
 }
 
 /**
@@ -317,7 +317,7 @@ export const updateVectorIndexConfig = async (collectionId: string, data: any): 
     })
   }
   
-  return api.put(`/database/vector/collections/${collectionId}/index`, data)
+  return api.put(`/dfm/database/vector/collections/${collectionId}/index`, data)
 }
 
 /**
@@ -395,5 +395,5 @@ export const searchVectors = async (collectionId: string, query: string, options
     return mockResponse(results)
   }
   
-  return api.post(`/database/vector/collections/${collectionId}/search`, { query, ...options })
+  return api.post(`/dfm/database/vector/collections/${collectionId}/search`, { query, ...options })
 }
