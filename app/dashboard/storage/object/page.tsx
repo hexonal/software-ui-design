@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Check,
   Download,
@@ -44,101 +44,28 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-// 模拟数据 - 存储桶
-const buckets = [
-  {
-    id: "bucket-1234567890abcdef0",
-    name: "app-assets",
-    region: "cn-east-1",
-    access: "public",
-    objectCount: 1245,
-    size: 2.5,
-    createdAt: new Date(2023, 5, 15),
-  },
-  {
-    id: "bucket-1234567890abcdef1",
-    name: "user-uploads",
-    region: "cn-east-1",
-    access: "private",
-    objectCount: 8721,
-    size: 15.8,
-    createdAt: new Date(2023, 6, 20),
-  },
-  {
-    id: "bucket-1234567890abcdef2",
-    name: "system-backups",
-    region: "cn-north-1",
-    access: "private",
-    objectCount: 342,
-    size: 120.3,
-    createdAt: new Date(2023, 7, 5),
-  },
-  {
-    id: "bucket-1234567890abcdef3",
-    name: "logs-archive",
-    region: "cn-east-1",
-    access: "private",
-    objectCount: 12543,
-    size: 45.2,
-    createdAt: new Date(2023, 8, 10),
-  },
-  {
-    id: "bucket-1234567890abcdef4",
-    name: "public-content",
-    region: "cn-north-1",
-    access: "public",
-    objectCount: 532,
-    size: 8.7,
-    createdAt: new Date(2023, 4, 1),
-  },
-]
+// 类型定义
+interface StorageBucket {
+  id: string
+  name: string
+  region: string
+  access: "public" | "private"
+  objectCount: number
+  size: number
+  createdAt: Date
+}
 
-// 模拟数据 - 对象
-const objects = [
-  {
-    key: "images/logo.png",
-    bucketName: "app-assets",
-    size: 0.25,
-    type: "image/png",
-    lastModified: new Date(2023, 9, 1),
-    access: "public",
-  },
-  {
-    key: "documents/report-q3.pdf",
-    bucketName: "user-uploads",
-    size: 1.8,
-    type: "application/pdf",
-    lastModified: new Date(2023, 9, 2),
-    access: "private",
-  },
-  {
-    key: "backup/database-2023-09-30.sql",
-    bucketName: "system-backups",
-    size: 45.2,
-    type: "application/sql",
-    lastModified: new Date(2023, 8, 30),
-    access: "private",
-  },
-  {
-    key: "logs/app-logs-2023-09-25.log",
-    bucketName: "logs-archive",
-    size: 2.3,
-    type: "text/plain",
-    lastModified: new Date(2023, 8, 25),
-    access: "private",
-  },
-  {
-    key: "public/landing-page.html",
-    bucketName: "public-content",
-    size: 0.05,
-    type: "text/html",
-    lastModified: new Date(2023, 9, 3),
-    access: "public",
-  },
-]
+interface StorageObject {
+  key: string
+  bucketName: string
+  size: number
+  type: string
+  lastModified: Date
+  access: "public" | "private"
+}
 
 // 访问权限标签颜色映射
-const accessColors = {
+const accessColors: Record<"public" | "private", string> = {
   public: "yellow",
   private: "green",
 }
@@ -148,6 +75,104 @@ export default function ObjectStoragePage() {
   const [searchObject, setSearchObject] = useState("")
   const [selectedBucketAccess, setSelectedBucketAccess] = useState("all")
   const [selectedBucket, setSelectedBucket] = useState("all")
+
+  // 数据状态
+  const [buckets, setBuckets] = useState<StorageBucket[]>([])
+  const [objects, setObjects] = useState<StorageObject[]>([])
+  const [lifecyclePolicies, setLifecyclePolicies] = useState<any[]>([])
+  const [loading, setLoading] = useState({
+    buckets: true,
+    objects: true,
+    lifecycle: true,
+  })
+  const [error, setError] = useState<string | null>(null)
+
+  // 获取存储桶列表
+  useEffect(() => {
+    const fetchBuckets = async () => {
+      try {
+        setLoading(prev => ({ ...prev, buckets: true }))
+        setError(null)
+
+        // 调用实际的API
+        const { getBuckets } = await import('@/lib/api/storage')
+        const response = await getBuckets()
+        if (response.success) {
+          setBuckets(response.data.map(bucket => ({
+            ...bucket,
+            createdAt: new Date(bucket.createdAt)
+          })))
+        } else {
+          setError(response.message || '获取存储桶失败')
+        }
+
+      } catch (err) {
+        console.error('获取存储桶失败:', err)
+        setError('获取存储桶失败')
+      } finally {
+        setLoading(prev => ({ ...prev, buckets: false }))
+      }
+    }
+
+    fetchBuckets()
+  }, [])
+
+  // 获取对象列表
+  useEffect(() => {
+    const fetchObjects = async () => {
+      try {
+        setLoading(prev => ({ ...prev, objects: true }))
+        setError(null)
+
+        // 调用实际的API
+        const { getObjects } = await import('@/lib/api/storage')
+        const response = await getObjects()
+        if (response.success) {
+          setObjects(response.data.map(obj => ({
+            ...obj,
+            lastModified: new Date(obj.lastModified)
+          })))
+        } else {
+          setError(response.message || '获取对象失败')
+        }
+
+      } catch (err) {
+        console.error('获取对象失败:', err)
+        setError('获取对象失败')
+      } finally {
+        setLoading(prev => ({ ...prev, objects: false }))
+      }
+    }
+
+    fetchObjects()
+  }, [])
+
+  // 获取生命周期策略列表
+  useEffect(() => {
+    const fetchLifecyclePolicies = async () => {
+      try {
+        setLoading(prev => ({ ...prev, lifecycle: true }))
+        setError(null)
+
+        // 调用实际的API
+        const { getLifecyclePolicies } = await import('@/lib/api/storage')
+        const response = await getLifecyclePolicies()
+        if (response.success) {
+          setLifecyclePolicies(response.data)
+        } else {
+          setError(response.message || '获取生命周期策略失败')
+        }
+
+      } catch (err) {
+        console.error('获取生命周期策略失败:', err)
+        setError('获取生命周期策略失败')
+      } finally {
+        setLoading(prev => ({ ...prev, lifecycle: false }))
+      }
+    }
+
+    fetchLifecyclePolicies()
+  }, [])
 
   // 过滤存储桶
   const filteredBuckets = buckets.filter((bucket) => {
@@ -170,12 +195,18 @@ export default function ObjectStoragePage() {
   const totalSize = buckets.reduce((sum, bucket) => sum + bucket.size, 0)
   const totalObjects = buckets.reduce((sum, bucket) => sum + bucket.objectCount, 0)
 
+  // 刷新数据
+  const handleRefresh = () => {
+    // 重新获取数据
+    window.location.reload()
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">对象存储管理</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={handleRefresh}>
             <RefreshCw className="mr-2 h-4 w-4" />
             刷新
           </Button>
@@ -186,6 +217,20 @@ export default function ObjectStoragePage() {
         </div>
       </div>
 
+      {/* 错误提示 */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="text-center">
+              <p className="text-sm text-destructive">{error}</p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
+                重试
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 存储概览卡片 */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -194,11 +239,20 @@ export default function ObjectStoragePage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{buckets.length}</div>
-            <p className="text-xs text-muted-foreground">
-              {buckets.filter((b) => b.access === "public").length} 个公开,{" "}
-              {buckets.filter((b) => b.access === "private").length} 个私有
-            </p>
+            {loading.buckets ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{buckets.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {buckets.filter((b) => b.access === "public").length} 个公开,{" "}
+                  {buckets.filter((b) => b.access === "private").length} 个私有
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -207,8 +261,17 @@ export default function ObjectStoragePage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalSize.toFixed(1)} GB</div>
-            <p className="text-xs text-muted-foreground">{totalObjects} 个对象</p>
+            {loading.buckets ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{totalSize.toFixed(1)} GB</div>
+                <p className="text-xs text-muted-foreground">{totalObjects} 个对象</p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -217,16 +280,25 @@ export default function ObjectStoragePage() {
             <Globe className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {buckets
-                .filter((b) => b.access === "public")
-                .reduce((sum, b) => sum + b.size, 0)
-                .toFixed(1)}{" "}
-              GB
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {buckets.filter((b) => b.access === "public").reduce((sum, b) => sum + b.objectCount, 0)} 个对象
-            </p>
+            {loading.buckets ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {buckets
+                    .filter((b) => b.access === "public")
+                    .reduce((sum, b) => sum + b.size, 0)
+                    .toFixed(1)}{" "}
+                  GB
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {buckets.filter((b) => b.access === "public").reduce((sum, b) => sum + b.objectCount, 0)} 个对象
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
         <Card>
@@ -235,16 +307,25 @@ export default function ObjectStoragePage() {
             <Lock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {buckets
-                .filter((b) => b.access === "private")
-                .reduce((sum, b) => sum + b.size, 0)
-                .toFixed(1)}{" "}
-              GB
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {buckets.filter((b) => b.access === "private").reduce((sum, b) => sum + b.objectCount, 0)} 个对象
-            </p>
+            {loading.buckets ? (
+              <div className="animate-pulse">
+                <div className="h-8 bg-muted rounded mb-2"></div>
+                <div className="h-4 bg-muted rounded w-3/4"></div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-bold">
+                  {buckets
+                    .filter((b) => b.access === "private")
+                    .reduce((sum, b) => sum + b.size, 0)
+                    .toFixed(1)}{" "}
+                  GB
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {buckets.filter((b) => b.access === "private").reduce((sum, b) => sum + b.objectCount, 0)} 个对象
+                </p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -348,48 +429,79 @@ export default function ObjectStoragePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredBuckets.map((bucket) => (
-                  <TableRow key={bucket.id}>
-                    <TableCell className="font-medium">{bucket.name}</TableCell>
-                    <TableCell>{bucket.region}</TableCell>
-                    <TableCell>
-                      <Badge variant={accessColors[bucket.access] as any}>{bucket.access}</Badge>
-                    </TableCell>
-                    <TableCell>{bucket.objectCount}</TableCell>
-                    <TableCell>{bucket.size.toFixed(1)} GB</TableCell>
-                    <TableCell>{format(bucket.createdAt, "yyyy-MM-dd")}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">打开菜单</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>操作</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>详情</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Upload className="mr-2 h-4 w-4" />
-                            <span>上传对象</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Link className="mr-2 h-4 w-4" />
-                            <span>生成访问链接</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>删除</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading.buckets ? (
+                  // 加载状态
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={`loading-${index}`}>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 bg-muted rounded animate-pulse w-16"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-8 bg-muted rounded animate-pulse w-8 ml-auto"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredBuckets.length === 0 ? (
+                  // 空数据状态
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2">
+                        <Package className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {buckets.length === 0 ? "暂无存储桶数据" : "没有匹配的存储桶"}
+                        </p>
+                        {buckets.length === 0 && (
+                          <p className="text-xs text-muted-foreground">请等待后端API实现</p>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  // 数据列表
+                  filteredBuckets.map((bucket) => (
+                    <TableRow key={bucket.id}>
+                      <TableCell className="font-medium">{bucket.name}</TableCell>
+                      <TableCell>{bucket.region}</TableCell>
+                      <TableCell>
+                        <Badge variant={accessColors[bucket.access] as any}>{bucket.access}</Badge>
+                      </TableCell>
+                      <TableCell>{bucket.objectCount}</TableCell>
+                      <TableCell>{bucket.size.toFixed(1)} GB</TableCell>
+                      <TableCell>{format(bucket.createdAt, "yyyy-MM-dd")}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">打开菜单</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>操作</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>详情</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Upload className="mr-2 h-4 w-4" />
+                              <span>上传对象</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Link className="mr-2 h-4 w-4" />
+                              <span>生成访问链接</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>删除</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -439,48 +551,79 @@ export default function ObjectStoragePage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredObjects.map((object) => (
-                  <TableRow key={object.key}>
-                    <TableCell className="font-medium">{object.key}</TableCell>
-                    <TableCell>{object.bucketName}</TableCell>
-                    <TableCell>{object.type}</TableCell>
-                    <TableCell>{object.size.toFixed(2)} GB</TableCell>
-                    <TableCell>
-                      <Badge variant={accessColors[object.access] as any}>{object.access}</Badge>
-                    </TableCell>
-                    <TableCell>{format(object.lastModified, "yyyy-MM-dd")}</TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">打开菜单</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>操作</DropdownMenuLabel>
-                          <DropdownMenuItem>
-                            <Download className="mr-2 h-4 w-4" />
-                            <span>下载</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Link className="mr-2 h-4 w-4" />
-                            <span>生成访问链接</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Settings className="mr-2 h-4 w-4" />
-                            <span>属性</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            <span>删除</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                {loading.objects ? (
+                  // 加载状态
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <TableRow key={`loading-object-${index}`}>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-6 bg-muted rounded animate-pulse w-16"></div></TableCell>
+                      <TableCell><div className="h-4 bg-muted rounded animate-pulse"></div></TableCell>
+                      <TableCell><div className="h-8 bg-muted rounded animate-pulse w-8 ml-auto"></div></TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredObjects.length === 0 ? (
+                  // 空数据状态
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8">
+                      <div className="flex flex-col items-center gap-2">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">
+                          {objects.length === 0 ? "暂无对象数据" : "没有匹配的对象"}
+                        </p>
+                        {objects.length === 0 && (
+                          <p className="text-xs text-muted-foreground">请等待后端API实现</p>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  // 数据列表
+                  filteredObjects.map((object) => (
+                    <TableRow key={object.key}>
+                      <TableCell className="font-medium">{object.key}</TableCell>
+                      <TableCell>{object.bucketName}</TableCell>
+                      <TableCell>{object.type}</TableCell>
+                      <TableCell>{object.size.toFixed(2)} GB</TableCell>
+                      <TableCell>
+                        <Badge variant={accessColors[object.access] as any}>{object.access}</Badge>
+                      </TableCell>
+                      <TableCell>{format(object.lastModified, "yyyy-MM-dd")}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">打开菜单</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>操作</DropdownMenuLabel>
+                            <DropdownMenuItem>
+                              <Download className="mr-2 h-4 w-4" />
+                              <span>下载</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Link className="mr-2 h-4 w-4" />
+                              <span>生成访问链接</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Settings className="mr-2 h-4 w-4" />
+                              <span>属性</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-red-600">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              <span>删除</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>
@@ -496,93 +639,102 @@ export default function ObjectStoragePage() {
             </Button>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
+          {loading.lifecycle ? (
+            // 加载状态
+            <div className="grid gap-4 md:grid-cols-2">
+              {Array.from({ length: 2 }).map((_, index) => (
+                <Card key={`loading-policy-${index}`}>
+                  <CardHeader>
+                    <div className="h-6 bg-muted rounded animate-pulse mb-2"></div>
+                    <div className="h-4 bg-muted rounded animate-pulse w-3/4"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="flex items-center justify-between">
+                          <div className="h-4 bg-muted rounded animate-pulse w-1/3"></div>
+                          <div className="h-4 bg-muted rounded animate-pulse w-1/4"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <div className="h-8 bg-muted rounded animate-pulse w-16"></div>
+                    <div className="h-8 bg-muted rounded animate-pulse w-16"></div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          ) : lifecyclePolicies.length === 0 ? (
+            // 空数据状态
             <Card>
-              <CardHeader>
-                <CardTitle>自动归档策略</CardTitle>
-                <CardDescription>30天后自动将对象转移到低频访问存储</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">应用存储桶:</span>
-                    <span className="text-sm font-medium">logs-archive</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">对象前缀:</span>
-                    <span className="text-sm font-medium">logs/</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">转换天数:</span>
-                    <span className="text-sm font-medium">30天</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">目标存储类型:</span>
-                    <span className="text-sm font-medium">低频访问</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">状态:</span>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Check className="h-3 w-3" /> 已启用
-                    </Badge>
-                  </div>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <Settings className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">暂无生命周期策略</p>
+                  <p className="text-xs text-muted-foreground mt-1">点击"创建策略"按钮开始配置</p>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  编辑
-                </Button>
-                <Button variant="outline" size="sm" className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  删除
-                </Button>
-              </CardFooter>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>过期删除策略</CardTitle>
-                <CardDescription>365天后自动删除临时对象</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">应用存储桶:</span>
-                    <span className="text-sm font-medium">user-uploads</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">对象前缀:</span>
-                    <span className="text-sm font-medium">temp/</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">过期天数:</span>
-                    <span className="text-sm font-medium">365天</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">操作:</span>
-                    <span className="text-sm font-medium">删除</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm">状态:</span>
-                    <Badge variant="outline" className="flex items-center gap-1">
-                      <Check className="h-3 w-3" /> 已启用
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  编辑
-                </Button>
-                <Button variant="outline" size="sm" className="text-red-600">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  删除
-                </Button>
-              </CardFooter>
-            </Card>
-          </div>
+          ) : (
+            // 策略列表
+            <div className="grid gap-4 md:grid-cols-2">
+              {lifecyclePolicies.map((policy) => (
+                <Card key={policy.id}>
+                  <CardHeader>
+                    <CardTitle>{policy.name}</CardTitle>
+                    <CardDescription>{policy.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">应用存储桶:</span>
+                        <span className="text-sm font-medium">{policy.bucketName}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">对象前缀:</span>
+                        <span className="text-sm font-medium">{policy.prefix}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">{policy.action === 'transition' ? '转换天数:' : '过期天数:'}</span>
+                        <span className="text-sm font-medium">{policy.days}天</span>
+                      </div>
+                      {policy.action === 'transition' && policy.targetStorageClass && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">目标存储类型:</span>
+                          <span className="text-sm font-medium">
+                            {policy.targetStorageClass === 'low-frequency' ? '低频访问' : policy.targetStorageClass}
+                          </span>
+                        </div>
+                      )}
+                      {policy.action === 'expiration' && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm">操作:</span>
+                          <span className="text-sm font-medium">删除</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">状态:</span>
+                        <Badge variant="outline" className="flex items-center gap-1">
+                          <Check className="h-3 w-3" /> {policy.enabled ? '已启用' : '已禁用'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="flex justify-between">
+                    <Button variant="outline" size="sm">
+                      <Settings className="mr-2 h-4 w-4" />
+                      编辑
+                    </Button>
+                    <Button variant="outline" size="sm" className="text-red-600">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      删除
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
     </div>

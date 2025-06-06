@@ -5,21 +5,18 @@ export const config = {
     baseUrl: typeof window !== 'undefined' && (window as any).location
       ? `${(window as any).location.protocol}//${(window as any).location.hostname}:8080`
       : 'http://localhost:8080',
-    
+
     // 请求超时时间
     timeout: 10000,
-    
-    // 是否使用Mock数据
-    useMock: false, // 默认关闭mock，连接真实后端
   },
-  
+
   // JWT配置
   jwt: {
     tokenKey: 'auth_token',
     // Token过期时间检查间隔(ms)
     checkInterval: 5 * 60 * 1000, // 5分钟
   },
-  
+
   // 应用信息
   app: {
     name: 'DFMS - 分布式数据库管理系统',
@@ -40,7 +37,7 @@ export const endpoints = {
     logout: '/dfm/user/logout',
     info: '/dfm/user/info',
   },
-  
+
   // 数据库相关
   database: {
     list: '/dfm/database',
@@ -50,7 +47,7 @@ export const endpoints = {
     delete: (id: string) => `/dfm/database/${id}`,
     query: (id: string) => `/dfm/database/${id}/query`,
   },
-  
+
   // 集群相关
   cluster: {
     nodes: '/dfm/cluster/nodes',
@@ -58,7 +55,7 @@ export const endpoints = {
     shards: '/dfm/cluster/shards',
     shardDetail: (id: string) => `/dfm/cluster/shards/${id}`,
   },
-  
+
   // 安全相关
   security: {
     users: '/dfm/security/users',

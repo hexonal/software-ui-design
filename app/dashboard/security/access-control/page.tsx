@@ -33,7 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 // 导入 API
 import { securityApi } from "@/api"
-import { AccessPolicy } from "@/mock/dashboard/types"
+import { AccessPolicy } from "@/lib/types"
 
 export default function AccessControlPage() {
   const [activeTab, setActiveTab] = useState("policies")
@@ -85,10 +85,10 @@ export default function AccessControlPage() {
         setError('请填写所有必填字段')
         return
       }
-      
+
       setLoading(true)
       setError(null)
-      
+
       const response = await securityApi.createAccessPolicy(newPolicyData)
       if (response.success) {
         setAccessPolicies(prev => [...prev, response.data])
@@ -113,14 +113,14 @@ export default function AccessControlPage() {
 
   const handleEditPolicy = async () => {
     if (!policyToEdit) return
-    
+
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await securityApi.updateAccessPolicy(policyToEdit.id, policyToEdit)
       if (response.success) {
-        setAccessPolicies(prev => prev.map(policy => 
+        setAccessPolicies(prev => prev.map(policy =>
           policy.id === policyToEdit.id ? response.data : policy
         ))
         setIsEditPolicyOpen(false)
@@ -138,11 +138,11 @@ export default function AccessControlPage() {
 
   const handleDeletePolicy = async () => {
     if (!policyToDelete) return
-    
+
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await securityApi.deleteAccessPolicy(policyToDelete)
       if (response.success) {
         setAccessPolicies(prev => prev.filter(policy => policy.id !== policyToDelete))
@@ -161,14 +161,14 @@ export default function AccessControlPage() {
 
   // 过滤策略
   const filteredPolicies = accessPolicies.filter(policy => {
-    const matchesSearch = 
+    const matchesSearch =
       policy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       policy.target.toLowerCase().includes(searchQuery.toLowerCase()) ||
       policy.role.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     const matchesType = typeFilter === 'all' || policy.type === typeFilter
     const matchesAccess = accessFilter === 'all' || policy.access === accessFilter
-    
+
     return matchesSearch && matchesType && matchesAccess
   })
 
@@ -200,21 +200,21 @@ export default function AccessControlPage() {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="policy-name">策略名称</Label>
-                  <Input 
-                    id="policy-name" 
+                  <Input
+                    id="policy-name"
                     value={newPolicyData.name}
-                    onChange={(e) => setNewPolicyData({...newPolicyData, name: e.target.value})}
-                    placeholder="输入策略名称" 
+                    onChange={(e) => setNewPolicyData({ ...newPolicyData, name: e.target.value })}
+                    placeholder="输入策略名称"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="resource-type">资源类型</Label>
-                  <Select 
+                  <Select
                     value={newPolicyData.type}
-                    onValueChange={(value) => setNewPolicyData({...newPolicyData, type: value})}
+                    onValueChange={(value) => setNewPolicyData({ ...newPolicyData, type: value })}
                   >
                     <SelectTrigger id="resource-type">
                       <SelectValue placeholder="选择资源类型" />
@@ -228,9 +228,9 @@ export default function AccessControlPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="resource-target">资源目标</Label>
-                  <Select 
+                  <Select
                     value={newPolicyData.target}
-                    onValueChange={(value) => setNewPolicyData({...newPolicyData, target: value})}
+                    onValueChange={(value) => setNewPolicyData({ ...newPolicyData, target: value })}
                   >
                     <SelectTrigger id="resource-target">
                       <SelectValue placeholder="选择资源目标" />
@@ -244,9 +244,9 @@ export default function AccessControlPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">角色</Label>
-                  <Select 
+                  <Select
                     value={newPolicyData.role}
-                    onValueChange={(value) => setNewPolicyData({...newPolicyData, role: value})}
+                    onValueChange={(value) => setNewPolicyData({ ...newPolicyData, role: value })}
                   >
                     <SelectTrigger id="role">
                       <SelectValue placeholder="选择角色" />
@@ -261,9 +261,9 @@ export default function AccessControlPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="access-level">访问级别</Label>
-                  <Select 
+                  <Select
                     value={newPolicyData.access}
-                    onValueChange={(value) => setNewPolicyData({...newPolicyData, access: value})}
+                    onValueChange={(value) => setNewPolicyData({ ...newPolicyData, access: value })}
                   >
                     <SelectTrigger id="access-level">
                       <SelectValue placeholder="选择访问级别" />
@@ -285,7 +285,7 @@ export default function AccessControlPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Button variant="outline" onClick={async () => {
             try {
               setLoading(true)
@@ -329,10 +329,10 @@ export default function AccessControlPage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索策略..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索策略..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -398,13 +398,13 @@ export default function AccessControlPage() {
                       <div className="flex flex-col items-center justify-center">
                         <Shield className="h-12 w-12 text-muted-foreground mb-2" />
                         <p className="text-muted-foreground">
-                          {accessPolicies.length === 0 
-                            ? "暂无访问策略数据" 
+                          {accessPolicies.length === 0
+                            ? "暂无访问策略数据"
                             : "没有符合筛选条件的策略"}
                         </p>
                         {accessPolicies.length === 0 && (
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="mt-4"
                             onClick={() => setIsAddPolicyOpen(true)}
                           >
@@ -449,7 +449,7 @@ export default function AccessControlPage() {
                             <DropdownMenuLabel>策略操作</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => {
-                              setPolicyToEdit({...policy})
+                              setPolicyToEdit({ ...policy })
                               setIsEditPolicyOpen(true)
                             }}>
                               <Edit className="mr-2 h-4 w-4" />
@@ -460,7 +460,7 @@ export default function AccessControlPage() {
                               复制策略
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => {
                                 setPolicyToDelete(policy.id)
@@ -892,21 +892,21 @@ export default function AccessControlPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="edit-policy-name">策略名称</Label>
-              <Input 
-                id="edit-policy-name" 
+              <Input
+                id="edit-policy-name"
                 value={policyToEdit?.name || ""}
-                onChange={(e) => setPolicyToEdit(prev => prev ? {...prev, name: e.target.value} : null)}
-                placeholder="输入策略名称" 
+                onChange={(e) => setPolicyToEdit(prev => prev ? { ...prev, name: e.target.value } : null)}
+                placeholder="输入策略名称"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-resource-type">资源类型</Label>
-              <Select 
+              <Select
                 value={policyToEdit?.type || ""}
-                onValueChange={(value) => setPolicyToEdit(prev => prev ? {...prev, type: value} : null)}
+                onValueChange={(value) => setPolicyToEdit(prev => prev ? { ...prev, type: value } : null)}
               >
                 <SelectTrigger id="edit-resource-type">
                   <SelectValue placeholder="选择资源类型" />
@@ -920,9 +920,9 @@ export default function AccessControlPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-resource-target">资源目标</Label>
-              <Select 
+              <Select
                 value={policyToEdit?.target || ""}
-                onValueChange={(value) => setPolicyToEdit(prev => prev ? {...prev, target: value} : null)}
+                onValueChange={(value) => setPolicyToEdit(prev => prev ? { ...prev, target: value } : null)}
               >
                 <SelectTrigger id="edit-resource-target">
                   <SelectValue placeholder="选择资源目标" />
@@ -936,9 +936,9 @@ export default function AccessControlPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role">角色</Label>
-              <Select 
+              <Select
                 value={policyToEdit?.role || ""}
-                onValueChange={(value) => setPolicyToEdit(prev => prev ? {...prev, role: value} : null)}
+                onValueChange={(value) => setPolicyToEdit(prev => prev ? { ...prev, role: value } : null)}
               >
                 <SelectTrigger id="edit-role">
                   <SelectValue placeholder="选择角色" />
@@ -953,9 +953,9 @@ export default function AccessControlPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-access-level">访问级别</Label>
-              <Select 
+              <Select
                 value={policyToEdit?.access || ""}
-                onValueChange={(value) => setPolicyToEdit(prev => prev ? {...prev, access: value} : null)}
+                onValueChange={(value) => setPolicyToEdit(prev => prev ? { ...prev, access: value } : null)}
               >
                 <SelectTrigger id="edit-access-level">
                   <SelectValue placeholder="选择访问级别" />

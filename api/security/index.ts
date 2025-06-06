@@ -1,7 +1,6 @@
 import { api } from '@/lib/api/client'
-import { mockResponse, useMock, getMockData } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
-import { User, Role, AccessPolicy } from '@/mock/dashboard/types'
+import { User, Role, AccessPolicy } from '@/lib/types'
 
 /**
  * @openapi
@@ -46,10 +45,6 @@ import { User, Role, AccessPolicy } from '@/mock/dashboard/types'
  *                 lastLogin: "2023-04-25 10:20:15"
  */
 export const getUsers = async (params?: QueryParams): Promise<ApiResponse<User[]>> => {
-  if (useMock()) {
-    return mockResponse(getMockData('users') as User[])
-  }
-  
   return api.get('/dfm/security/users', { params })
 }
 
@@ -82,17 +77,6 @@ export const getUsers = async (params?: QueryParams): Promise<ApiResponse<User[]
  *               lastLogin: "2023-05-10 08:45:12"
  */
 export const getUserById = async (id: string): Promise<ApiResponse<User | null>> => {
-  if (useMock()) {
-    const users = getMockData('users') as User[]
-    const user = users.find(u => u.id === id)
-    
-    if (!user) {
-      return mockResponse(null, true, 404)
-    }
-    
-    return mockResponse(user)
-  }
-  
   return api.get(`/dfm/security/users/${id}`)
 }
 
@@ -125,15 +109,6 @@ export const getUserById = async (id: string): Promise<ApiResponse<User | null>>
  *               lastLogin: "2023-05-10 08:45:12"
  */
 export const createUser = async (data: Omit<User, 'id'>): Promise<ApiResponse<User>> => {
-  if (useMock()) {
-    // 模拟创建用户
-    const newUser: User = {
-      id: `user-${Date.now()}`,
-      ...data
-    }
-    return mockResponse(newUser)
-  }
-  
   return api.post('/dfm/security/users', data)
 }
 
@@ -172,18 +147,6 @@ export const createUser = async (data: Omit<User, 'id'>): Promise<ApiResponse<Us
  *               lastLogin: "2023-05-10 08:45:12"
  */
 export const updateUser = async (id: string, data: Partial<User>): Promise<ApiResponse<User | null>> => {
-  if (useMock()) {
-    const users = getMockData('users') as User[]
-    const userIndex = users.findIndex(u => u.id === id)
-    
-    if (userIndex === -1) {
-      return mockResponse(null, true, 404)
-    }
-    
-    const updatedUser = { ...users[userIndex], ...data }
-    return mockResponse(updatedUser)
-  }
-  
   return api.put(`/dfm/security/users/${id}`, data)
 }
 
@@ -211,14 +174,10 @@ export const updateUser = async (id: string, data: Partial<User>): Promise<ApiRe
  *                 success:
  *                   type: boolean
  *                   example: true
- *             example:
- *               success: true
+ *               example:
+ *                 success: true
  */
 export const deleteUser = async (id: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    return mockResponse(true)
-  }
-  
   return api.delete(`/dfm/security/users/${id}`)
 }
 
@@ -261,10 +220,6 @@ export const deleteUser = async (id: string): Promise<ApiResponse<boolean>> => {
  *                 permissions: "有限的只读权限"
  */
 export const getRoles = async (params?: QueryParams): Promise<ApiResponse<Role[]>> => {
-  if (useMock()) {
-    return mockResponse(getMockData('roles') as Role[])
-  }
-  
   return api.get('/dfm/security/roles', { params })
 }
 
@@ -296,17 +251,6 @@ export const getRoles = async (params?: QueryParams): Promise<ApiResponse<Role[]
  *               permissions: "所有权限"
  */
 export const getRoleById = async (id: string): Promise<ApiResponse<Role | null>> => {
-  if (useMock()) {
-    const roles = getMockData('roles') as Role[]
-    const role = roles.find(r => r.id === id)
-    
-    if (!role) {
-      return mockResponse(null, true, 404)
-    }
-    
-    return mockResponse(role)
-  }
-  
   return api.get(`/dfm/security/roles/${id}`)
 }
 
@@ -338,15 +282,6 @@ export const getRoleById = async (id: string): Promise<ApiResponse<Role | null>>
  *               permissions: "所有权限"
  */
 export const createRole = async (data: Omit<Role, 'id'>): Promise<ApiResponse<Role>> => {
-  if (useMock()) {
-    // 模拟创建角色
-    const newRole: Role = {
-      id: `role-${Date.now()}`,
-      ...data
-    }
-    return mockResponse(newRole)
-  }
-  
   return api.post('/dfm/security/roles', data)
 }
 
@@ -384,18 +319,6 @@ export const createRole = async (data: Omit<Role, 'id'>): Promise<ApiResponse<Ro
  *               permissions: "所有权限"
  */
 export const updateRole = async (id: string, data: Partial<Role>): Promise<ApiResponse<Role | null>> => {
-  if (useMock()) {
-    const roles = getMockData('roles') as Role[]
-    const roleIndex = roles.findIndex(r => r.id === id)
-    
-    if (roleIndex === -1) {
-      return mockResponse(null, true, 404)
-    }
-    
-    const updatedRole = { ...roles[roleIndex], ...data }
-    return mockResponse(updatedRole)
-  }
-  
   return api.put(`/dfm/security/roles/${id}`, data)
 }
 
@@ -423,14 +346,10 @@ export const updateRole = async (id: string, data: Partial<Role>): Promise<ApiRe
  *                 success:
  *                   type: boolean
  *                   example: true
- *             example:
- *               success: true
+ *               example:
+ *                 success: true
  */
 export const deleteRole = async (id: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    return mockResponse(true)
-  }
-  
   return api.delete(`/dfm/security/roles/${id}`)
 }
 
@@ -477,10 +396,6 @@ export const deleteRole = async (id: string): Promise<ApiResponse<boolean>> => {
  *                 access: "只读"
  */
 export const getAccessPolicies = async (params?: QueryParams): Promise<ApiResponse<AccessPolicy[]>> => {
-  if (useMock()) {
-    return mockResponse(getMockData('accessPolicies') as AccessPolicy[])
-  }
-  
   return api.get('/dfm/security/access-policies', { params })
 }
 
@@ -513,17 +428,6 @@ export const getAccessPolicies = async (params?: QueryParams): Promise<ApiRespon
  *               access: "完全访问"
  */
 export const getAccessPolicyById = async (id: string): Promise<ApiResponse<AccessPolicy | null>> => {
-  if (useMock()) {
-    const policies = getMockData('accessPolicies') as AccessPolicy[]
-    const policy = policies.find(p => p.id === id)
-    
-    if (!policy) {
-      return mockResponse(null, true, 404)
-    }
-    
-    return mockResponse(policy)
-  }
-  
   return api.get(`/dfm/security/access-policies/${id}`)
 }
 
@@ -556,15 +460,6 @@ export const getAccessPolicyById = async (id: string): Promise<ApiResponse<Acces
  *               access: "完全访问"
  */
 export const createAccessPolicy = async (data: Omit<AccessPolicy, 'id'>): Promise<ApiResponse<AccessPolicy>> => {
-  if (useMock()) {
-    // 模拟创建访问策略
-    const newPolicy: AccessPolicy = {
-      id: `policy-${Date.now()}`,
-      ...data
-    }
-    return mockResponse(newPolicy)
-  }
-  
   return api.post('/dfm/security/access-policies', data)
 }
 
@@ -603,18 +498,6 @@ export const createAccessPolicy = async (data: Omit<AccessPolicy, 'id'>): Promis
  *               access: "完全访问"
  */
 export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>): Promise<ApiResponse<AccessPolicy | null>> => {
-  if (useMock()) {
-    const policies = getMockData('accessPolicies') as AccessPolicy[]
-    const policyIndex = policies.findIndex(p => p.id === id)
-    
-    if (policyIndex === -1) {
-      return mockResponse(null, true, 404)
-    }
-    
-    const updatedPolicy = { ...policies[policyIndex], ...data }
-    return mockResponse(updatedPolicy)
-  }
-  
   return api.put(`/dfm/security/access-policies/${id}`, data)
 }
 
@@ -642,13 +525,9 @@ export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>
  *                 success:
  *                   type: boolean
  *                   example: true
- *             example:
- *               success: true
+ *               example:
+ *                 success: true
  */
 export const deleteAccessPolicy = async (id: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    return mockResponse(true)
-  }
-  
   return api.delete(`/dfm/security/access-policies/${id}`)
 }

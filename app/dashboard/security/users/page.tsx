@@ -33,7 +33,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 // 导入 API
 import { securityApi } from "@/api"
-import { User, Role } from "@/mock/dashboard/types"
+import { User, Role } from "@/lib/types"
 
 export default function UserManagementPage() {
   const [activeTab, setActiveTab] = useState("users")
@@ -90,7 +90,7 @@ export default function UserManagementPage() {
         } else {
           setError(usersResponse.message)
         }
-        
+
         // 获取角色数据
         setLoading(prev => ({ ...prev, roles: true }))
         const rolesResponse = await securityApi.getRoles()
@@ -119,15 +119,15 @@ export default function UserManagementPage() {
         setError('请填写所有必填字段')
         return
       }
-      
+
       if (newUserData.password !== newUserData.confirmPassword) {
         setError('两次输入的密码不一致')
         return
       }
-      
+
       setLoading(prev => ({ ...prev, users: true }))
       setError(null)
-      
+
       const response = await securityApi.createUser({
         username: newUserData.username,
         email: newUserData.email,
@@ -135,7 +135,7 @@ export default function UserManagementPage() {
         status: '活跃',
         lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 19)
       })
-      
+
       if (response.success) {
         setUsers(prev => [...prev, response.data])
         setIsAddUserOpen(false)
@@ -163,17 +163,17 @@ export default function UserManagementPage() {
         setError('请填写所有必填字段')
         return
       }
-      
+
       setLoading(prev => ({ ...prev, roles: true }))
       setError(null)
-      
+
       const response = await securityApi.createRole({
         name: newRoleData.name,
         description: newRoleData.description,
         permissions: newRoleData.permissions,
         users: 0
       })
-      
+
       if (response.success) {
         setRoles(prev => [...prev, response.data])
         setIsAddRoleOpen(false)
@@ -195,14 +195,14 @@ export default function UserManagementPage() {
 
   const handleEditUser = async () => {
     if (!userToEdit) return
-    
+
     try {
       setLoading(prev => ({ ...prev, users: true }))
       setError(null)
-      
+
       const response = await securityApi.updateUser(userToEdit.id, userToEdit)
       if (response.success) {
-        setUsers(prev => prev.map(user => 
+        setUsers(prev => prev.map(user =>
           user.id === userToEdit.id ? response.data : user
         ))
         setIsEditUserOpen(false)
@@ -220,14 +220,14 @@ export default function UserManagementPage() {
 
   const handleEditRole = async () => {
     if (!roleToEdit) return
-    
+
     try {
       setLoading(prev => ({ ...prev, roles: true }))
       setError(null)
-      
+
       const response = await securityApi.updateRole(roleToEdit.id, roleToEdit)
       if (response.success) {
-        setRoles(prev => prev.map(role => 
+        setRoles(prev => prev.map(role =>
           role.id === roleToEdit.id ? response.data : role
         ))
         setIsEditRoleOpen(false)
@@ -245,21 +245,21 @@ export default function UserManagementPage() {
 
   const handleResetPassword = async () => {
     if (!userToResetPassword) return
-    
+
     try {
       if (!newPassword.password) {
         setError('请输入新密码')
         return
       }
-      
+
       if (newPassword.password !== newPassword.confirmPassword) {
         setError('两次输入的密码不一致')
         return
       }
-      
+
       setLoading(prev => ({ ...prev, users: true }))
       setError(null)
-      
+
       // 模拟重置密码
       setTimeout(() => {
         setIsResetPasswordOpen(false)
@@ -280,11 +280,11 @@ export default function UserManagementPage() {
 
   const handleDeleteUser = async () => {
     if (!userToDelete) return
-    
+
     try {
       setLoading(prev => ({ ...prev, users: true }))
       setError(null)
-      
+
       const response = await securityApi.deleteUser(userToDelete)
       if (response.success) {
         setUsers(prev => prev.filter(user => user.id !== userToDelete))
@@ -303,11 +303,11 @@ export default function UserManagementPage() {
 
   const handleDeleteRole = async () => {
     if (!roleToDelete) return
-    
+
     try {
       setLoading(prev => ({ ...prev, roles: true }))
       setError(null)
-      
+
       const response = await securityApi.deleteRole(roleToDelete)
       if (response.success) {
         setRoles(prev => prev.filter(role => role.id !== roleToDelete))
@@ -328,12 +328,12 @@ export default function UserManagementPage() {
     try {
       setLoading(prev => ({ ...prev, users: true }))
       setError(null)
-      
+
       const newStatus = currentStatus === "活跃" ? "锁定" : "活跃"
-      
+
       const response = await securityApi.updateUser(userId, { status: newStatus })
       if (response.success) {
-        setUsers(prev => prev.map(user => 
+        setUsers(prev => prev.map(user =>
           user.id === userId ? response.data : user
         ))
       } else {
@@ -349,19 +349,19 @@ export default function UserManagementPage() {
 
   // 过滤用户
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+    const matchesSearch =
       user.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
       user.id.toLowerCase().includes(userSearchQuery.toLowerCase())
-    
+
     const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter
     const matchesStatus = userStatusFilter === 'all' || user.status === userStatusFilter
-    
+
     return matchesSearch && matchesRole && matchesStatus
   })
 
   // 过滤角色
-  const filteredRoles = roles.filter(role => 
+  const filteredRoles = roles.filter(role =>
     role.name.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
     role.description.toLowerCase().includes(roleSearchQuery.toLowerCase()) ||
     role.id.toLowerCase().includes(roleSearchQuery.toLowerCase())
@@ -395,51 +395,51 @@ export default function UserManagementPage() {
                     <AlertDescription>{error}</AlertDescription>
                   </Alert>
                 )}
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="username">用户名</Label>
-                  <Input 
-                    id="username" 
+                  <Input
+                    id="username"
                     value={newUserData.username}
-                    onChange={(e) => setNewUserData({...newUserData, username: e.target.value})}
-                    placeholder="输入用户名" 
+                    onChange={(e) => setNewUserData({ ...newUserData, username: e.target.value })}
+                    placeholder="输入用户名"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">电子邮箱</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
+                  <Input
+                    id="email"
+                    type="email"
                     value={newUserData.email}
-                    onChange={(e) => setNewUserData({...newUserData, email: e.target.value})}
-                    placeholder="输入电子邮箱" 
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    placeholder="输入电子邮箱"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">密码</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
+                  <Input
+                    id="password"
+                    type="password"
                     value={newUserData.password}
-                    onChange={(e) => setNewUserData({...newUserData, password: e.target.value})}
-                    placeholder="输入密码" 
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    placeholder="输入密码"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirm-password">确认密码</Label>
-                  <Input 
-                    id="confirm-password" 
-                    type="password" 
+                  <Input
+                    id="confirm-password"
+                    type="password"
                     value={newUserData.confirmPassword}
-                    onChange={(e) => setNewUserData({...newUserData, confirmPassword: e.target.value})}
-                    placeholder="再次输入密码" 
+                    onChange={(e) => setNewUserData({ ...newUserData, confirmPassword: e.target.value })}
+                    placeholder="再次输入密码"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role">角色</Label>
-                  <Select 
+                  <Select
                     value={newUserData.role}
-                    onValueChange={(value) => setNewUserData({...newUserData, role: value})}
+                    onValueChange={(value) => setNewUserData({ ...newUserData, role: value })}
                   >
                     <SelectTrigger id="role">
                       <SelectValue placeholder="选择角色" />
@@ -461,7 +461,7 @@ export default function UserManagementPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Button variant="outline" onClick={async () => {
             try {
               setLoading({
@@ -469,7 +469,7 @@ export default function UserManagementPage() {
                 roles: true
               })
               setError(null)
-              
+
               // 获取用户数据
               const usersResponse = await securityApi.getUsers()
               if (usersResponse.success) {
@@ -477,7 +477,7 @@ export default function UserManagementPage() {
               } else {
                 setError(usersResponse.message)
               }
-              
+
               // 获取角色数据
               const rolesResponse = await securityApi.getRoles()
               if (rolesResponse.success) {
@@ -520,10 +520,10 @@ export default function UserManagementPage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索用户..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索用户..."
+                className="pl-8"
                 value={userSearchQuery}
                 onChange={(e) => setUserSearchQuery(e.target.value)}
               />
@@ -588,13 +588,13 @@ export default function UserManagementPage() {
                       <div className="flex flex-col items-center justify-center">
                         <Users className="h-12 w-12 text-muted-foreground mb-2" />
                         <p className="text-muted-foreground">
-                          {users.length === 0 
-                            ? "暂无用户数据" 
+                          {users.length === 0
+                            ? "暂无用户数据"
                             : "没有符合筛选条件的用户"}
                         </p>
                         {users.length === 0 && (
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="mt-4"
                             onClick={() => setIsAddUserOpen(true)}
                           >
@@ -631,7 +631,7 @@ export default function UserManagementPage() {
                             <DropdownMenuLabel>用户操作</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => {
-                              setUserToEdit({...user})
+                              setUserToEdit({ ...user })
                               setIsEditUserOpen(true)
                             }}>
                               <Edit className="mr-2 h-4 w-4" />
@@ -658,7 +658,7 @@ export default function UserManagementPage() {
                               )}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => {
                                 setUserToDelete(user.id)
@@ -684,10 +684,10 @@ export default function UserManagementPage() {
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="search" 
-                  placeholder="搜索角色..." 
-                  className="pl-8" 
+                <Input
+                  type="search"
+                  placeholder="搜索角色..."
+                  className="pl-8"
                   value={roleSearchQuery}
                   onChange={(e) => setRoleSearchQuery(e.target.value)}
                 />
@@ -718,30 +718,30 @@ export default function UserManagementPage() {
                         <AlertDescription>{error}</AlertDescription>
                       </Alert>
                     )}
-                    
+
                     <div className="space-y-2">
                       <Label htmlFor="role-name">角色名称</Label>
-                      <Input 
-                        id="role-name" 
+                      <Input
+                        id="role-name"
                         value={newRoleData.name}
-                        onChange={(e) => setNewRoleData({...newRoleData, name: e.target.value})}
-                        placeholder="输入角色名称" 
+                        onChange={(e) => setNewRoleData({ ...newRoleData, name: e.target.value })}
+                        placeholder="输入角色名称"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="role-description">角色描述</Label>
-                      <Input 
-                        id="role-description" 
+                      <Input
+                        id="role-description"
                         value={newRoleData.description}
-                        onChange={(e) => setNewRoleData({...newRoleData, description: e.target.value})}
-                        placeholder="输入角色描述" 
+                        onChange={(e) => setNewRoleData({ ...newRoleData, description: e.target.value })}
+                        placeholder="输入角色描述"
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="role-permissions">权限级别</Label>
-                      <Select 
+                      <Select
                         value={newRoleData.permissions}
-                        onValueChange={(value) => setNewRoleData({...newRoleData, permissions: value})}
+                        onValueChange={(value) => setNewRoleData({ ...newRoleData, permissions: value })}
                       >
                         <SelectTrigger id="role-permissions">
                           <SelectValue placeholder="选择权限级别" />
@@ -793,13 +793,13 @@ export default function UserManagementPage() {
                       <div className="flex flex-col items-center justify-center">
                         <Shield className="h-12 w-12 text-muted-foreground mb-2" />
                         <p className="text-muted-foreground">
-                          {roles.length === 0 
-                            ? "暂无角色数据" 
+                          {roles.length === 0
+                            ? "暂无角色数据"
                             : "没有符合筛选条件的角色"}
                         </p>
                         {roles.length === 0 && (
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             className="mt-4"
                             onClick={() => setIsAddRoleOpen(true)}
                           >
@@ -829,7 +829,7 @@ export default function UserManagementPage() {
                             <DropdownMenuLabel>角色操作</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => {
-                              setRoleToEdit({...role})
+                              setRoleToEdit({ ...role })
                               setIsEditRoleOpen(true)
                             }}>
                               <Edit className="mr-2 h-4 w-4" />
@@ -847,7 +847,7 @@ export default function UserManagementPage() {
                               查看用户
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => {
                                 setRoleToDelete(role.id)
@@ -1081,31 +1081,31 @@ export default function UserManagementPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="edit-username">用户名</Label>
-              <Input 
-                id="edit-username" 
+              <Input
+                id="edit-username"
                 value={userToEdit?.username || ""}
-                onChange={(e) => setUserToEdit(prev => prev ? {...prev, username: e.target.value} : null)}
-                placeholder="输入用户名" 
+                onChange={(e) => setUserToEdit(prev => prev ? { ...prev, username: e.target.value } : null)}
+                placeholder="输入用户名"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-email">电子邮箱</Label>
-              <Input 
-                id="edit-email" 
-                type="email" 
+              <Input
+                id="edit-email"
+                type="email"
                 value={userToEdit?.email || ""}
-                onChange={(e) => setUserToEdit(prev => prev ? {...prev, email: e.target.value} : null)}
-                placeholder="输入电子邮箱" 
+                onChange={(e) => setUserToEdit(prev => prev ? { ...prev, email: e.target.value } : null)}
+                placeholder="输入电子邮箱"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role">角色</Label>
-              <Select 
+              <Select
                 value={userToEdit?.role || ""}
-                onValueChange={(value) => setUserToEdit(prev => prev ? {...prev, role: value} : null)}
+                onValueChange={(value) => setUserToEdit(prev => prev ? { ...prev, role: value } : null)}
               >
                 <SelectTrigger id="edit-role">
                   <SelectValue placeholder="选择角色" />
@@ -1120,9 +1120,9 @@ export default function UserManagementPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-status">状态</Label>
-              <Select 
+              <Select
                 value={userToEdit?.status || ""}
-                onValueChange={(value) => setUserToEdit(prev => prev ? {...prev, status: value} : null)}
+                onValueChange={(value) => setUserToEdit(prev => prev ? { ...prev, status: value } : null)}
               >
                 <SelectTrigger id="edit-status">
                   <SelectValue placeholder="选择状态" />
@@ -1158,30 +1158,30 @@ export default function UserManagementPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="edit-role-name">角色名称</Label>
-              <Input 
-                id="edit-role-name" 
+              <Input
+                id="edit-role-name"
                 value={roleToEdit?.name || ""}
-                onChange={(e) => setRoleToEdit(prev => prev ? {...prev, name: e.target.value} : null)}
-                placeholder="输入角色名称" 
+                onChange={(e) => setRoleToEdit(prev => prev ? { ...prev, name: e.target.value } : null)}
+                placeholder="输入角色名称"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role-description">角色描述</Label>
-              <Input 
-                id="edit-role-description" 
+              <Input
+                id="edit-role-description"
                 value={roleToEdit?.description || ""}
-                onChange={(e) => setRoleToEdit(prev => prev ? {...prev, description: e.target.value} : null)}
-                placeholder="输入角色描述" 
+                onChange={(e) => setRoleToEdit(prev => prev ? { ...prev, description: e.target.value } : null)}
+                placeholder="输入角色描述"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-role-permissions">权限级别</Label>
-              <Select 
+              <Select
                 value={roleToEdit?.permissions || ""}
-                onValueChange={(value) => setRoleToEdit(prev => prev ? {...prev, permissions: value} : null)}
+                onValueChange={(value) => setRoleToEdit(prev => prev ? { ...prev, permissions: value } : null)}
               >
                 <SelectTrigger id="edit-role-permissions">
                   <SelectValue placeholder="选择权限级别" />
@@ -1221,25 +1221,25 @@ export default function UserManagementPage() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <div className="space-y-2">
               <Label htmlFor="new-password">新密码</Label>
-              <Input 
-                id="new-password" 
-                type="password" 
+              <Input
+                id="new-password"
+                type="password"
                 value={newPassword.password}
-                onChange={(e) => setNewPassword({...newPassword, password: e.target.value})}
-                placeholder="输入新密码" 
+                onChange={(e) => setNewPassword({ ...newPassword, password: e.target.value })}
+                placeholder="输入新密码"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="confirm-new-password">确认新密码</Label>
-              <Input 
-                id="confirm-new-password" 
-                type="password" 
+              <Input
+                id="confirm-new-password"
+                type="password"
                 value={newPassword.confirmPassword}
-                onChange={(e) => setNewPassword({...newPassword, confirmPassword: e.target.value})}
-                placeholder="再次输入新密码" 
+                onChange={(e) => setNewPassword({ ...newPassword, confirmPassword: e.target.value })}
+                placeholder="再次输入新密码"
               />
             </div>
           </div>
@@ -1308,8 +1308,8 @@ export default function UserManagementPage() {
             <Button variant="outline" onClick={() => setIsConfirmDeleteRoleOpen(false)}>
               取消
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDeleteRole}
               disabled={roles.find(r => r.id === roleToDelete)?.users > 0}
             >

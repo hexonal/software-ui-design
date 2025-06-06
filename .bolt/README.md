@@ -74,9 +74,8 @@ API 文档位于 `.bolt/api-docs.json` 文件中，采用 OpenAPI 3.0 规范。
 │   └── ui/               # UI 组件
 ├── lib/                  # 工具库
 │   ├── api/              # API 客户端
+│   ├── types/            # 类型定义
 │   └── utils.ts          # 工具函数
-├── mock/                 # 模拟数据
-│   └── dashboard/        # 仪表盘模拟数据
 ├── public/               # 静态资源
 ├── styles/               # 样式文件
 ├── .bolt/                # Bolt 配置

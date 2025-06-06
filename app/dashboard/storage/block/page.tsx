@@ -47,8 +47,13 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API 和常量
 import { storageApi } from "@/api"
-import { statusColors } from "@/mock/dashboard/constants"
-import { Volume, Snapshot } from "@/mock/dashboard/types"
+// 状态颜色配置
+const statusColors = {
+  normal: "bg-green-100 text-green-800",
+  warning: "bg-amber-100 text-amber-800",
+  error: "bg-red-100 text-red-800"
+}
+import { Volume, Snapshot } from "@/lib/types"
 
 export default function BlockStoragePage() {
   const [searchVolume, setSearchVolume] = useState("")
@@ -74,7 +79,7 @@ export default function BlockStoragePage() {
         } else {
           setError(volumesResponse.message)
         }
-        
+
         // 获取快照数据
         setLoading(prev => ({ ...prev, snapshots: true }))
         const snapshotsResponse = await storageApi.getSnapshots()

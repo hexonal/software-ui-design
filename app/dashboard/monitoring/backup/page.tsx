@@ -50,7 +50,7 @@ import {
 
 // 导入 API
 import { monitoringApi } from "@/api"
-import { BackupHistory, BackupSchedule } from "@/mock/dashboard/types"
+import { BackupHistory, BackupSchedule } from "@/lib/types"
 
 export default function BackupManagementPage() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -91,7 +91,7 @@ export default function BackupManagementPage() {
         } else {
           setError(historyResponse.message)
         }
-        
+
         // 获取备份计划
         setLoading(prev => ({ ...prev, schedules: true }))
         const schedulesResponse = await monitoringApi.getBackupSchedules()
@@ -119,19 +119,19 @@ export default function BackupManagementPage() {
       setIsBackingUp(true)
       setBackupProgress(0)
       setError(null)
-      
+
       // 创建手动备份
       const response = await monitoringApi.createManualBackup({
         name: "手动备份",
         type: "完整"
       })
-      
+
       if (!response.success) {
         setError(response.message)
         setIsBackingUp(false)
         return
       }
-      
+
       // 模拟备份进度
       const interval = setInterval(() => {
         setBackupProgress((prev) => {
@@ -159,17 +159,17 @@ export default function BackupManagementPage() {
     setSelectedBackup(backupId)
     setIsRestoreDialogOpen(true)
   }
-  
+
   const handleCreateSchedule = async () => {
     if (!newScheduleData.name || !newScheduleData.schedule) {
       setError('计划名称和执行时间不能为空')
       return
     }
-    
+
     try {
       setLoading(prev => ({ ...prev, schedules: true }))
       setError(null)
-      
+
       const response = await monitoringApi.createBackupSchedule({
         name: newScheduleData.name,
         type: newScheduleData.type,
@@ -180,7 +180,7 @@ export default function BackupManagementPage() {
         lastRun: "-",
         nextRun: calculateNextRun(newScheduleData.schedule)
       })
-      
+
       if (response.success) {
         setBackupSchedules([...backupSchedules, response.data])
         setIsCreateScheduleOpen(false)
@@ -202,16 +202,16 @@ export default function BackupManagementPage() {
       setLoading(prev => ({ ...prev, schedules: false }))
     }
   }
-  
+
   const handleDeleteSchedule = async () => {
     if (!scheduleToDelete) return
-    
+
     try {
       setLoading(prev => ({ ...prev, schedules: true }))
       setError(null)
-      
+
       const response = await monitoringApi.deleteBackupSchedule(scheduleToDelete)
-      
+
       if (response.success) {
         setBackupSchedules(backupSchedules.filter(schedule => schedule.id !== scheduleToDelete))
         setIsConfirmDeleteOpen(false)
@@ -226,11 +226,11 @@ export default function BackupManagementPage() {
       setLoading(prev => ({ ...prev, schedules: false }))
     }
   }
-  
+
   // 计算下次执行时间
   const calculateNextRun = (schedule: string): string => {
     const now = new Date()
-    
+
     if (schedule.startsWith('每天')) {
       const time = schedule.split(' ')[1]
       const [hours, minutes] = time.split(':').map(Number)
@@ -241,58 +241,58 @@ export default function BackupManagementPage() {
       }
       return nextRun.toISOString().replace('T', ' ').substring(0, 19)
     }
-    
+
     if (schedule.startsWith('每周')) {
       const day = schedule.split(' ')[1]
       const time = schedule.split(' ')[2]
       const [hours, minutes] = time.split(':').map(Number)
-      
+
       const daysOfWeek = ['日', '一', '二', '三', '四', '五', '六']
       const targetDay = daysOfWeek.indexOf(day)
-      
+
       const nextRun = new Date(now)
       nextRun.setHours(hours, minutes, 0, 0)
-      
+
       // 计算下一个目标星期几
       const currentDay = nextRun.getDay()
       const daysToAdd = (targetDay + 7 - currentDay) % 7
-      
+
       nextRun.setDate(nextRun.getDate() + daysToAdd)
       if (daysToAdd === 0 && nextRun <= now) {
         nextRun.setDate(nextRun.getDate() + 7)
       }
-      
+
       return nextRun.toISOString().replace('T', ' ').substring(0, 19)
     }
-    
+
     if (schedule.startsWith('每月')) {
       const day = parseInt(schedule.split('日')[0].split('每月')[1])
       const time = schedule.split(' ')[1]
       const [hours, minutes] = time.split(':').map(Number)
-      
+
       const nextRun = new Date(now)
       nextRun.setDate(day)
       nextRun.setHours(hours, minutes, 0, 0)
-      
+
       if (nextRun <= now) {
         nextRun.setMonth(nextRun.getMonth() + 1)
       }
-      
+
       return nextRun.toISOString().replace('T', ' ').substring(0, 19)
     }
-    
+
     return new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString().replace('T', ' ').substring(0, 19)
   }
-  
+
   // 过滤备份历史
   const filteredHistory = backupHistory.filter(backup => {
-    const matchesSearch = 
+    const matchesSearch =
       backup.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       backup.id.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     const matchesType = typeFilter === 'all' || backup.type === typeFilter
     const matchesStatus = statusFilter === 'all' || backup.status === statusFilter
-    
+
     return matchesSearch && matchesType && matchesStatus
   })
 
@@ -365,8 +365,8 @@ export default function BackupManagementPage() {
               <CardContent>
                 <div className="text-2xl font-bold">成功</div>
                 <p className="text-xs text-muted-foreground">
-                  {backupHistory.length > 0 
-                    ? `最近备份于 ${backupHistory[0].endTime}` 
+                  {backupHistory.length > 0
+                    ? `最近备份于 ${backupHistory[0].endTime}`
                     : "尚未执行备份"}
                 </p>
               </CardContent>
@@ -381,8 +381,8 @@ export default function BackupManagementPage() {
                   {backupHistory.length > 0 ? backupHistory[0].size : "0 GB"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {backupHistory.length > 1 
-                    ? `较上次 ${compareSizes(backupHistory[0].size, backupHistory[1].size)}` 
+                  {backupHistory.length > 1
+                    ? `较上次 ${compareSizes(backupHistory[0].size, backupHistory[1].size)}`
                     : "无历史数据"}
                 </p>
               </CardContent>
@@ -397,8 +397,8 @@ export default function BackupManagementPage() {
                   {backupHistory.length > 0 ? backupHistory[0].duration : "0 分钟"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {backupHistory.length > 1 
-                    ? `较上次 ${compareDurations(backupHistory[0].duration, backupHistory[1].duration)}` 
+                  {backupHistory.length > 1
+                    ? `较上次 ${compareDurations(backupHistory[0].duration, backupHistory[1].duration)}`
                     : "无历史数据"}
                 </p>
               </CardContent>
@@ -410,13 +410,13 @@ export default function BackupManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {backupSchedules.length > 0 
-                    ? formatNextRun(backupSchedules[0].nextRun) 
+                  {backupSchedules.length > 0
+                    ? formatNextRun(backupSchedules[0].nextRun)
                     : "未计划"}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {backupSchedules.length > 0 
-                    ? `${backupSchedules[0].type}备份` 
+                  {backupSchedules.length > 0
+                    ? `${backupSchedules[0].type}备份`
                     : "无备份计划"}
                 </p>
               </CardContent>
@@ -493,8 +493,8 @@ export default function BackupManagementPage() {
                 <div className="py-8 text-center">
                   <Save className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">暂无备份历史数据</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={handleStartBackup}
                     disabled={isBackingUp}
@@ -567,10 +567,10 @@ export default function BackupManagementPage() {
               <div className="flex items-center gap-2 mb-4">
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input 
-                    type="search" 
-                    placeholder="搜索备份..." 
-                    className="pl-8" 
+                  <Input
+                    type="search"
+                    placeholder="搜索备份..."
+                    className="pl-8"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -614,13 +614,13 @@ export default function BackupManagementPage() {
                 <div className="py-8 text-center">
                   <Save className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">
-                    {backupHistory.length === 0 
-                      ? "暂无备份历史数据" 
+                    {backupHistory.length === 0
+                      ? "暂无备份历史数据"
                       : "没有符合筛选条件的备份"}
                   </p>
                   {backupHistory.length === 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={handleStartBackup}
                       disabled={isBackingUp}
@@ -673,7 +673,7 @@ export default function BackupManagementPage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>备份操作</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => handleOpenRestoreDialog(backup.id)}
                                 disabled={backup.status !== "成功"}
                               >
@@ -730,7 +730,7 @@ export default function BackupManagementPage() {
                       <Input
                         id="schedule-name"
                         value={newScheduleData.name}
-                        onChange={(e) => setNewScheduleData({...newScheduleData, name: e.target.value})}
+                        onChange={(e) => setNewScheduleData({ ...newScheduleData, name: e.target.value })}
                         placeholder="输入计划名称"
                         className="col-span-3"
                       />
@@ -741,7 +741,7 @@ export default function BackupManagementPage() {
                       </Label>
                       <Select
                         value={newScheduleData.type}
-                        onValueChange={(value) => setNewScheduleData({...newScheduleData, type: value})}
+                        onValueChange={(value) => setNewScheduleData({ ...newScheduleData, type: value })}
                       >
                         <SelectTrigger id="schedule-type" className="col-span-3">
                           <SelectValue placeholder="选择备份类型" />
@@ -759,7 +759,7 @@ export default function BackupManagementPage() {
                       </Label>
                       <Select
                         value={newScheduleData.schedule}
-                        onValueChange={(value) => setNewScheduleData({...newScheduleData, schedule: value})}
+                        onValueChange={(value) => setNewScheduleData({ ...newScheduleData, schedule: value })}
                       >
                         <SelectTrigger id="schedule-time" className="col-span-3">
                           <SelectValue placeholder="选择执行时间" />
@@ -778,7 +778,7 @@ export default function BackupManagementPage() {
                       </Label>
                       <Select
                         value={newScheduleData.target}
-                        onValueChange={(value) => setNewScheduleData({...newScheduleData, target: value})}
+                        onValueChange={(value) => setNewScheduleData({ ...newScheduleData, target: value })}
                       >
                         <SelectTrigger id="schedule-target" className="col-span-3">
                           <SelectValue placeholder="选择备份目标" />
@@ -797,7 +797,7 @@ export default function BackupManagementPage() {
                       </Label>
                       <Select
                         value={newScheduleData.retention}
-                        onValueChange={(value) => setNewScheduleData({...newScheduleData, retention: value})}
+                        onValueChange={(value) => setNewScheduleData({ ...newScheduleData, retention: value })}
                       >
                         <SelectTrigger id="schedule-retention" className="col-span-3">
                           <SelectValue placeholder="选择保留策略" />
@@ -831,8 +831,8 @@ export default function BackupManagementPage() {
                 <div className="py-8 text-center">
                   <Calendar className="mx-auto h-12 w-12 text-muted-foreground mb-2" />
                   <p className="text-muted-foreground">暂无备份计划</p>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="mt-4"
                     onClick={() => setIsCreateScheduleOpen(true)}
                   >
@@ -900,7 +900,7 @@ export default function BackupManagementPage() {
                                 立即执行
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => {
                                   setScheduleToDelete(schedule.id)
@@ -1117,7 +1117,7 @@ export default function BackupManagementPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* 确认删除计划对话框 */}
       <Dialog open={isConfirmDeleteOpen} onOpenChange={setIsConfirmDeleteOpen}>
         <DialogContent>
@@ -1154,9 +1154,9 @@ export default function BackupManagementPage() {
 function compareSizes(current: string, previous: string): string {
   const currentSize = parseFloat(current.replace(' GB', ''))
   const previousSize = parseFloat(previous.replace(' GB', ''))
-  
+
   if (isNaN(currentSize) || isNaN(previousSize)) return ''
-  
+
   const diff = currentSize - previousSize
   return diff >= 0 ? `+${diff.toFixed(1)} GB` : `${diff.toFixed(1)} GB`
 }
@@ -1166,9 +1166,9 @@ function compareDurations(current: string, previous: string): string {
   // 简化处理，假设格式为 "XX分钟"
   const currentMinutes = parseInt(current.replace('分钟', ''))
   const previousMinutes = parseInt(previous.replace('分钟', ''))
-  
+
   if (isNaN(currentMinutes) || isNaN(previousMinutes)) return ''
-  
+
   const diff = currentMinutes - previousMinutes
   return diff >= 0 ? `+${diff} 分钟` : `-${Math.abs(diff)} 分钟`
 }
@@ -1177,19 +1177,19 @@ function compareDurations(current: string, previous: string): string {
 function formatNextRun(dateTimeString: string): string {
   const date = new Date(dateTimeString)
   const now = new Date()
-  
+
   // 如果是今天
   if (date.toDateString() === now.toDateString()) {
     return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
   }
-  
+
   // 如果是明天
   const tomorrow = new Date(now)
   tomorrow.setDate(tomorrow.getDate() + 1)
   if (date.toDateString() === tomorrow.toDateString()) {
     return `明天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
   }
-  
+
   // 其他情况
   return dateTimeString
 }

@@ -51,7 +51,7 @@ import { Table as TableComponent, TableBody, TableCell, TableHead, TableHeader, 
 
 // 导入 API
 import { databaseApi, dataModelApi } from "@/api"
-import { Table as TableType } from "@/mock/dashboard/types"
+import { Table as TableType } from "@/lib/types"
 
 export default function RelationalTablesPage() {
   const [searchTable, setSearchTable] = useState("")
@@ -231,7 +231,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+
       // 准备表数据，确保包含ID字段作为主键
       const tableData = {
         name: newTableData.name,
@@ -293,7 +293,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, indexes: true }))
       setError(null)
-      
+
       const indexData = {
         name: newIndexData.name,
         columns: newIndexData.columns,
@@ -342,7 +342,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, structure: true }))
       setError(null)
-      
+
       // 准备修改表结构的数据
       const alterData = {
         action: "ADD_COLUMN",
@@ -391,7 +391,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, structure: true }))
       setError(null)
-      
+
       // 准备修改表结构的数据
       const alterData = {
         action: "MODIFY_COLUMN",
@@ -429,7 +429,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+
       const response = await dataModelApi.dropTable(selectedDatabase, tableToDelete)
       if (response.success) {
         // 刷新表列表
@@ -465,7 +465,7 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, indexes: true }))
       setError(null)
-      
+
       const response = await dataModelApi.dropIndex(selectedDatabase, selectedTable, indexToDelete)
       if (response.success) {
         // 刷新索引列表
@@ -496,12 +496,12 @@ export default function RelationalTablesPage() {
     try {
       setLoading(prev => ({ ...prev, data: true }))
       setError(null)
-      
+
       const response = await databaseApi.executeQuery(
-        selectedDatabase, 
+        selectedDatabase,
         `SELECT * FROM ${selectedTable} LIMIT 100`
       )
-      
+
       if (response.success) {
         setTableData(response.data)
         setIsViewDataOpen(true)
@@ -558,7 +558,7 @@ export default function RelationalTablesPage() {
   }
 
   // 过滤表
-  const filteredTables = tables.filter(table => 
+  const filteredTables = tables.filter(table =>
     table.name.toLowerCase().includes(searchTable.toLowerCase())
   )
 
@@ -566,9 +566,9 @@ export default function RelationalTablesPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div className="flex items-center gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             asChild
           >
             <Link href="/dashboard/database/relational">
@@ -604,13 +604,13 @@ export default function RelationalTablesPage() {
                   <Input
                     id="table-name"
                     value={newTableData.name}
-                    onChange={(e) => setNewTableData({...newTableData, name: e.target.value})}
+                    onChange={(e) => setNewTableData({ ...newTableData, name: e.target.value })}
                     placeholder="输入表名"
                     className="col-span-3"
                     required
                   />
                 </div>
-                
+
                 <div className="mt-4">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-medium">表字段</h3>
@@ -619,7 +619,7 @@ export default function RelationalTablesPage() {
                       添加字段
                     </Button>
                   </div>
-                  
+
                   <div className="space-y-4">
                     {newTableData.fields.map((field, index) => (
                       <div key={index} className="grid grid-cols-12 gap-2 items-start border p-3 rounded-md">
@@ -635,13 +635,13 @@ export default function RelationalTablesPage() {
                             required
                           />
                         </div>
-                        
+
                         <div className="col-span-2">
                           <Label htmlFor={`field-type-${index}`} className="mb-1 block">
                             数据类型
                           </Label>
-                          <Select 
-                            value={field.type} 
+                          <Select
+                            value={field.type}
                             onValueChange={(value) => updateTableField(index, 'type', value)}
                           >
                             <SelectTrigger id={`field-type-${index}`}>
@@ -657,7 +657,7 @@ export default function RelationalTablesPage() {
                             </SelectContent>
                           </Select>
                         </div>
-                        
+
                         <div className="col-span-2">
                           <Label htmlFor={`field-length-${index}`} className="mb-1 block">
                             长度/精度
@@ -670,7 +670,7 @@ export default function RelationalTablesPage() {
                             disabled={field.type === 'text' || field.type === 'boolean'}
                           />
                         </div>
-                        
+
                         <div className="col-span-3">
                           <Label htmlFor={`field-default-${index}`} className="mb-1 block">
                             默认值
@@ -682,11 +682,11 @@ export default function RelationalTablesPage() {
                             placeholder="默认值（可选）"
                           />
                         </div>
-                        
+
                         <div className="col-span-1 flex flex-col items-center justify-end pt-6">
                           <div className="flex items-center space-x-2">
-                            <Checkbox 
-                              id={`field-nullable-${index}`} 
+                            <Checkbox
+                              id={`field-nullable-${index}`}
                               checked={field.nullable}
                               onCheckedChange={(checked) => updateTableField(index, 'nullable', checked)}
                             />
@@ -695,12 +695,12 @@ export default function RelationalTablesPage() {
                             </Label>
                           </div>
                         </div>
-                        
+
                         <div className="col-span-1 flex items-center justify-center pt-6">
-                          <Button 
-                            type="button" 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={() => removeTableField(index)}
                             disabled={newTableData.fields.length <= 1}
                           >
@@ -737,16 +737,16 @@ export default function RelationalTablesPage() {
         <div className="flex items-center gap-2 flex-1">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="search" 
-              placeholder="搜索表..." 
-              className="pl-8" 
+            <Input
+              type="search"
+              placeholder="搜索表..."
+              className="pl-8"
               value={searchTable}
               onChange={(e) => setSearchTable(e.target.value)}
             />
           </div>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={() => setSearchTable("")}
           >
@@ -755,8 +755,8 @@ export default function RelationalTablesPage() {
           </Button>
         </div>
         <div className="flex items-center gap-2">
-          <Select 
-            value={selectedDatabase || ""} 
+          <Select
+            value={selectedDatabase || ""}
             onValueChange={setSelectedDatabase}
           >
             <SelectTrigger className="w-[220px]">
@@ -774,12 +774,12 @@ export default function RelationalTablesPage() {
               )}
             </SelectContent>
           </Select>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={async () => {
               if (!selectedDatabase) return
-              
+
               try {
                 setLoading(prev => ({ ...prev, tables: true }))
                 setError(null)
@@ -815,8 +815,8 @@ export default function RelationalTablesPage() {
             <CardHeader>
               <CardTitle>数据库表</CardTitle>
               <CardDescription>
-                {selectedDatabase ? 
-                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` : 
+                {selectedDatabase ?
+                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` :
                   "请选择一个数据库"}
               </CardDescription>
             </CardHeader>
@@ -841,8 +841,8 @@ export default function RelationalTablesPage() {
                     <p className="mt-1 text-sm text-muted-foreground">
                       {searchTable ? "没有找到匹配的表" : "该数据库中没有表，请创建新表"}
                     </p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsCreateTableOpen(true)}
                     >
@@ -906,8 +906,8 @@ export default function RelationalTablesPage() {
                                 管理索引
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
-                                className="text-red-600" 
+                              <DropdownMenuItem
+                                className="text-red-600"
                                 onClick={() => {
                                   setTableToDelete(table.name)
                                   setIsConfirmDeleteTableOpen(true)
@@ -935,8 +935,8 @@ export default function RelationalTablesPage() {
                 <div>
                   <CardTitle>表结构</CardTitle>
                   <CardDescription>
-                    {selectedTable ? 
-                      `${selectedDatabase} / ${selectedTable}` : 
+                    {selectedTable ?
+                      `${selectedDatabase} / ${selectedTable}` :
                       "请选择一个表查看结构"}
                   </CardDescription>
                 </div>
@@ -963,7 +963,7 @@ export default function RelationalTablesPage() {
                           <Input
                             id="field-name"
                             value={newFieldData.name}
-                            onChange={(e) => setNewFieldData({...newFieldData, name: e.target.value})}
+                            onChange={(e) => setNewFieldData({ ...newFieldData, name: e.target.value })}
                             placeholder="输入字段名"
                             className="col-span-3"
                             required
@@ -973,9 +973,9 @@ export default function RelationalTablesPage() {
                           <Label htmlFor="field-type" className="text-right">
                             数据类型
                           </Label>
-                          <Select 
+                          <Select
                             value={newFieldData.type}
-                            onValueChange={(value) => setNewFieldData({...newFieldData, type: value})}
+                            onValueChange={(value) => setNewFieldData({ ...newFieldData, type: value })}
                           >
                             <SelectTrigger id="field-type" className="col-span-3">
                               <SelectValue placeholder="选择数据类型" />
@@ -997,7 +997,7 @@ export default function RelationalTablesPage() {
                           <Input
                             id="field-length"
                             value={newFieldData.length}
-                            onChange={(e) => setNewFieldData({...newFieldData, length: e.target.value})}
+                            onChange={(e) => setNewFieldData({ ...newFieldData, length: e.target.value })}
                             placeholder="例如：50 或 10,2"
                             className="col-span-3"
                             disabled={newFieldData.type === 'text' || newFieldData.type === 'boolean'}
@@ -1010,7 +1010,7 @@ export default function RelationalTablesPage() {
                           <Input
                             id="field-default"
                             value={newFieldData.default}
-                            onChange={(e) => setNewFieldData({...newFieldData, default: e.target.value})}
+                            onChange={(e) => setNewFieldData({ ...newFieldData, default: e.target.value })}
                             placeholder="默认值（可选）"
                             className="col-span-3"
                           />
@@ -1020,11 +1020,11 @@ export default function RelationalTablesPage() {
                             <Label htmlFor="field-nullable">允许空值</Label>
                           </div>
                           <div className="col-span-3 flex items-center space-x-2">
-                            <Checkbox 
-                              id="field-nullable" 
+                            <Checkbox
+                              id="field-nullable"
                               checked={newFieldData.nullable}
-                              onCheckedChange={(checked) => 
-                                setNewFieldData({...newFieldData, nullable: checked === true})
+                              onCheckedChange={(checked) =>
+                                setNewFieldData({ ...newFieldData, nullable: checked === true })
                               }
                             />
                             <Label htmlFor="field-nullable">允许 NULL 值</Label>
@@ -1084,8 +1084,8 @@ export default function RelationalTablesPage() {
                         <div>{field.nullable ? "是" : "否"}</div>
                         <div>{field.default || "-"}</div>
                         <div className="flex justify-end gap-2">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="sm"
                             onClick={() => {
                               setFieldToEdit(field)
@@ -1120,8 +1120,8 @@ export default function RelationalTablesPage() {
                 <div>
                   <CardTitle>索引管理</CardTitle>
                   <CardDescription>
-                    {selectedTable ? 
-                      `${selectedDatabase} / ${selectedTable} 的索引` : 
+                    {selectedTable ?
+                      `${selectedDatabase} / ${selectedTable} 的索引` :
                       "请选择一个表管理索引"}
                   </CardDescription>
                 </div>
@@ -1148,7 +1148,7 @@ export default function RelationalTablesPage() {
                           <Input
                             id="index-name"
                             value={newIndexData.name}
-                            onChange={(e) => setNewIndexData({...newIndexData, name: e.target.value})}
+                            onChange={(e) => setNewIndexData({ ...newIndexData, name: e.target.value })}
                             placeholder="输入索引名称"
                             className="col-span-3"
                             required
@@ -1158,8 +1158,8 @@ export default function RelationalTablesPage() {
                           <Label htmlFor="index-column" className="text-right">
                             索引字段
                           </Label>
-                          <Select 
-                            value={newIndexData.columns[0]} 
+                          <Select
+                            value={newIndexData.columns[0]}
                             onValueChange={updateIndexColumn}
                           >
                             <SelectTrigger className="col-span-3">
@@ -1178,9 +1178,9 @@ export default function RelationalTablesPage() {
                           <Label htmlFor="index-type" className="text-right">
                             索引类型
                           </Label>
-                          <Select 
+                          <Select
                             value={newIndexData.type}
-                            onValueChange={(value) => setNewIndexData({...newIndexData, type: value})}
+                            onValueChange={(value) => setNewIndexData({ ...newIndexData, type: value })}
                           >
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="选择索引类型" />
@@ -1196,9 +1196,9 @@ export default function RelationalTablesPage() {
                           <Label htmlFor="index-method" className="text-right">
                             索引方法
                           </Label>
-                          <Select 
+                          <Select
                             value={newIndexData.method}
-                            onValueChange={(value) => setNewIndexData({...newIndexData, method: value})}
+                            onValueChange={(value) => setNewIndexData({ ...newIndexData, method: value })}
                           >
                             <SelectTrigger className="col-span-3">
                               <SelectValue placeholder="选择索引方法" />
@@ -1244,8 +1244,8 @@ export default function RelationalTablesPage() {
                     <Key className="mx-auto h-12 w-12 text-muted-foreground" />
                     <h3 className="mt-2 text-lg font-medium">暂无索引</h3>
                     <p className="mt-1 text-sm text-muted-foreground">该表没有索引，点击"创建索引"按钮添加</p>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsCreateIndexOpen(true)}
                     >
@@ -1275,9 +1275,9 @@ export default function RelationalTablesPage() {
                         </div>
                         <div>{index.method}</div>
                         <div className="flex justify-end">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-600"
                             onClick={() => {
                               setIndexToDelete(index.name)
@@ -1316,7 +1316,7 @@ export default function RelationalTablesPage() {
               <Input
                 id="edit-field-name"
                 value={editFieldData.name}
-                onChange={(e) => setEditFieldData({...editFieldData, name: e.target.value})}
+                onChange={(e) => setEditFieldData({ ...editFieldData, name: e.target.value })}
                 placeholder="输入字段名"
                 className="col-span-3"
                 required
@@ -1326,9 +1326,9 @@ export default function RelationalTablesPage() {
               <Label htmlFor="edit-field-type" className="text-right">
                 数据类型
               </Label>
-              <Select 
+              <Select
                 value={editFieldData.type}
-                onValueChange={(value) => setEditFieldData({...editFieldData, type: value})}
+                onValueChange={(value) => setEditFieldData({ ...editFieldData, type: value })}
               >
                 <SelectTrigger id="edit-field-type" className="col-span-3">
                   <SelectValue placeholder="选择数据类型" />
@@ -1350,7 +1350,7 @@ export default function RelationalTablesPage() {
               <Input
                 id="edit-field-length"
                 value={editFieldData.length}
-                onChange={(e) => setEditFieldData({...editFieldData, length: e.target.value})}
+                onChange={(e) => setEditFieldData({ ...editFieldData, length: e.target.value })}
                 placeholder="例如：50 或 10,2"
                 className="col-span-3"
                 disabled={editFieldData.type === 'text' || editFieldData.type === 'boolean'}
@@ -1363,7 +1363,7 @@ export default function RelationalTablesPage() {
               <Input
                 id="edit-field-default"
                 value={editFieldData.default}
-                onChange={(e) => setEditFieldData({...editFieldData, default: e.target.value})}
+                onChange={(e) => setEditFieldData({ ...editFieldData, default: e.target.value })}
                 placeholder="默认值（可选）"
                 className="col-span-3"
               />
@@ -1373,11 +1373,11 @@ export default function RelationalTablesPage() {
                 <Label htmlFor="edit-field-nullable">允许空值</Label>
               </div>
               <div className="col-span-3 flex items-center space-x-2">
-                <Checkbox 
-                  id="edit-field-nullable" 
+                <Checkbox
+                  id="edit-field-nullable"
                   checked={editFieldData.nullable}
-                  onCheckedChange={(checked) => 
-                    setEditFieldData({...editFieldData, nullable: checked === true})
+                  onCheckedChange={(checked) =>
+                    setEditFieldData({ ...editFieldData, nullable: checked === true })
                   }
                 />
                 <Label htmlFor="edit-field-nullable">允许 NULL 值</Label>
@@ -1461,16 +1461,16 @@ export default function RelationalTablesPage() {
                 try {
                   // 将表数据转换为 CSV 格式
                   const headers = tableData.columns.join(',')
-                  const rows = tableData.rows.map((row: any) => 
-                    tableData.columns.map((col: string) => 
+                  const rows = tableData.rows.map((row: any) =>
+                    tableData.columns.map((col: string) =>
                       row[col] !== null ? `"${row[col]}"` : '""'
                     ).join(',')
                   ).join('\n')
                   const csvContent = `${headers}\n${rows}`
-                  
+
                   // 创建 Blob 对象
                   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-                  
+
                   // 创建下载链接并触发下载
                   const url = URL.createObjectURL(blob)
                   const link = document.createElement('a')

@@ -57,7 +57,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API
 import { timeseriesApi } from "@/api"
-import { TimeSeries, RetentionPolicy } from "@/mock/dashboard/types"
+import { TimeSeries, RetentionPolicy } from "@/lib/types"
 
 export default function TimeseriesDatabasePage() {
   const [activeTab, setActiveTab] = useState("databases")
@@ -106,8 +106,8 @@ export default function TimeseriesDatabasePage() {
         setError(null)
         const response = await timeseriesApi.getTimeseriesDatabases()
         if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0 && !selectedDatabase) {
+          setDatabases(response.data || [])
+          if (response.data && response.data.length > 0 && !selectedDatabase) {
             setSelectedDatabase(response.data[0].id)
           }
         } else {
@@ -134,7 +134,7 @@ export default function TimeseriesDatabasePage() {
         setError(null)
         const response = await timeseriesApi.getTimeseries(selectedDatabase)
         if (response.success) {
-          setSeries(response.data)
+          setSeries(response.data || [])
         } else {
           setError(response.message || "获取时间序列失败")
         }
@@ -159,7 +159,7 @@ export default function TimeseriesDatabasePage() {
         setError(null)
         const response = await timeseriesApi.getRetentionPolicies(selectedDatabase)
         if (response.success) {
-          setRetentionPolicies(response.data)
+          setRetentionPolicies(response.data || [])
         } else {
           setError(response.message || "获取保留策略失败")
         }
@@ -1037,7 +1037,7 @@ export default function TimeseriesDatabasePage() {
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={async () => {
                 if (!selectedDatabase) return;
-                
+
                 try {
                   setLoading(prev => ({ ...prev, metrics: true }));
                   setError(null);

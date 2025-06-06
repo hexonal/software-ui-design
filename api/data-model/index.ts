@@ -1,5 +1,4 @@
 import { api } from '@/lib/api/client'
-import { mockResponse, useMock, getMockData } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
 /**
@@ -53,39 +52,6 @@ import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
  *                 default: "CURRENT_TIMESTAMP"
  */
 export const getTableStructure = async (databaseId: string, tableName: string): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    // 根据表名返回不同的结构
-    let structure: any[] = []
-    
-    if (tableName === 'users') {
-      structure = [
-        { name: "id", type: "integer", length: null, nullable: false, default: "自增" },
-        { name: "username", type: "varchar", length: 50, nullable: false, default: null },
-        { name: "email", type: "varchar", length: 100, nullable: false, default: null },
-        { name: "password_hash", type: "varchar", length: 255, nullable: false, default: null },
-        { name: "created_at", type: "timestamp", length: null, nullable: false, default: "CURRENT_TIMESTAMP" }
-      ]
-    } else if (tableName === 'products') {
-      structure = [
-        { name: "id", type: "integer", length: null, nullable: false, default: "自增" },
-        { name: "name", type: "varchar", length: 100, nullable: false, default: null },
-        { name: "description", type: "text", length: null, nullable: true, default: null },
-        { name: "price", type: "decimal", length: "10,2", nullable: false, default: "0.00" },
-        { name: "category_id", type: "integer", length: null, nullable: false, default: null }
-      ]
-    } else if (tableName === 'orders') {
-      structure = [
-        { name: "id", type: "integer", length: null, nullable: false, default: "自增" },
-        { name: "user_id", type: "integer", length: null, nullable: false, default: null },
-        { name: "status", type: "varchar", length: 20, nullable: false, default: "'pending'" },
-        { name: "total_amount", type: "decimal", length: "10,2", nullable: false, default: "0.00" },
-        { name: "created_at", type: "timestamp", length: null, nullable: false, default: "CURRENT_TIMESTAMP" }
-      ]
-    }
-    
-    return mockResponse(structure)
-  }
-  
   return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/structure`)
 }
 
@@ -147,11 +113,7 @@ export const getTableStructure = async (databaseId: string, tableName: string): 
  *               tableName: "new_table"
  */
 export const createTable = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse({ success: true, tableName: data.name })
-  }
-  
-  return api.post(`/data-model/tables/${databaseId}`, data)
+  return api.post(`/dfm/data-model/tables/${databaseId}`, data)
 }
 
 /**
@@ -201,7 +163,8 @@ export const createTable = async (databaseId: string, data: any): Promise<ApiRes
  *             action: "ADD_COLUMN"
  *             column:
  *               name: "new_column"
- *               type: "text"
+ *               type: "varchar"
+ *               length: 255
  *               nullable: true
  *     responses:
  *       200:
@@ -210,18 +173,6 @@ export const createTable = async (databaseId: string, data: any): Promise<ApiRes
  *           application/json:
  *             example:
  *               success: true
- */
-export const alterTable = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse({ success: true })
-  }
-  
-  return api.put(`/data-model/tables/${databaseId}/${tableName}`, data)
-}
-
-/**
- * @openapi
- * /data-model/tables/{databaseId}/{tableName}:
  *   delete:
  *     summary: 删除表
  *     tags:
@@ -245,12 +196,12 @@ export const alterTable = async (databaseId: string, tableName: string, data: an
  *             example:
  *               success: true
  */
+export const alterTable = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
+  return api.put(`/dfm/data-model/tables/${databaseId}/${tableName}`, data)
+}
+
 export const dropTable = async (databaseId: string, tableName: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    return mockResponse(true)
-  }
-  
-  return api.delete(`/data-model/tables/${databaseId}/${tableName}`)
+  return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}`)
 }
 
 /**
@@ -277,37 +228,14 @@ export const dropTable = async (databaseId: string, tableName: string): Promise<
  *         content:
  *           application/json:
  *             example:
+ *               - name: "pk_users_id"
+ *                 columns: ["id"]
+ *                 type: "PRIMARY"
+ *                 method: "BTREE"
  *               - name: "idx_users_email"
  *                 columns: ["email"]
  *                 type: "UNIQUE"
  *                 method: "BTREE"
- *               - name: "idx_users_username"
- *                 columns: ["username"]
- *                 type: "UNIQUE"
- *                 method: "BTREE"
- *               - name: "idx_users_created_at"
- *                 columns: ["created_at"]
- *                 type: "INDEX"
- *                 method: "BTREE"
- */
-export const getTableIndexes = async (databaseId: string, tableName: string): Promise<ApiResponse<any[]>> => {
-  if (useMock()) {
-    // 模拟索引数据
-    const indexes = [
-      { name: "idx_users_email", columns: ["email"], type: "UNIQUE", method: "BTREE" },
-      { name: "idx_users_username", columns: ["username"], type: "UNIQUE", method: "BTREE" },
-      { name: "idx_users_created_at", columns: ["created_at"], type: "INDEX", method: "BTREE" }
-    ]
-    
-    return mockResponse(indexes)
-  }
-  
-  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`)
-}
-
-/**
- * @openapi
- * /data-model/tables/{databaseId}/{tableName}/indexes:
  *   post:
  *     summary: 创建索引
  *     tags:
@@ -332,20 +260,24 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
  *             properties:
  *               name:
  *                 type: string
+ *                 description: 索引名称
  *               columns:
  *                 type: array
  *                 items:
  *                   type: string
+ *                 description: 索引字段
  *               type:
  *                 type: string
- *                 enum: [PRIMARY, UNIQUE, INDEX, FULLTEXT]
+ *                 enum: [UNIQUE, INDEX, PRIMARY]
+ *                 description: 索引类型
  *               method:
  *                 type: string
- *                 enum: [BTREE, HASH, RTREE, GIN, GIST]
+ *                 enum: [BTREE, HASH]
+ *                 description: 索引方法
  *           example:
- *             name: "idx_new_column"
- *             columns: ["new_column"]
- *             type: "INDEX"
+ *             name: "idx_username"
+ *             columns: ["username"]
+ *             type: "UNIQUE"
  *             method: "BTREE"
  *     responses:
  *       200:
@@ -354,13 +286,13 @@ export const getTableIndexes = async (databaseId: string, tableName: string): Pr
  *           application/json:
  *             example:
  *               success: true
- *               indexName: "idx_new_column"
+ *               indexName: "idx_username"
  */
+export const getTableIndexes = async (databaseId: string, tableName: string): Promise<ApiResponse<any[]>> => {
+  return api.get(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`)
+}
+
 export const createIndex = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse({ success: true, indexName: data.name })
-  }
-  
   return api.post(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes`, data)
 }
 
@@ -396,10 +328,6 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
  *               success: true
  */
 export const dropIndex = async (databaseId: string, tableName: string, indexName: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    return mockResponse(true)
-  }
-  
   return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
 }
 
@@ -424,52 +352,38 @@ export const dropIndex = async (databaseId: string, tableName: string, indexName
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *                 description: 任务名称
  *               file:
  *                 type: string
  *                 format: binary
  *                 description: 导入文件
- *           example:
- *             name: "用户数据导入"
- *             file: "users.csv"
+ *               name:
+ *                 type: string
+ *                 description: 任务名称
+ *               format:
+ *                 type: string
+ *                 enum: [CSV, JSON, SQL]
+ *                 description: 文件格式
  *     responses:
  *       200:
- *         description: 导入任务
+ *         description: 导入任务创建成功
  *         content:
  *           application/json:
  *             example:
- *               id: "import-1678886400000"
- *               name: "用户数据导入"
- *               source: "users.csv"
+ *               id: "import-123456789"
+ *               name: "数据导入"
+ *               source: "data.csv"
  *               target: "users"
- *               database: "postgres-main"
+ *               database: "test_db"
  *               status: "进行中"
  *               progress: 0
  *               rows: 0
- *               created: "2023-03-15 12:00:00"
+ *               created: "2024-01-15 10:30:00"
  */
 export const importData = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    // 模拟导入任务
-    return mockResponse({
-      id: `import-${Date.now()}`,
-      name: data.name || "数据导入",
-      source: data.file?.name || "导入文件",
-      target: tableName,
-      database: databaseId,
-      status: "进行中",
-      progress: 0,
-      rows: 0,
-      created: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-  }
-  
   return api.post(`/dfm/data-model/import/${databaseId}/${tableName}`, data)
 }
 
@@ -493,51 +407,41 @@ export const importData = async (databaseId: string, tableName: string, data: an
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *                 description: 任务名称
  *               source:
  *                 type: string
- *                 description: 导出源（表名/查询语句）
+ *                 description: 源表名
  *               filename:
  *                 type: string
  *                 description: 导出文件名
+ *               format:
+ *                 type: string
+ *                 enum: [CSV, JSON, SQL]
+ *                 description: 导出格式
+ *               name:
+ *                 type: string
+ *                 description: 任务名称
  *           example:
- *             name: "用户数据导出"
  *             source: "users"
  *             filename: "users_export.csv"
+ *             format: "CSV"
+ *             name: "用户数据导出"
  *     responses:
  *       200:
- *         description: 导出任务
+ *         description: 导出任务创建成功
  *         content:
  *           application/json:
  *             example:
- *               id: "export-1678886400000"
- *               name: "用户数据导出"
+ *               id: "export-123456789"
+ *               name: "数据导出"
  *               source: "users"
  *               target: "users_export.csv"
- *               database: "postgres-main"
+ *               database: "test_db"
  *               status: "进行中"
  *               progress: 0
  *               rows: 0
- *               created: "2023-03-15 12:00:00"
+ *               created: "2024-01-15 10:35:00"
  */
 export const exportData = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    // 模拟导出任务
-    return mockResponse({
-      id: `export-${Date.now()}`,
-      name: data.name || "数据导出",
-      source: data.source || "users",
-      target: data.filename || "export.csv",
-      database: databaseId,
-      status: "进行中",
-      progress: 0,
-      rows: 0,
-      created: new Date().toISOString().replace('T', ' ').substring(0, 19)
-    })
-  }
-  
   return api.post(`/dfm/data-model/export/${databaseId}`, data)
 }
 
@@ -558,87 +462,37 @@ export const exportData = async (databaseId: string, data: any): Promise<ApiResp
  *                 name: "用户数据导入"
  *                 source: "users.csv"
  *                 target: "users"
- *                 database: "postgres-main"
- *                 status: "完成"
+ *                 database: "test_db"
+ *                 status: "已完成"
  *                 progress: 100
- *                 rows: 15420
- *                 created: "2023-05-09 14:30:22"
+ *                 rows: 1500
+ *                 created: "2024-01-15 09:30:00"
+ *                 completed: "2024-01-15 09:35:00"
  *               - id: "export-001"
- *                 name: "用户数据导出"
- *                 source: "users"
- *                 target: "users_backup.csv"
- *                 database: "postgres-main"
- *                 status: "完成"
- *                 progress: 100
- *                 rows: 15420
- *                 created: "2023-05-07 11:20:15"
+ *                 name: "产品数据导出"
+ *                 source: "products"
+ *                 target: "products_export.json"
+ *                 database: "test_db"
+ *                 status: "进行中"
+ *                 progress: 75
+ *                 rows: 850
+ *                 created: "2024-01-15 10:00:00"
  */
 export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
-  if (useMock()) {
-    // 模拟导入导出任务列表
-    const importTasks = [
-      {
-        id: "import-001",
-        name: "用户数据导入",
-        source: "users.csv",
-        target: "users",
-        database: "postgres-main",
-        status: "完成",
-        progress: 100,
-        rows: 15420,
-        created: "2023-05-09 14:30:22",
-      },
-      {
-        id: "import-002",
-        name: "产品数据导入",
-        source: "products.csv",
-        target: "products",
-        database: "postgres-main",
-        status: "进行中",
-        progress: 65,
-        rows: 8500,
-        created: "2023-05-10 09:15:45",
-      },
-      {
-        id: "import-003",
-        name: "订单历史导入",
-        source: "orders_history.csv",
-        target: "orders",
-        database: "postgres-main",
-        status: "失败",
-        progress: 32,
-        rows: 25000,
-        created: "2023-05-08 16:42:10",
-      },
-    ]
-
-    const exportTasks = [
-      {
-        id: "export-001",
-        name: "用户数据导出",
-        source: "users",
-        target: "users_backup.csv",
-        database: "postgres-main",
-        status: "完成",
-        progress: 100,
-        rows: 15420,
-        created: "2023-05-07 11:20:15",
-      },
-      {
-        id: "export-002",
-        name: "月度报表导出",
-        source: "monthly_report",
-        target: "report_2023_04.xlsx",
-        database: "postgres-analytics",
-        status: "完成",
-        progress: 100,
-        rows: 1250,
-        created: "2023-05-01 08:30:00",
-      },
-    ]
-    
-    return mockResponse([...importTasks, ...exportTasks] as any[])
-  }
-  
   return api.get('/dfm/data-model/tasks')
+}
+
+// 删除导入/导出任务
+export const deleteTask = async (taskId: string): Promise<ApiResponse<boolean>> => {
+  return api.delete(`/dfm/data-model/tasks/${taskId}`)
+}
+
+// 取消导入/导出任务
+export const cancelTask = async (taskId: string): Promise<ApiResponse<boolean>> => {
+  return api.post(`/dfm/data-model/tasks/${taskId}/cancel`)
+}
+
+// 重新启动失败的导入/导出任务
+export const retryTask = async (taskId: string): Promise<ApiResponse<any>> => {
+  return api.post(`/dfm/data-model/tasks/${taskId}/retry`)
 }

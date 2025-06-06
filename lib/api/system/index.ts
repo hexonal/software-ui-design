@@ -1,172 +1,189 @@
 import { api } from '@/lib/api/client'
-import { mockResponse, useMock, getMockData } from '@/lib/api/mock-handler'
 import { ApiResponse, PaginatedData, QueryParams } from '@/lib/api/types'
 
 // 获取系统设置
 export const getSystemSettings = async (): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse({
-      general: {
-        systemName: "分布式融合数据库与存储管理系统",
-        version: "1.0.0",
-        maxConnections: 100,
-        queryTimeout: 30,
-        bufferSize: 1024,
-        workerThreads: 8
-      },
-      security: {
-        sslEnabled: true,
-        autoLogout: true,
-        auditLogging: true
-      },
-      backup: {
-        backupPath: "/data/backups",
-        retention: "30",
-        schedule: "daily",
-        compression: true,
-        encryption: true
-      }
-    })
-  }
-  
   return api.get('/dfm/system/settings')
 }
 
 // 更新系统设置
 export const updateSystemSettings = async (data: any): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse(data)
-  }
-  
   return api.put('/dfm/system/settings', data)
 }
 
 // 获取系统日志
 export const getSystemLogs = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
-  if (useMock()) {
-    // 返回模拟的系统日志数据
-    const logs = getMockData('systemLogs')
-    
-    // 处理搜索和过滤
-    let filteredLogs = [...logs]
-    if (params?.search) {
-      const searchLower = params.search.toLowerCase()
-      filteredLogs = filteredLogs.filter(log => 
-        log.message.toLowerCase().includes(searchLower) || 
-        log.source.toLowerCase().includes(searchLower)
-      )
-    }
-    
-    if (params?.filter) {
-      if (params.filter.level) {
-        filteredLogs = filteredLogs.filter(log => log.level === params.filter.level)
-      }
-      if (params.filter.source) {
-        filteredLogs = filteredLogs.filter(log => log.source === params.filter.source)
-      }
-    }
-    
-    return mockResponse(filteredLogs)
-  }
-  
   return api.get('/dfm/system/logs', { params })
 }
 
 // 获取系统告警
 export const getSystemAlerts = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
-  if (useMock()) {
-    // 返回模拟的系统告警数据
-    const alerts = getMockData('systemAlerts')
-    
-    // 处理搜索和过滤
-    let filteredAlerts = [...alerts]
-    if (params?.search) {
-      const searchLower = params.search.toLowerCase()
-      filteredAlerts = filteredAlerts.filter(alert => 
-        alert.title.toLowerCase().includes(searchLower) || 
-        alert.message.toLowerCase().includes(searchLower)
-      )
-    }
-    
-    if (params?.filter) {
-      if (params.filter.severity) {
-        filteredAlerts = filteredAlerts.filter(alert => alert.severity === params.filter.severity)
-      }
-      if (params.filter.acknowledged !== undefined) {
-        filteredAlerts = filteredAlerts.filter(alert => alert.acknowledged === params.filter.acknowledged)
-      }
-    }
-    
-    return mockResponse(filteredAlerts)
-  }
-  
   return api.get('/dfm/system/alerts', { params })
 }
 
 // 确认告警
 export const acknowledgeAlert = async (id: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    // 更新模拟数据中的告警状态
-    const alerts = getMockData('systemAlerts') as any[];
-    const alertIndex = alerts.findIndex(alert => alert.id === id);
-    
-    if (alertIndex !== -1) {
-      alerts[alertIndex].acknowledged = true;
-    }
-    
-    return mockResponse(true)
-  }
-  
   return api.put(`/dfm/system/alerts/${id}/acknowledge`)
 }
 
 // 解决告警
 export const resolveAlert = async (id: string): Promise<ApiResponse<boolean>> => {
-  if (useMock()) {
-    // 更新模拟数据中的告警状态
-    const alerts = getMockData('systemAlerts') as any[];
-    const alertIndex = alerts.findIndex(alert => alert.id === id);
-    
-    if (alertIndex !== -1) {
-      alerts[alertIndex].resolved = true;
-      alerts[alertIndex].resolvedAt = new Date();
-    }
-    
-    return mockResponse(true)
-  }
-  
   return api.put(`/dfm/system/alerts/${id}/resolve`)
 }
 
 // 获取系统性能数据
 export const getSystemPerformance = async (timeRange?: string): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    // 返回模拟的系统性能数据
-    return mockResponse(getMockData('performanceData'))
-  }
-  
   return api.get('/dfm/system/performance', { params: { timeRange } })
 }
 
 export const getSystemStatus = async (): Promise<ApiResponse<any>> => {
-  if (useMock()) {
-    return mockResponse({
-      health: { value: "良好", description: "所有系统正常运行", status: "success" },
-      storage: { value: "42%", description: "已使用 4.2TB / 10TB", status: "warning" },
-      nodes: { value: "18/20", description: "18 个节点在线", status: "success" },
-      databases: { value: "12/15", description: "3 个实例需要注意", status: "warning" }
-    })
-  }
   return api.get('/dfm/system/status')
 }
 
 export const getSidebarNavItems = async (): Promise<ApiResponse<any[]>> => {
-  if (useMock()) {
-    // 这里直接返回原 navItems 结构
-    return mockResponse([
-      // ... existing code ...
-    ])
-  }
-  // 真实 API 可根据实际后端实现调整
   return api.get('/dfm/system/sidebar-nav')
+}
+
+// 系统健康数据类型定义
+export interface SystemHealthData {
+  name: string
+  cpu: number
+  memory: number
+  disk: number
+  network: number
+}
+
+// 系统监控指标请求参数
+export interface GetHealthMetricsRequest {
+  timeRange?: string // '24h', '7d', '30d'
+  interval?: string  // '1m', '5m', '1h', '1d'
+  metrics?: string[] // ['cpu', 'memory', 'disk', 'network']
+}
+
+// 系统概览数据
+export interface SystemOverviewData {
+  totalNodes: number
+  healthyNodes: number
+  totalCpu: number
+  totalMemory: number
+  totalDisk: number
+  activeConnections: number
+  uptime: number
+}
+
+/**
+ * 获取系统健康指标数据
+ */
+export async function getHealthMetrics(request: GetHealthMetricsRequest = {}) {
+  try {
+    const response = await api.post('/system/health/metrics', {
+      timeRange: request.timeRange || '30d',
+      interval: request.interval || '1d',
+      metrics: request.metrics || ['cpu', 'memory', 'disk', 'network']
+    })
+    return {
+      success: true,
+      data: response.data.data as SystemHealthData[],
+      message: response.data.message
+    }
+  } catch (error) {
+    console.error('获取系统健康指标失败:', error)
+    return {
+      success: false,
+      data: [],
+      message: '获取系统健康指标失败'
+    }
+  }
+}
+
+/**
+ * 获取系统概览数据
+ */
+export async function getSystemOverview() {
+  try {
+    const response = await api.post('/system/overview', {})
+    return {
+      success: true,
+      data: response.data.data as SystemOverviewData,
+      message: response.data.message
+    }
+  } catch (error) {
+    console.error('获取系统概览失败:', error)
+    return {
+      success: false,
+      data: null,
+      message: '获取系统概览失败'
+    }
+  }
+}
+
+/**
+ * 获取实时系统状态
+ */
+export async function getRealtimeStatus() {
+  try {
+    const response = await api.post('/system/realtime', {})
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message
+    }
+  } catch (error) {
+    console.error('获取实时状态失败:', error)
+    return {
+      success: false,
+      data: null,
+      message: '获取实时状态失败'
+    }
+  }
+}
+
+/**
+ * 获取性能历史数据
+ */
+export async function getPerformanceHistory(timeRange: string = '24h') {
+  try {
+    const response = await api.post('/system/performance/history', { timeRange })
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message
+    }
+  } catch (error) {
+    console.error('获取性能历史数据失败:', error)
+    return {
+      success: false,
+      data: [],
+      message: '获取性能历史数据失败'
+    }
+  }
+}
+
+/**
+ * 获取系统事件日志
+ */
+export async function getSystemEvents(params?: {
+  level?: 'info' | 'warning' | 'error'
+  timeRange?: string
+  limit?: number
+}) {
+  try {
+    const response = await api.post('/system/events', {
+      level: params?.level || 'info',
+      timeRange: params?.timeRange || '24h',
+      limit: params?.limit || 100
+    })
+    return {
+      success: true,
+      data: response.data.data,
+      message: response.data.message
+    }
+  } catch (error) {
+    console.error('获取系统事件失败:', error)
+    return {
+      success: false,
+      data: [],
+      message: '获取系统事件失败'
+    }
+  }
 }

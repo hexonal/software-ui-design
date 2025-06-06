@@ -30,7 +30,7 @@ export default function DashboardPage() {
         setLoading(true)
         const response = await systemApi.getSystemAlerts()
         if (response.success) {
-          setAlerts(response.data)
+          setAlerts(response.data || [])
         } else {
           setError('获取告警数据失败')
         }
@@ -61,12 +61,12 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatusCard 
-          title="系统健康状态" 
-          value={systemStatus.health.value} 
-          description={systemStatus.health.description} 
-          icon={Activity} 
-          status={systemStatus.health.status as "success" | "warning" | "error" | "default"} 
+        <StatusCard
+          title="系统健康状态"
+          value={systemStatus.health.value}
+          description={systemStatus.health.description}
+          icon={Activity}
+          status={systemStatus.health.status as "success" | "warning" | "error" | "default"}
         />
         <StatusCard
           title="存储使用量"
@@ -75,19 +75,19 @@ export default function DashboardPage() {
           icon={HardDrive}
           status={systemStatus.storage.status as "success" | "warning" | "error" | "default"}
         />
-        <StatusCard 
-          title="节点状态" 
-          value={systemStatus.nodes.value} 
-          description={systemStatus.nodes.description} 
-          icon={Server} 
-          status={systemStatus.nodes.status as "success" | "warning" | "error" | "default"} 
+        <StatusCard
+          title="节点状态"
+          value={systemStatus.nodes.value}
+          description={systemStatus.nodes.description}
+          icon={Server}
+          status={systemStatus.nodes.status as "success" | "warning" | "error" | "default"}
         />
-        <StatusCard 
-          title="数据库实例" 
-          value={systemStatus.databases.value} 
-          description={systemStatus.databases.description} 
-          icon={Database} 
-          status={systemStatus.databases.status as "success" | "warning" | "error" | "default"} 
+        <StatusCard
+          title="数据库实例"
+          value={systemStatus.databases.value}
+          description={systemStatus.databases.description}
+          icon={Database}
+          status={systemStatus.databases.status as "success" | "warning" | "error" | "default"}
         />
       </div>
 
@@ -125,7 +125,7 @@ export default function DashboardPage() {
               recentAlerts.map((alert) => {
                 let IconComponent = FileText;
                 let variant: "default" | "destructive" | undefined = "default";
-                
+
                 if (alert.severity === "critical") {
                   IconComponent = AlertTriangle;
                   variant = "destructive";
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                 } else if (alert.severity === "medium") {
                   IconComponent = Activity;
                 }
-                
+
                 return (
                   <Alert key={alert.id} variant={variant}>
                     <IconComponent className="h-4 w-4" />

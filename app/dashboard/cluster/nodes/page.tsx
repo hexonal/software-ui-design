@@ -32,7 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 // 导入 API
 import { clusterApi } from "@/api"
-import { Node } from "@/mock/dashboard/types"
+import { Node } from "@/lib/types"
 
 export default function ClusterNodesPage() {
   const [activeTab, setActiveTab] = useState("nodes")
@@ -90,7 +90,7 @@ export default function ClusterNodesPage() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await clusterApi.createNode({
         name: newNodeData.name,
         ip: newNodeData.ip,
@@ -100,7 +100,7 @@ export default function ClusterNodesPage() {
         memory: 0,
         disk: 0
       })
-      
+
       if (response.success) {
         setNodes([...nodes, response.data])
         setIsAddNodeOpen(false)
@@ -126,9 +126,9 @@ export default function ClusterNodesPage() {
     try {
       setLoading(true)
       setError(null)
-      
+
       const response = await clusterApi.deleteNode(nodeToDelete)
-      
+
       if (response.success) {
         setNodes(nodes.filter(node => node.id !== nodeToDelete))
         if (selectedNode === nodeToDelete) {
@@ -151,7 +151,7 @@ export default function ClusterNodesPage() {
     try {
       setIsStarting(nodeId)
       setError(null)
-      
+
       // 模拟启动节点
       setTimeout(async () => {
         try {
@@ -161,9 +161,9 @@ export default function ClusterNodesPage() {
             memory: Math.floor(Math.random() * 30) + 20, // 随机生成20-50之间的内存使用率
             disk: Math.floor(Math.random() * 30) + 20 // 随机生成20-50之间的磁盘使用率
           })
-          
+
           if (response.success) {
-            setNodes(nodes.map(node => 
+            setNodes(nodes.map(node =>
               node.id === nodeId ? response.data : node
             ))
           } else {
@@ -187,7 +187,7 @@ export default function ClusterNodesPage() {
     try {
       setIsStopping(nodeId)
       setError(null)
-      
+
       // 模拟停止节点
       setTimeout(async () => {
         try {
@@ -197,9 +197,9 @@ export default function ClusterNodesPage() {
             memory: 0,
             disk: 0
           })
-          
+
           if (response.success) {
-            setNodes(nodes.map(node => 
+            setNodes(nodes.map(node =>
               node.id === nodeId ? response.data : node
             ))
           } else {
@@ -223,7 +223,7 @@ export default function ClusterNodesPage() {
     try {
       setIsRestarting(nodeId)
       setError(null)
-      
+
       // 模拟重启节点
       setTimeout(async () => {
         try {
@@ -234,7 +234,7 @@ export default function ClusterNodesPage() {
             memory: 0,
             disk: 0
           })
-          
+
           // 延迟后将节点设为在线
           setTimeout(async () => {
             try {
@@ -244,9 +244,9 @@ export default function ClusterNodesPage() {
                 memory: Math.floor(Math.random() * 30) + 20,
                 disk: Math.floor(Math.random() * 30) + 20
               })
-              
+
               if (response.success) {
-                setNodes(nodes.map(node => 
+                setNodes(nodes.map(node =>
                   node.id === nodeId ? response.data : node
                 ))
               } else {
@@ -274,14 +274,14 @@ export default function ClusterNodesPage() {
 
   // 过滤节点
   const filteredNodes = nodes.filter(node => {
-    const matchesSearch = 
+    const matchesSearch =
       node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       node.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       node.ip.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesRole = filterRole === 'all' || node.role === filterRole;
     const matchesStatus = filterStatus === 'all' || node.status === filterStatus;
-    
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -313,7 +313,7 @@ export default function ClusterNodesPage() {
                   <Input
                     id="node-name"
                     value={newNodeData.name}
-                    onChange={(e) => setNewNodeData({...newNodeData, name: e.target.value})}
+                    onChange={(e) => setNewNodeData({ ...newNodeData, name: e.target.value })}
                     placeholder="输入节点名称"
                     className="col-span-3"
                   />
@@ -325,7 +325,7 @@ export default function ClusterNodesPage() {
                   <Input
                     id="node-ip"
                     value={newNodeData.ip}
-                    onChange={(e) => setNewNodeData({...newNodeData, ip: e.target.value})}
+                    onChange={(e) => setNewNodeData({ ...newNodeData, ip: e.target.value })}
                     placeholder="输入IP地址"
                     className="col-span-3"
                   />
@@ -336,7 +336,7 @@ export default function ClusterNodesPage() {
                   </Label>
                   <Select
                     value={newNodeData.role}
-                    onValueChange={(value) => setNewNodeData({...newNodeData, role: value})}
+                    onValueChange={(value) => setNewNodeData({ ...newNodeData, role: value })}
                   >
                     <SelectTrigger id="node-role" className="col-span-3">
                       <SelectValue placeholder="选择节点角色" />
@@ -377,10 +377,10 @@ export default function ClusterNodesPage() {
           <div className="flex flex-col md:flex-row items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索节点..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索节点..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -441,8 +441,8 @@ export default function ClusterNodesPage() {
                     {nodes.length === 0 ? "暂无节点数据" : "没有匹配的节点"}
                   </p>
                   {nodes.length === 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsAddNodeOpen(true)}
                     >
@@ -548,7 +548,7 @@ export default function ClusterNodesPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setNodeToDelete(node.id)
@@ -584,8 +584,8 @@ export default function ClusterNodesPage() {
                     </div>
                     <div className="flex gap-2">
                       {node.status === "在线" ? (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleStopNode(node.id)}
                           disabled={isStopping === node.id}
@@ -603,8 +603,8 @@ export default function ClusterNodesPage() {
                           )}
                         </Button>
                       ) : (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           size="sm"
                           onClick={() => handleStartNode(node.id)}
                           disabled={isStarting === node.id}
@@ -622,8 +622,8 @@ export default function ClusterNodesPage() {
                           )}
                         </Button>
                       )}
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => handleRestartNode(node.id)}
                         disabled={isRestarting === node.id}
@@ -640,8 +640,8 @@ export default function ClusterNodesPage() {
                           </>
                         )}
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         className="text-red-600"
                         onClick={() => {

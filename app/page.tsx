@@ -44,13 +44,6 @@ export default function LoginPage() {
           <CardTitle className="text-2xl font-bold text-center">分布式融合数据库与存储管理系统</CardTitle>
           <CardDescription className="text-center">
             请输入您的账号和密码登录系统
-            {config.api.useMock && (
-              <div className="mt-2">
-                <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
-                  开发模式: 使用模拟数据
-                </Badge>
-              </div>
-            )}
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

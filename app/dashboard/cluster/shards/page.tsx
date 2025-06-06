@@ -33,7 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 
 // 导入 API
 import { clusterApi } from "@/api"
-import { Node, Shard } from "@/mock/dashboard/types"
+import { Node, Shard } from "@/lib/types"
 
 export default function ClusterShardsPage() {
   const [activeTab, setActiveTab] = useState("shards")
@@ -158,7 +158,7 @@ export default function ClusterShardsPage() {
     try {
       setLoading(prev => ({ ...prev, shards: true }))
       setError(null)
-      
+
       const response = await clusterApi.createShard({
         range: newShardData.range,
         nodeId: newShardData.nodeId,
@@ -167,7 +167,7 @@ export default function ClusterShardsPage() {
         usage: 0,
         replicas: newShardData.replicas
       })
-      
+
       if (response.success) {
         setShards([...shards, response.data])
         setIsCreateShardOpen(false)
@@ -193,9 +193,9 @@ export default function ClusterShardsPage() {
     try {
       setLoading(prev => ({ ...prev, shards: true }))
       setError(null)
-      
+
       const response = await clusterApi.deleteShard(shardToDelete)
-      
+
       if (response.success) {
         setShards(shards.filter(shard => shard.id !== shardToDelete))
         setIsConfirmDeleteOpen(false)
@@ -220,16 +220,16 @@ export default function ClusterShardsPage() {
     try {
       setIsMigrating(shardToMigrate)
       setError(null)
-      
+
       // 模拟迁移过程
       setTimeout(async () => {
         try {
           const response = await clusterApi.updateShard(shardToMigrate, {
             nodeId: targetNodeId
           })
-          
+
           if (response.success) {
-            setShards(shards.map(shard => 
+            setShards(shards.map(shard =>
               shard.id === shardToMigrate ? response.data : shard
             ))
             setIsMigrateShardOpen(false)
@@ -256,7 +256,7 @@ export default function ClusterShardsPage() {
     try {
       setIsRebuildingIndex(shardId)
       setError(null)
-      
+
       // 模拟重建索引过程
       setTimeout(() => {
         setIsRebuildingIndex(null)
@@ -269,7 +269,7 @@ export default function ClusterShardsPage() {
   }
 
   const toggleNodeSelection = (nodeId: string) => {
-    setSelectedNodes(prev => 
+    setSelectedNodes(prev =>
       prev.includes(nodeId)
         ? prev.filter(id => id !== nodeId)
         : [...prev, nodeId]
@@ -278,13 +278,13 @@ export default function ClusterShardsPage() {
 
   // 过滤分片
   const filteredShards = shards.filter(shard => {
-    const matchesSearch = 
+    const matchesSearch =
       shard.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       shard.range.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesNode = filterNode === 'all' || shard.nodeId === filterNode;
     const matchesStatus = filterStatus === 'all' || shard.status === filterStatus;
-    
+
     return matchesSearch && matchesNode && matchesStatus;
   });
 
@@ -301,7 +301,7 @@ export default function ClusterShardsPage() {
       const sizeInGB = parseFloat(shard.size.replace(' GB', ''))
       return sum + (isNaN(sizeInGB) ? 0 : sizeInGB)
     }, 0)
-    
+
     return {
       ...node,
       shardCount: nodeShards.length,
@@ -337,7 +337,7 @@ export default function ClusterShardsPage() {
                   <Input
                     id="shard-range"
                     value={newShardData.range}
-                    onChange={(e) => setNewShardData({...newShardData, range: e.target.value})}
+                    onChange={(e) => setNewShardData({ ...newShardData, range: e.target.value })}
                     placeholder="例如: 0-1023"
                     className="col-span-3"
                   />
@@ -348,7 +348,7 @@ export default function ClusterShardsPage() {
                   </Label>
                   <Select
                     value={newShardData.nodeId}
-                    onValueChange={(value) => setNewShardData({...newShardData, nodeId: value})}
+                    onValueChange={(value) => setNewShardData({ ...newShardData, nodeId: value })}
                   >
                     <SelectTrigger id="shard-node" className="col-span-3">
                       <SelectValue placeholder="选择节点" />
@@ -370,7 +370,7 @@ export default function ClusterShardsPage() {
                   </Label>
                   <Select
                     value={newShardData.replicas.toString()}
-                    onValueChange={(value) => setNewShardData({...newShardData, replicas: parseInt(value)})}
+                    onValueChange={(value) => setNewShardData({ ...newShardData, replicas: parseInt(value) })}
                   >
                     <SelectTrigger id="shard-replicas" className="col-span-3">
                       <SelectValue placeholder="选择副本数" />
@@ -413,10 +413,10 @@ export default function ClusterShardsPage() {
           <div className="flex flex-col md:flex-row items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索分片..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索分片..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -480,8 +480,8 @@ export default function ClusterShardsPage() {
                     {shards.length === 0 ? "暂无分片数据" : "没有匹配的分片"}
                   </p>
                   {shards.length === 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsCreateShardOpen(true)}
                     >
@@ -526,7 +526,7 @@ export default function ClusterShardsPage() {
                           <DropdownMenuLabel>分片操作</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem>查看详情</DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => {
                               setShardToMigrate(shard.id)
                               setIsMigrateShardOpen(true)
@@ -545,7 +545,7 @@ export default function ClusterShardsPage() {
                               </>
                             )}
                           </DropdownMenuItem>
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             onClick={() => handleRebuildIndex(shard.id)}
                             disabled={isRebuildingIndex === shard.id}
                           >
@@ -562,7 +562,7 @@ export default function ClusterShardsPage() {
                             )}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setShardToDelete(shard.id)
@@ -639,7 +639,7 @@ export default function ClusterShardsPage() {
                     try {
                       setLoading(prev => ({ ...prev, shards: true, nodes: true }))
                       setError(null)
-                      
+
                       // 重新获取分片数据
                       const shardsResponse = await clusterApi.getShards()
                       if (shardsResponse.success) {
@@ -647,7 +647,7 @@ export default function ClusterShardsPage() {
                       } else {
                         setError(shardsResponse.message)
                       }
-                      
+
                       // 重新获取节点数据
                       const nodesResponse = await clusterApi.getNodes()
                       if (nodesResponse.success) {
@@ -715,9 +715,9 @@ export default function ClusterShardsPage() {
                     {nodes
                       .filter(node => node.status === "在线")
                       .map(node => (
-                        <Badge 
-                          key={node.id} 
-                          variant="outline" 
+                        <Badge
+                          key={node.id}
+                          variant="outline"
                           className={`cursor-pointer ${selectedNodes.includes(node.id) ? "bg-primary/10" : ""}`}
                           onClick={() => toggleNodeSelection(node.id)}
                         >
@@ -739,8 +739,8 @@ export default function ClusterShardsPage() {
                 )}
 
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     disabled={isRebalancing || selectedNodes.length === 0}
                     onClick={() => {
                       // 模拟预览变更
@@ -749,14 +749,14 @@ export default function ClusterShardsPage() {
                         setError("请至少选择一个目标节点")
                         return
                       }
-                      
+
                       alert(`预览变更：将在 ${selectedNodes.length} 个节点之间重新分布 ${shards.length} 个分片`)
                     }}
                   >
                     预览变更
                   </Button>
-                  <Button 
-                    onClick={handleRebalance} 
+                  <Button
+                    onClick={handleRebalance}
                     disabled={isRebalancing || selectedNodes.length === 0}
                   >
                     {isRebalancing ? (
