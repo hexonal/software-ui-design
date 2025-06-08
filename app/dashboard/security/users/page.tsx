@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, Search, Filter, MoreHorizontal, Plus, UserPlus, Key, Shield, AlertTriangle, Trash2, RefreshCw, Edit, Save, Lock, Unlock } from "lucide-react"
+import { Users, UserPlus, Search, Filter, RefreshCw, Edit, Trash2, CheckCircle, MoreHorizontal, Shield, Eye, EyeOff, Settings, UserCheck, AlertTriangle, Key, Lock, Unlock, Plus, Save } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -30,10 +30,11 @@ import {
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
 
 // 导入 API
 import { securityApi } from "@/api"
-import { User, Role } from "@/lib/types"
+import { User, Role, PermissionGroup, RolePermissions, UpdateRolePermissionsRequest } from "@/lib/types"
 
 export default function UserManagementPage() {
   const [activeTab, setActiveTab] = useState("users")
@@ -48,18 +49,19 @@ export default function UserManagementPage() {
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState({
     users: true,
-    roles: true
+    roles: true,
+    permissions: false
   })
   const [error, setError] = useState<string | null>(null)
   const [userSearchQuery, setUserSearchQuery] = useState("")
   const [roleSearchQuery, setRoleSearchQuery] = useState("")
   const [userRoleFilter, setUserRoleFilter] = useState("all")
-  const [userStatusFilter, setUserStatusFilter] = useState("all")
   const [userToEdit, setUserToEdit] = useState<User | null>(null)
   const [roleToEdit, setRoleToEdit] = useState<Role | null>(null)
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [roleToDelete, setRoleToDelete] = useState<string | null>(null)
   const [userToResetPassword, setUserToResetPassword] = useState<User | null>(null)
+  const [selectedRole, setSelectedRole] = useState("")
   const [isEditingPermissions, setIsEditingPermissions] = useState(false)
   const [permissionsChanged, setPermissionsChanged] = useState(false)
   const [newUserData, setNewUserData] = useState({
@@ -67,7 +69,7 @@ export default function UserManagementPage() {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "访客"
+    role: ""
   })
   const [newRoleData, setNewRoleData] = useState({
     name: "",
@@ -78,40 +80,268 @@ export default function UserManagementPage() {
     password: "",
     confirmPassword: ""
   })
+  const [permissionGroups, setPermissionGroups] = useState<PermissionGroup[]>([])
+  const [currentRolePermissions, setCurrentRolePermissions] = useState<RolePermissions | null>(null)
+  const [editingPermissions, setEditingPermissions] = useState<string[]>([])
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null)
+
         // 获取用户数据
         setLoading(prev => ({ ...prev, users: true }))
-        const usersResponse = await securityApi.getUsers()
-        if (usersResponse.success) {
-          setUsers(usersResponse.data)
-        } else {
-          setError(usersResponse.message)
+        try {
+          const usersResponse = await securityApi.getUsers()
+          console.log('用户数据API响应:', usersResponse)
+
+          // 从HTTP响应对象中提取业务数据
+          const usersData: any = usersResponse?.data || usersResponse
+          console.log('用户业务数据:', usersData)
+
+          if (usersData && (usersData.code === 200 || usersData.success === true)) {
+            let userData: any[] = []
+
+            if (usersData.data && Array.isArray(usersData.data)) {
+              userData = usersData.data
+            } else if (Array.isArray(usersData)) {
+              userData = usersData
+            }
+
+            if (Array.isArray(userData) && userData.length >= 0) {
+              console.log('设置用户数据:', userData)
+              setUsers(userData.filter(user => user != null))
+            } else {
+              console.warn('用户数据格式异常:', usersData)
+              setError('用户数据格式异常')
+            }
+          } else {
+            const errorMessage = usersData?.message || '获取用户数据失败'
+            console.error('获取用户数据失败:', usersData)
+            setError(`获取用户数据失败: ${errorMessage}`)
+          }
+        } catch (userErr) {
+          console.error('获取用户数据异常:', userErr)
+          setError('获取用户数据异常')
+        } finally {
+          setLoading(prev => ({ ...prev, users: false }))
         }
 
         // 获取角色数据
         setLoading(prev => ({ ...prev, roles: true }))
-        const rolesResponse = await securityApi.getRoles()
-        if (rolesResponse.success) {
-          setRoles(rolesResponse.data)
-        } else {
-          setError(rolesResponse.message)
+        try {
+          const rolesResponse = await securityApi.getRoles()
+          console.log('角色数据API响应:', rolesResponse)
+
+          // 从HTTP响应对象中提取业务数据
+          const rolesData: any = rolesResponse?.data || rolesResponse
+          console.log('角色业务数据:', rolesData)
+
+          if (rolesData && (rolesData.code === 200 || rolesData.success === true)) {
+            let roleData: any[] = []
+
+            if (rolesData.data && Array.isArray(rolesData.data)) {
+              roleData = rolesData.data
+            } else if (Array.isArray(rolesData)) {
+              roleData = rolesData
+            }
+
+            if (Array.isArray(roleData) && roleData.length >= 0) {
+              console.log('设置角色数据:', roleData)
+              const filteredRoles = roleData.filter(role => role != null)
+              setRoles(filteredRoles)
+            } else {
+              console.warn('角色数据格式异常:', rolesResponse)
+            }
+          } else {
+            console.error('获取角色数据失败:', rolesResponse)
+            setError('获取角色数据失败')
+          }
+        } catch (err) {
+          console.error('角色数据获取异常:', err)
+          setError('角色数据获取异常')
+        } finally {
+          setLoading(prev => ({ ...prev, roles: false }))
         }
-      } catch (err) {
-        setError('获取用户和角色数据失败')
-        console.error(err)
-      } finally {
-        setLoading({
-          users: false,
-          roles: false
-        })
+
+        // 获取权限分组数据
+        setLoading(prev => ({ ...prev, permissions: true }))
+        try {
+          const permissionsResponse = await securityApi.getPermissionGroups()
+          console.log('权限数据API响应:', permissionsResponse)
+
+          // 从HTTP响应对象中提取业务数据
+          const permissionsData: any = permissionsResponse?.data || permissionsResponse
+          console.log('权限业务数据:', permissionsData)
+
+          if (permissionsData && (permissionsData.code === 200 || permissionsData.success === true)) {
+            let permissionGroupData: any[] = []
+
+            if (permissionsData.data && Array.isArray(permissionsData.data)) {
+              permissionGroupData = permissionsData.data
+            } else if (Array.isArray(permissionsData)) {
+              permissionGroupData = permissionsData
+            }
+
+            if (Array.isArray(permissionGroupData) && permissionGroupData.length >= 0) {
+              console.log('设置权限分组数据:', permissionGroupData)
+              const filteredPermissions = permissionGroupData.filter(group => group != null)
+              setPermissionGroups(filteredPermissions)
+            } else {
+              console.warn('权限数据格式异常:', permissionsResponse)
+            }
+          } else {
+            console.error('获取权限数据失败:', permissionsResponse)
+            setError('获取权限数据失败')
+          }
+        } catch (err) {
+          console.error('权限数据获取异常:', err)
+          setError('权限数据获取异常')
+        } finally {
+          setLoading(prev => ({ ...prev, permissions: false }))
+        }
+      } catch (error) {
+        console.error('获取数据失败:', error)
+        setError('获取数据失败')
       }
     }
 
     fetchData()
   }, [])
+
+  // 当角色数据加载完成时，设置默认角色
+  useEffect(() => {
+    if (roles.length > 0) {
+      // 设置新用户的默认角色
+      if (!newUserData.role) {
+        setNewUserData(prev => ({ ...prev, role: roles[0].name }))
+      }
+      // userRoleFilter 默认为 "all"，不需要额外设置
+    }
+  }, [roles])
+
+  // 获取角色权限
+  const fetchRolePermissions = async (roleId: string) => {
+    if (!roleId) return
+
+    try {
+      setLoading(prev => ({ ...prev, permissions: true }))
+      const response = await securityApi.getRolePermissions(roleId)
+      console.log('角色权限API响应:', response)
+
+      const permissionsData: any = response?.data || response
+      console.log('角色权限业务数据:', permissionsData)
+
+      if (permissionsData && (permissionsData.code === 200 || permissionsData.message === "success")) {
+        const rolePermissions = permissionsData.data || permissionsData
+        console.log('解析后的角色权限:', rolePermissions)
+        setCurrentRolePermissions(rolePermissions)
+      } else {
+        console.error('获取角色权限失败:', response)
+        setError('获取角色权限失败')
+      }
+    } catch (error) {
+      console.error('角色权限获取异常:', error)
+      setError('角色权限获取异常')
+    } finally {
+      setLoading(prev => ({ ...prev, permissions: false }))
+    }
+  }
+
+  // 角色选择变化时获取权限
+  const handleRoleSelectionChange = (roleId: string) => {
+    setSelectedRole(roleId)
+    if (roleId) {
+      fetchRolePermissions(roleId)
+    } else {
+      setCurrentRolePermissions(null)
+      setEditingPermissions([])
+    }
+  }
+
+  // 开始编辑权限时初始化编辑状态
+  const startEditingPermissions = () => {
+    if (currentRolePermissions) {
+      setEditingPermissions([...currentRolePermissions.grantedPermissions])
+    }
+    setIsEditingPermissions(true)
+  }
+
+  // 取消编辑权限
+  const cancelEditingPermissions = () => {
+    setIsEditingPermissions(false)
+    setPermissionsChanged(false)
+    setEditingPermissions([])
+    // 重新获取权限数据
+    if (selectedRole) {
+      fetchRolePermissions(selectedRole)
+    }
+  }
+
+  // 保存角色权限
+  const saveRolePermissions = async () => {
+    if (!selectedRole || !currentRolePermissions) return
+
+    try {
+      setLoading(prev => ({ ...prev, permissions: true }))
+
+      // 使用编辑状态中的权限ID
+      const permissionIds = editingPermissions
+      console.log('要保存的权限ID:', permissionIds)
+
+      const updateRequest: UpdateRolePermissionsRequest = {
+        permissionIds,
+        remark: "权限更新"
+      }
+
+      const response = await securityApi.updateRolePermissions(selectedRole, updateRequest)
+      console.log('权限更新响应:', response)
+
+      // 修复响应判断逻辑
+      const responseData: any = response?.data || response
+      console.log('权限更新业务数据:', responseData)
+
+      if (responseData && (responseData.code === 200 || responseData.message === "success")) {
+        setPermissionsChanged(true)
+        setIsEditingPermissions(false)
+        setEditingPermissions([])
+        // 重新获取角色权限
+        await fetchRolePermissions(selectedRole)
+
+        // 2秒后隐藏成功提示
+        setTimeout(() => setPermissionsChanged(false), 2000)
+      } else {
+        console.error('保存权限失败 - 响应格式异常:', response)
+        setError('保存权限失败')
+      }
+    } catch (error) {
+      console.error('保存权限异常:', error)
+      setError('保存权限异常')
+    } finally {
+      setLoading(prev => ({ ...prev, permissions: false }))
+    }
+  }
+
+  // 切换权限状态
+  const togglePermission = (permissionId: string, checked: boolean) => {
+    setEditingPermissions(prev => {
+      if (checked) {
+        // 添加权限
+        return prev.includes(permissionId) ? prev : [...prev, permissionId]
+      } else {
+        // 移除权限
+        return prev.filter(id => id !== permissionId)
+      }
+    })
+  }
+
+  // 检查权限是否被授予（编辑状态下使用编辑权限，否则使用当前权限）
+  const isPermissionGranted = (permissionId: string): boolean => {
+    if (isEditingPermissions) {
+      return editingPermissions.includes(permissionId)
+    }
+    return currentRolePermissions?.grantedPermissions?.includes(permissionId) || false
+  }
 
   const handleAddUser = async () => {
     try {
@@ -136,18 +366,18 @@ export default function UserManagementPage() {
         lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 19)
       })
 
-      if (response.success) {
-        setUsers(prev => [...prev, response.data])
+      if (response.success && response.data) {
+        setUsers(prev => [...prev, response.data].filter(user => user != null))
         setIsAddUserOpen(false)
         setNewUserData({
           username: "",
           email: "",
           password: "",
           confirmPassword: "",
-          role: "访客"
+          role: ""
         })
       } else {
-        setError(response.message)
+        setError(response.message || '创建用户失败')
       }
     } catch (err) {
       setError('创建用户失败')
@@ -174,8 +404,8 @@ export default function UserManagementPage() {
         users: 0
       })
 
-      if (response.success) {
-        setRoles(prev => [...prev, response.data])
+      if (response.success && response.data) {
+        setRoles(prev => [...prev, response.data].filter(role => role != null))
         setIsAddRoleOpen(false)
         setNewRoleData({
           name: "",
@@ -203,7 +433,7 @@ export default function UserManagementPage() {
       const response = await securityApi.updateUser(userToEdit.id, userToEdit)
       if (response.success) {
         setUsers(prev => prev.map(user =>
-          user.id === userToEdit.id ? response.data : user
+          user.id === userToEdit.id ? (response.data || user) : user
         ))
         setIsEditUserOpen(false)
         setUserToEdit(null)
@@ -226,10 +456,10 @@ export default function UserManagementPage() {
       setError(null)
 
       const response = await securityApi.updateRole(roleToEdit.id, roleToEdit)
-      if (response.success) {
+      if (response.success && response.data) {
         setRoles(prev => prev.map(role =>
           role.id === roleToEdit.id ? response.data : role
-        ))
+        ).filter(role => role != null))
         setIsEditRoleOpen(false)
         setRoleToEdit(null)
       } else {
@@ -332,10 +562,10 @@ export default function UserManagementPage() {
       const newStatus = currentStatus === "活跃" ? "锁定" : "活跃"
 
       const response = await securityApi.updateUser(userId, { status: newStatus })
-      if (response.success) {
+      if (response.success && response.data) {
         setUsers(prev => prev.map(user =>
           user.id === userId ? response.data : user
-        ))
+        ).filter(user => user != null))
       } else {
         setError(response.message)
       }
@@ -355,9 +585,8 @@ export default function UserManagementPage() {
       user.id.toLowerCase().includes(userSearchQuery.toLowerCase())
 
     const matchesRole = userRoleFilter === 'all' || user.role === userRoleFilter
-    const matchesStatus = userStatusFilter === 'all' || user.status === userStatusFilter
 
-    return matchesSearch && matchesRole && matchesStatus
+    return matchesSearch && matchesRole
   })
 
   // 过滤角色
@@ -445,10 +674,11 @@ export default function UserManagementPage() {
                       <SelectValue placeholder="选择角色" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="管理员">管理员</SelectItem>
-                      <SelectItem value="操作员">操作员</SelectItem>
-                      <SelectItem value="分析师">分析师</SelectItem>
-                      <SelectItem value="访客">访客</SelectItem>
+                      {roles.map((role) => (
+                        <SelectItem key={role.id} value={role.name}>
+                          {role.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -466,32 +696,79 @@ export default function UserManagementPage() {
             try {
               setLoading({
                 users: true,
-                roles: true
+                roles: true,
+                permissions: false
               })
               setError(null)
 
               // 获取用户数据
               const usersResponse = await securityApi.getUsers()
-              if (usersResponse.success) {
-                setUsers(usersResponse.data)
+              console.log('刷新-用户数据API响应:', usersResponse)
+
+              // 从HTTP响应对象中提取业务数据
+              const usersData: any = usersResponse?.data || usersResponse
+              console.log('刷新-用户业务数据:', usersData)
+
+              if (usersData && (usersData.code === 200 || usersData.success === true)) {
+                let userData: any[] = []
+
+                if (usersData.data && Array.isArray(usersData.data)) {
+                  userData = usersData.data
+                } else if (Array.isArray(usersData)) {
+                  userData = usersData
+                }
+
+                if (Array.isArray(userData) && userData.length >= 0) {
+                  console.log('刷新-设置用户数据:', userData)
+                  setUsers(userData.filter(user => user != null))
+                } else {
+                  console.warn('刷新-用户数据格式异常:', usersResponse)
+                }
               } else {
-                setError(usersResponse.message)
+                console.error('刷新-获取用户数据失败:', usersResponse)
+                setError('获取用户数据失败')
               }
 
               // 获取角色数据
               const rolesResponse = await securityApi.getRoles()
-              if (rolesResponse.success) {
-                setRoles(rolesResponse.data)
+              console.log('刷新-角色数据API响应:', rolesResponse)
+
+              // 从HTTP响应对象中提取业务数据
+              const rolesData: any = rolesResponse?.data || rolesResponse
+              console.log('刷新-角色业务数据:', rolesData)
+
+              if (rolesData && (rolesData.code === 200 || rolesData.success === true)) {
+                let roleData: any[] = []
+
+                if (rolesData.data && Array.isArray(rolesData.data)) {
+                  roleData = rolesData.data
+                } else if (Array.isArray(rolesData)) {
+                  roleData = rolesData
+                }
+
+                if (Array.isArray(roleData) && roleData.length >= 0) {
+                  console.log('刷新-设置角色数据:', roleData)
+                  setRoles(roleData.filter(role => role != null))
+                } else {
+                  console.warn('刷新-角色数据格式异常:', rolesResponse)
+                }
               } else {
-                setError(rolesResponse.message)
+                console.error('刷新-获取角色数据失败:', rolesResponse)
+                setError('获取角色数据失败')
               }
-            } catch (err) {
-              setError('刷新数据失败')
-              console.error(err)
-            } finally {
+
               setLoading({
                 users: false,
-                roles: false
+                roles: false,
+                permissions: false
+              })
+            } catch (error) {
+              console.error('刷新数据失败:', error)
+              setError('刷新数据失败')
+              setLoading({
+                users: false,
+                roles: false,
+                permissions: false
               })
             }
           }}>
@@ -533,27 +810,17 @@ export default function UserManagementPage() {
                 <SelectValue placeholder="筛选角色" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">所有角色</SelectItem>
-                <SelectItem value="管理员">管理员</SelectItem>
-                <SelectItem value="操作员">操作员</SelectItem>
-                <SelectItem value="分析师">分析师</SelectItem>
-                <SelectItem value="访客">访客</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={userStatusFilter} onValueChange={setUserStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="筛选状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有状态</SelectItem>
-                <SelectItem value="活跃">活跃</SelectItem>
-                <SelectItem value="锁定">锁定</SelectItem>
+                <SelectItem value="all">所有</SelectItem>
+                {roles.map((role) => (
+                  <SelectItem key={role.id} value={role.name}>
+                    {role.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Button variant="outline" size="icon" onClick={() => {
               setUserSearchQuery("")
               setUserRoleFilter("all")
-              setUserStatusFilter("all")
             }}>
               <Filter className="h-4 w-4" />
               <span className="sr-only">重置筛选</span>
@@ -614,7 +881,7 @@ export default function UserManagementPage() {
                         <Badge variant="outline">{user.role}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={user.status === "活跃" ? "success" : "secondary"}>
+                        <Badge variant={user.status === "活跃" ? "default" : "secondary"}>
                           {user.status}
                         </Badge>
                       </TableCell>
@@ -837,7 +1104,7 @@ export default function UserManagementPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => {
                               setActiveTab("permissions")
-                              setIsEditingPermissions(true)
+                              startEditingPermissions()
                             }}>
                               <Shield className="mr-2 h-4 w-4" />
                               管理权限
@@ -879,20 +1146,16 @@ export default function UserManagementPage() {
                 </div>
                 {isEditingPermissions ? (
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => setIsEditingPermissions(false)}>
+                    <Button variant="outline" onClick={cancelEditingPermissions}>
                       取消
                     </Button>
-                    <Button onClick={() => {
-                      setPermissionsChanged(true)
-                      setTimeout(() => setPermissionsChanged(false), 2000)
-                      setIsEditingPermissions(false)
-                    }}>
+                    <Button onClick={saveRolePermissions}>
                       <Save className="mr-2 h-4 w-4" />
                       保存权限
                     </Button>
                   </div>
                 ) : (
-                  <Button variant="outline" onClick={() => setIsEditingPermissions(true)}>
+                  <Button variant="outline" onClick={startEditingPermissions}>
                     <Edit className="mr-2 h-4 w-4" />
                     编辑权限
                   </Button>
@@ -901,17 +1164,56 @@ export default function UserManagementPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
-                <Select defaultValue="role-001">
+                <Select
+                  value={selectedRole}
+                  onValueChange={handleRoleSelectionChange}
+                >
                   <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder="选择角色" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="role-001">管理员</SelectItem>
-                    <SelectItem value="role-002">操作员</SelectItem>
-                    <SelectItem value="role-003">分析师</SelectItem>
-                    <SelectItem value="role-004">访客</SelectItem>
+                    {roles.map((role) => (
+                      <SelectItem key={role.id} value={role.id}>
+                        {role.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
+
+                {selectedRole && (
+                  <div className="flex items-center gap-2">
+                    {!isEditingPermissions ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={startEditingPermissions}
+                        disabled={loading.permissions}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        编辑权限
+                      </Button>
+                    ) : (
+                      <>
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={saveRolePermissions}
+                          disabled={loading.permissions}
+                        >
+                          <Save className="h-4 w-4 mr-2" />
+                          保存权限
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={cancelEditingPermissions}
+                        >
+                          取消
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {permissionsChanged && (
@@ -922,146 +1224,69 @@ export default function UserManagementPage() {
                 </Alert>
               )}
 
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium mb-2">数据库管理权限</h3>
-                  <div className="space-y-2 border rounded-md p-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-db-view" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-db-view"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        查看数据库
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-db-create" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-db-create"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        创建数据库
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-db-modify" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-db-modify"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        修改数据库
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-db-delete" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-db-delete"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        删除数据库
-                      </label>
-                    </div>
-                  </div>
-                </div>
+              {loading.permissions && (
+                <Alert>
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  <AlertTitle>加载中</AlertTitle>
+                  <AlertDescription>正在加载权限数据...</AlertDescription>
+                </Alert>
+              )}
 
-                <div>
-                  <h3 className="text-lg font-medium mb-2">存储管理权限</h3>
-                  <div className="space-y-2 border rounded-md p-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-storage-view" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-storage-view"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        查看存储
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-storage-create" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-storage-create"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        创建存储
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-storage-modify" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-storage-modify"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        修改存储
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-storage-delete" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-storage-delete"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        删除存储
-                      </label>
-                    </div>
+              {selectedRole && currentRolePermissions && (
+                <div className="space-y-4">
+                  <div className="text-sm text-gray-600">
+                    当前角色: <span className="font-medium">{currentRolePermissions.roleName}</span>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-medium mb-2">系统管理权限</h3>
-                  <div className="space-y-2 border rounded-md p-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-system-view" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-system-view"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        查看系统设置
-                      </label>
+                  {permissionGroups.map((group) => (
+                    <div key={group.id}>
+                      <h3 className="text-lg font-medium mb-2">{group.name}</h3>
+                      <div className="space-y-2 border rounded-md p-4">
+                        {group.permissions.map((permission) => (
+                          <div key={permission.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`perm-${permission.id}`}
+                              checked={isPermissionGranted(permission.id)}
+                              disabled={!isEditingPermissions}
+                              onCheckedChange={(checked) => {
+                                togglePermission(permission.id, Boolean(checked))
+                              }}
+                            />
+                            <label
+                              htmlFor={`perm-${permission.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {permission.name}
+                            </label>
+                            {permission.description && (
+                              <span className="text-xs text-gray-500">
+                                ({permission.description})
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-system-modify" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-system-modify"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        修改系统设置
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-user-manage" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-user-manage"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        用户管理
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="perm-role-manage" defaultChecked disabled={!isEditingPermissions} />
-                      <label
-                        htmlFor="perm-role-manage"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                      >
-                        角色管理
-                      </label>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </div>
+              )}
+
+              {selectedRole && !currentRolePermissions && !loading.permissions && (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>无权限数据</AlertTitle>
+                  <AlertDescription>未找到该角色的权限配置</AlertDescription>
+                </Alert>
+              )}
+
+              {!selectedRole && (
+                <Alert>
+                  <Shield className="h-4 w-4" />
+                  <AlertTitle>请选择角色</AlertTitle>
+                  <AlertDescription>请先选择一个角色以查看和编辑其权限</AlertDescription>
+                </Alert>
+              )}
             </CardContent>
-            <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsEditingPermissions(false)}>
-                取消
-              </Button>
-              <Button onClick={() => {
-                setPermissionsChanged(true)
-                setTimeout(() => setPermissionsChanged(false), 2000)
-                setIsEditingPermissions(false)
-              }}>
-                保存权限
-              </Button>
-            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
@@ -1111,10 +1336,11 @@ export default function UserManagementPage() {
                   <SelectValue placeholder="选择角色" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="管理员">管理员</SelectItem>
-                  <SelectItem value="操作员">操作员</SelectItem>
-                  <SelectItem value="分析师">分析师</SelectItem>
-                  <SelectItem value="访客">访客</SelectItem>
+                  {roles.map((role) => (
+                    <SelectItem key={role.id} value={role.name}>
+                      {role.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1296,7 +1522,7 @@ export default function UserManagementPage() {
               <AlertTitle>警告</AlertTitle>
               <AlertDescription>
                 删除角色将永久移除该角色的所有信息和权限设置。此操作无法恢复。
-                {roles.find(r => r.id === roleToDelete)?.users && roles.find(r => r.id === roleToDelete)?.users > 0 && (
+                {roles.find(r => r.id === roleToDelete)?.users && (roles.find(r => r.id === roleToDelete)?.users || 0) > 0 && (
                   <div className="mt-2 font-bold">
                     此角色当前有用户使用，无法删除。请先将用户分配到其他角色。
                   </div>
@@ -1311,7 +1537,7 @@ export default function UserManagementPage() {
             <Button
               variant="destructive"
               onClick={handleDeleteRole}
-              disabled={roles.find(r => r.id === roleToDelete)?.users > 0}
+              disabled={(roles.find(r => r.id === roleToDelete)?.users || 0) > 0}
             >
               确认删除
             </Button>

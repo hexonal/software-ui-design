@@ -531,3 +531,208 @@ export const updateAccessPolicy = async (id: string, data: Partial<AccessPolicy>
 export const deleteAccessPolicy = async (id: string): Promise<ApiResponse<boolean>> => {
   return api.delete(`/dfm/security/access-policies/${id}`)
 }
+
+// =============================================== 权限管理 API
+// ===============================================
+
+/**
+ * 权限分组接口
+ */
+export interface PermissionGroup {
+  id: string
+  name: string
+  description?: string
+  permissions: Permission[]
+}
+
+/**
+ * 权限接口
+ */
+export interface Permission {
+  id: string
+  name: string
+  code: string
+  description?: string
+  groupId: string
+}
+
+/**
+ * 角色权限接口
+ */
+export interface RolePermissions {
+  roleId: string
+  roleName: string
+  grantedPermissions: string[]
+}
+
+/**
+ * 更新角色权限请求接口
+ */
+export interface UpdateRolePermissionsRequest {
+  permissionIds: string[]
+  remark?: string
+}
+
+/**
+ * 权限检查结果接口
+ */
+export interface PermissionCheckResult {
+  roleId: string
+  permissionCode: string
+  hasPermission: boolean
+}
+
+/**
+ * @openapi
+ * /security/permissions/groups:
+ *   get:
+ *     summary: 获取权限分组列表
+ *     tags:
+ *       - Permissions
+ *     responses:
+ *       200:
+ *         description: 权限分组列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/PermissionGroup'
+ *             example:
+ *               - id: "database"
+ *                 name: "数据库管理权限"
+ *                 description: "数据库管理权限相关的所有权限"
+ *                 permissions:
+ *                   - id: "db_view"
+ *                     name: "查看数据库"
+ *                     code: "database:view"
+ *                     description: "查看数据库的权限"
+ *                     groupId: "database"
+ *                   - id: "db_create"
+ *                     name: "创建数据库"
+ *                     code: "database:create"
+ *                     description: "创建数据库的权限"
+ *                     groupId: "database"
+ */
+export const getPermissionGroups = async (): Promise<ApiResponse<PermissionGroup[]>> => {
+  return api.get('/dfm/security/permissions/groups')
+}
+
+/**
+ * @openapi
+ * /security/permissions:
+ *   get:
+ *     summary: 获取所有权限列表
+ *     tags:
+ *       - Permissions
+ *     responses:
+ *       200:
+ *         description: 权限列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Permission'
+ */
+export const getAllPermissions = async (): Promise<ApiResponse<Permission[]>> => {
+  return api.get('/dfm/security/permissions')
+}
+
+/**
+ * @openapi
+ * /security/roles/{roleId}/permissions:
+ *   get:
+ *     summary: 获取角色权限
+ *     tags:
+ *       - Permissions
+ *     parameters:
+ *       - name: roleId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 角色权限配置
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RolePermissions'
+ *             example:
+ *               roleId: "1"
+ *               roleName: "管理员"
+ *               grantedPermissions: ["db_view", "db_create", "storage_view"]
+ */
+export const getRolePermissions = async (roleId: string): Promise<ApiResponse<RolePermissions>> => {
+  return api.get(`/dfm/security/roles/${roleId}/permissions`)
+}
+
+/**
+ * @openapi
+ * /security/roles/{roleId}/permissions:
+ *   put:
+ *     summary: 更新角色权限
+ *     tags:
+ *       - Permissions
+ *     parameters:
+ *       - name: roleId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UpdateRolePermissionsRequest'
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/RolePermissions'
+ */
+export const updateRolePermissions = async (
+  roleId: string,
+  data: UpdateRolePermissionsRequest
+): Promise<ApiResponse<RolePermissions>> => {
+  return api.put(`/dfm/security/roles/${roleId}/permissions`, data)
+}
+
+/**
+ * @openapi
+ * /security/roles/{roleId}/permissions/check:
+ *   get:
+ *     summary: 检查角色权限
+ *     tags:
+ *       - Permissions
+ *     parameters:
+ *       - name: roleId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - name: permissionCode
+ *         in: query
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 权限检查结果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/PermissionCheckResult'
+ */
+export const checkRolePermission = async (
+  roleId: string,
+  permissionCode: string
+): Promise<ApiResponse<PermissionCheckResult>> => {
+  return api.get(`/dfm/security/roles/${roleId}/permissions/check`, {
+    params: { permissionCode }
+  })
+}

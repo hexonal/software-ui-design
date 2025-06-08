@@ -60,22 +60,156 @@ export default function PerformanceMonitoringPage() {
   }, [timeRange])
 
   const fetchPerformanceData = async () => {
+    // 设置超时定时器（50秒）
+    const timeoutId = setTimeout(() => {
+      setError('请求超时：获取性能数据超过50秒，请检查网络连接或服务状态')
+      setLoading(false)
+      setIsRefreshing(false)
+    }, 50000) // 50秒超时
+
     try {
       setLoading(true)
       setError(null)
       setIsRefreshing(true)
+      console.log('开始加载状态，设置loading为true')
+
+      console.log('开始获取性能数据，时间范围:', timeRange)
+      console.log('调用 monitoringApi.getPerformanceData:', monitoringApi.getPerformanceData)
 
       const response = await monitoringApi.getPerformanceData(timeRange)
 
-      if (response.success) {
-        setPerformanceData(response.data)
-      } else {
-        setError(response.message || "获取性能数据失败")
+      console.log('===== 性能数据详细调试信息 =====')
+      console.log('原始API响应:', response)
+      console.log('响应对象类型:', typeof response)
+      console.log('响应是否为null:', response === null)
+      console.log('响应是否为undefined:', response === undefined)
+      console.log('响应原型:', Object.getPrototypeOf(response))
+      console.log('响应构造函数:', response?.constructor?.name)
+      console.log('响应类型检查:', {
+        responseType: typeof response,
+        isObject: typeof response === 'object',
+        hasSuccess: response && 'success' in response,
+        hasData: response && 'data' in response,
+        hasMessage: response && 'message' in response,
+        hasCode: response && 'code' in response,
+        successValue: response?.success,
+        dataValue: response?.data,
+        messageValue: response?.message,
+        codeValue: response?.code
+      })
+
+      // 增强的响应处理逻辑
+      let finalData = null
+      let isSuccess = false
+      let errorMessage = "获取性能数据失败"
+
+      // 情况1: 标准Result结构 (response.success存在)
+      if (response && typeof response === 'object' && 'success' in response) {
+        isSuccess = Boolean(response.success)
+        finalData = response.data
+        errorMessage = response.message || errorMessage
+        console.log('检测到标准Result结构:', { isSuccess, finalData, errorMessage })
       }
-    } catch (err) {
-      console.error("获取性能数据出错:", err)
-      setError("获取性能数据失败")
+      // 情况2: 直接返回数据 (没有success字段，但有数据)
+      else if (response && typeof response === 'object') {
+        // 检查是否有code字段判断成功
+        if ('code' in response) {
+          isSuccess = response.code === 200
+          finalData = response.data || response
+          errorMessage = response.message || errorMessage
+          console.log('检测到带code的响应:', { isSuccess, finalData, errorMessage })
+        } else {
+          // 假设直接返回的对象就是数据
+          isSuccess = true
+          finalData = response
+          console.log('检测到直接对象响应:', { finalData })
+        }
+      }
+      // 情况3: 数组数据
+      else if (Array.isArray(response)) {
+        isSuccess = true
+        finalData = response
+        console.log('检测到数组响应:', { finalData })
+      }
+      // 情况4: 基础类型数据
+      else if (response !== null && response !== undefined) {
+        isSuccess = true
+        finalData = response
+        console.log('检测到基础类型响应:', { finalData })
+      }
+
+      if (isSuccess && finalData !== null && finalData !== undefined) {
+        console.log('===== 成功处理性能数据 =====')
+        console.log('最终数据:', finalData)
+
+        // 额外检查：如果 finalData 是 axios 响应对象，需要进一步解析
+        let extractedData = finalData
+        if (finalData && typeof finalData === 'object' && 'data' in finalData && 'status' in finalData) {
+          console.log('检测到 axios 响应对象，进行数据提取')
+          console.log('响应对象的 data 字段:', finalData.data)
+
+          // 这是一个 axios 响应对象，需要提取数据
+          if (finalData.data && typeof finalData.data === 'object') {
+            if ('data' in finalData.data) {
+              // 嵌套的 data 结构：response.data.data
+              extractedData = finalData.data.data
+              console.log('提取的嵌套数据:', extractedData)
+            } else {
+              // 直接的 data 结构：response.data
+              extractedData = finalData.data
+              console.log('提取的直接数据:', extractedData)
+            }
+          }
+        }
+
+        console.log('数据详细结构:', {
+          hasCpu: extractedData?.cpu,
+          hasMemory: extractedData?.memory,
+          hasDisk: extractedData?.disk,
+          hasNetwork: extractedData?.network,
+          cpuCurrent: extractedData?.cpu?.current,
+          memoryCurrent: extractedData?.memory?.current,
+          diskCurrent: extractedData?.disk?.current,
+          networkCurrent: extractedData?.network?.current
+        })
+        console.log('设置 performanceData 为:', extractedData)
+        console.log('数据加载完成，清除超时定时器')
+        clearTimeout(timeoutId) // 清除超时定时器
+        setPerformanceData(extractedData)
+        setError(null)
+      } else {
+        console.error('获取性能数据失败:', {
+          isSuccess,
+          finalData,
+          errorMessage,
+          originalResponse: response
+        })
+        clearTimeout(timeoutId) // 清除超时定时器
+        setError(errorMessage)
+        setPerformanceData(null)
+      }
+    } catch (err: any) {
+      console.error("获取性能数据异常:", err)
+      console.error("异常详情:", {
+        message: err?.message,
+        response: err?.response,
+        status: err?.response?.status,
+        data: err?.response?.data
+      })
+
+      // 尝试从异常中提取有用信息
+      let errorMsg = "获取性能数据失败"
+      if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message
+      } else if (err?.message) {
+        errorMsg = err.message
+      }
+
+      clearTimeout(timeoutId) // 清除超时定时器
+      setError(errorMsg)
+      setPerformanceData(null)
     } finally {
+      console.log('API请求完成，设置loading为false')
       setLoading(false)
       setIsRefreshing(false)
     }
@@ -174,8 +308,80 @@ export default function PerformanceMonitoringPage() {
     }
   }
 
-  // 如果没有数据，显示加载状态
-  if (loading && !performanceData) {
+  // 辅助函数：比较当前值与昨日值
+  const compareValues = (current: number, yesterday: number): string => {
+    if (current === undefined || yesterday === undefined) return "N/A"
+    const diff = current - yesterday
+    return diff >= 0 ? `+${diff}%` : `${diff}%`
+  }
+
+  // 辅助函数：格式化时间范围
+  const formatTimeRange = (range: string): string => {
+    switch (range) {
+      case "1h": return "1 小时"
+      case "6h": return "6 小时"
+      case "24h": return "24 小时"
+      case "7d": return "7 天"
+      case "30d": return "30 天"
+      default: return range
+    }
+  }
+
+  // 辅助函数：根据数据库名称获取类型
+  const getDatabaseType = (name: string): string => {
+    if (name.includes("postgres")) return "关系型"
+    if (name.includes("timeseries")) return "时序型"
+    if (name.includes("vector")) return "向量型"
+    if (name.includes("geo")) return "地理空间型"
+    return "未知"
+  }
+
+  // 辅助函数：过滤数据库
+  const filterDatabases = (databases: any[]): any[] => {
+    if (!databases || !Array.isArray(databases)) return []
+
+    return databases.filter(db => {
+      // 根据搜索查询过滤
+      const matchesSearch = !searchQuery ||
+        db.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+      // 根据数据库类型过滤
+      const matchesType = databaseFilter === "all" ||
+        (databaseFilter === "relational" && db.name.includes("postgres")) ||
+        (databaseFilter === "timeseries" && db.name.includes("timeseries")) ||
+        (databaseFilter === "vector" && db.name.includes("vector")) ||
+        (databaseFilter === "geospatial" && db.name.includes("geo"))
+
+      return matchesSearch && matchesType
+    })
+  }
+
+  // 辅助函数：过滤查询
+  const filterQueries = (queries: any[]): any[] => {
+    if (!queries || !Array.isArray(queries)) return []
+
+    return queries.filter(query => {
+      // 根据搜索查询过滤
+      const matchesSearch = !searchQuery ||
+        query.name.toLowerCase().includes(searchQuery.toLowerCase())
+
+      // 根据查询类型过滤
+      const matchesType = queryFilter === "all" ||
+        query.name === queryFilter
+
+      return matchesSearch && matchesType
+    })
+  }
+
+  // 渲染时调试信息
+  console.log('===== 渲染时状态检查 =====')
+  console.log('performanceData状态:', performanceData)
+  console.log('loading状态:', loading)
+  console.log('error状态:', error)
+  console.log('CPU当前值用于渲染:', performanceData?.cpu?.current)
+
+  // 如果正在加载或者没有数据，显示加载状态
+  if (loading || !performanceData) {
     return (
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -186,7 +392,26 @@ export default function PerformanceMonitoringPage() {
         </div>
 
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground mb-2">正在加载性能数据...</p>
+            <p className="text-xs text-muted-foreground">
+              {loading ? '请等待，最长加载时间50秒' : '等待数据返回'}
+            </p>
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md max-w-md mx-auto">
+                <p className="text-red-600 text-sm mb-2">{error}</p>
+                <Button
+                  onClick={fetchPerformanceData}
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-600 hover:bg-red-50"
+                >
+                  重新加载
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     )
@@ -284,16 +509,16 @@ export default function PerformanceMonitoringPage() {
             <HardDrive className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{performanceData?.disk?.iops || 0} IOPS</div>
+            <div className="text-2xl font-bold">{performanceData?.disk?.current || 0} IOPS</div>
             <p className="text-xs text-muted-foreground">
-              {performanceData?.disk?.throughput || "0 MB/s"} 吞吐量
+              {performanceData?.disk?.current || 0} MB/s 吞吐量
             </p>
             <Progress
-              value={performanceData?.disk?.utilization || 0}
+              value={performanceData?.disk?.current || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.disk?.utilization || 0) > 80 ? "bg-red-500" :
-                  (performanceData?.disk?.utilization || 0) > 60 ? "bg-amber-500" :
+                (performanceData?.disk?.current || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.disk?.current || 0) > 60 ? "bg-amber-500" :
                     "bg-green-500"
               }
             />
@@ -305,16 +530,16 @@ export default function PerformanceMonitoringPage() {
             <Network className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{performanceData?.network?.throughput || "0 Mbps"}</div>
+            <div className="text-2xl font-bold">{performanceData?.network?.current || 0} Mbps</div>
             <p className="text-xs text-muted-foreground">
-              {performanceData?.network?.packets || "0"} 包/秒
+              {performanceData?.network?.current || 0} 包/秒
             </p>
             <Progress
-              value={performanceData?.network?.utilization || 0}
+              value={performanceData?.network?.current || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.network?.utilization || 0) > 80 ? "bg-red-500" :
-                  (performanceData?.network?.utilization || 0) > 60 ? "bg-amber-500" :
+                (performanceData?.network?.current || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.network?.current || 0) > 60 ? "bg-amber-500" :
                     "bg-green-500"
               }
             />
@@ -339,7 +564,15 @@ export default function PerformanceMonitoringPage() {
               <div className="h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={performanceData?.systemData || performanceData}
+                    data={performanceData?.systemData || [
+                      {
+                        time: '00:00',
+                        cpu: performanceData?.cpu?.current || 0,
+                        memory: performanceData?.memory?.current || 0,
+                        disk: performanceData?.disk?.current || 0,
+                        network: performanceData?.network?.current || 0,
+                      }
+                    ]}
                     margin={{
                       top: 5,
                       right: 30,
@@ -501,8 +734,8 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>
                       <Badge variant={
                         (performanceData?.cpu?.current || 0) > 80 ? "destructive" :
-                          (performanceData?.cpu?.current || 0) > 60 ? "warning" :
-                            "success"
+                          (performanceData?.cpu?.current || 0) > 60 ? "outline" :
+                            "default"
                       }>
                         {(performanceData?.cpu?.current || 0) > 80 ? "高负载" :
                           (performanceData?.cpu?.current || 0) > 60 ? "中负载" :
@@ -518,8 +751,8 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>
                       <Badge variant={
                         (performanceData?.memory?.current || 0) > 80 ? "destructive" :
-                          (performanceData?.memory?.current || 0) > 60 ? "warning" :
-                            "success"
+                          (performanceData?.memory?.current || 0) > 60 ? "outline" :
+                            "default"
                       }>
                         {(performanceData?.memory?.current || 0) > 80 ? "高负载" :
                           (performanceData?.memory?.current || 0) > 60 ? "中负载" :
@@ -535,8 +768,8 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>
                       <Badge variant={
                         (performanceData?.disk?.current || 0) > 80 ? "destructive" :
-                          (performanceData?.disk?.current || 0) > 60 ? "warning" :
-                            "success"
+                          (performanceData?.disk?.current || 0) > 60 ? "outline" :
+                            "default"
                       }>
                         {(performanceData?.disk?.current || 0) > 80 ? "高负载" :
                           (performanceData?.disk?.current || 0) > 60 ? "中负载" :
@@ -552,8 +785,8 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>
                       <Badge variant={
                         (performanceData?.network?.current || 0) > 80 ? "destructive" :
-                          (performanceData?.network?.current || 0) > 60 ? "warning" :
-                            "success"
+                          (performanceData?.network?.current || 0) > 60 ? "outline" :
+                            "default"
                       }>
                         {(performanceData?.network?.current || 0) > 80 ? "高负载" :
                           (performanceData?.network?.current || 0) > 60 ? "中负载" :
@@ -723,8 +956,8 @@ export default function PerformanceMonitoringPage() {
                       <TableCell>
                         <Badge variant={
                           db.latency > 50 ? "destructive" :
-                            db.latency > 30 ? "warning" :
-                              "success"
+                            db.latency > 30 ? "outline" :
+                              "default"
                         }>
                           {db.latency > 50 ? "高延迟" :
                             db.latency > 30 ? "中延迟" :
@@ -859,8 +1092,8 @@ export default function PerformanceMonitoringPage() {
                       <TableCell>
                         <Badge variant={
                           query.executionTime > 1000 ? "destructive" :
-                            query.executionTime > 500 ? "warning" :
-                              "success"
+                            query.executionTime > 500 ? "outline" :
+                              "default"
                         }>
                           {query.executionTime > 1000 ? "严重" :
                             query.executionTime > 500 ? "警告" :
@@ -877,70 +1110,4 @@ export default function PerformanceMonitoringPage() {
       </Tabs>
     </div>
   )
-}
-
-// 辅助函数：比较当前值与昨日值
-function compareValues(current: number, yesterday: number): string {
-  if (current === undefined || yesterday === undefined) return "N/A"
-
-  const diff = current - yesterday
-  return diff >= 0 ? `+${diff}%` : `${diff}%`
-}
-
-// 辅助函数：格式化时间范围
-function formatTimeRange(range: string): string {
-  switch (range) {
-    case "1h": return "1 小时"
-    case "6h": return "6 小时"
-    case "24h": return "24 小时"
-    case "7d": return "7 天"
-    case "30d": return "30 天"
-    default: return range
-  }
-}
-
-// 辅助函数：根据数据库名称获取类型
-function getDatabaseType(name: string): string {
-  if (name.includes("postgres")) return "关系型"
-  if (name.includes("timeseries")) return "时序型"
-  if (name.includes("vector")) return "向量型"
-  if (name.includes("geo")) return "地理空间型"
-  return "未知"
-}
-
-// 辅助函数：过滤数据库
-function filterDatabases(databases: any[]): any[] {
-  if (!databases || !Array.isArray(databases)) return []
-
-  return databases.filter(db => {
-    // 根据搜索查询过滤
-    const matchesSearch = !searchQuery ||
-      db.name.toLowerCase().includes(searchQuery.toLowerCase())
-
-    // 根据数据库类型过滤
-    const matchesType = databaseFilter === "all" ||
-      (databaseFilter === "relational" && db.name.includes("postgres")) ||
-      (databaseFilter === "timeseries" && db.name.includes("timeseries")) ||
-      (databaseFilter === "vector" && db.name.includes("vector")) ||
-      (databaseFilter === "geospatial" && db.name.includes("geo"))
-
-    return matchesSearch && matchesType
-  })
-}
-
-// 辅助函数：过滤查询
-function filterQueries(queries: any[]): any[] {
-  if (!queries || !Array.isArray(queries)) return []
-
-  return queries.filter(query => {
-    // 根据搜索查询过滤
-    const matchesSearch = !searchQuery ||
-      query.name.toLowerCase().includes(searchQuery.toLowerCase())
-
-    // 根据查询类型过滤
-    const matchesType = queryFilter === "all" ||
-      query.name === queryFilter
-
-    return matchesSearch && matchesType
-  })
 }

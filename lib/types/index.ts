@@ -125,4 +125,39 @@ export interface AccessPolicy {
     target: string
     role: string
     access: string
+}
+
+// =============================================== 权限管理类型
+// ===============================================
+
+export interface Permission {
+    id: string
+    name: string
+    code: string
+    description?: string
+    groupId: string
+}
+
+export interface PermissionGroup {
+    id: string
+    name: string
+    description?: string
+    permissions: Permission[]
+}
+
+export interface RolePermissions {
+    roleId: string
+    roleName: string
+    grantedPermissions: string[]
+}
+
+export interface UpdateRolePermissionsRequest {
+    permissionIds: string[]
+    remark?: string
+}
+
+export interface PermissionCheckResult {
+    roleId: string
+    permissionCode: string
+    hasPermission: boolean
 } 
