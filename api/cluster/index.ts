@@ -129,6 +129,6 @@ export const updateNode = async (id: number, data: Partial<Node>): Promise<ApiRe
  *                   type: boolean
  *                   example: true
  */
-export const deleteNode = async (id: number): Promise<ApiResponse<boolean>> => {
+export const deleteNode = async (id: string | number): Promise<ApiResponse<boolean>> => {
   return api.delete(`/dfm/cluster/nodes/${id}`)
 }

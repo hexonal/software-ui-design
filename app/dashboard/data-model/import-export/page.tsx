@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Upload, Download, CheckCircle, XCircle, Clock, FileText, Database, Filter, Search, Trash2, AlertTriangle, Eye, RefreshCw } from "lucide-react"
+import { Upload, Download, CheckCircle, XCircle, Clock, FileText, Database, Filter, Search, Trash2, AlertTriangle, Eye, RefreshCw, MoreHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -58,7 +58,7 @@ export default function ImportExportPage() {
   const [isTaskDetailsOpen, setIsTaskDetailsOpen] = useState(false)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [taskToDelete, setTaskToDelete] = useState<string | null>(null)
-  
+
   // 导入表单数据
   const [importFormData, setImportFormData] = useState({
     name: "",
@@ -70,7 +70,7 @@ export default function ImportExportPage() {
     truncateTable: false,
     ignoreErrors: false
   })
-  
+
   // 导出表单数据
   const [exportFormData, setExportFormData] = useState({
     name: "",
@@ -89,7 +89,7 @@ export default function ImportExportPage() {
       try {
         setLoading(prev => ({ ...prev, tasks: true }))
         const response = await dataModelApi.getImportExportTasks()
-        if (response.success) {
+        if (response.success && response.data) {
           setTasks(response.data)
         } else {
           setError(response.message)
@@ -104,22 +104,26 @@ export default function ImportExportPage() {
 
     fetchTasks()
   }, [])
-  
+
   useEffect(() => {
     const fetchDatabases = async () => {
       try {
         setLoading(prev => ({ ...prev, databases: true }))
         const response = await databaseApi.getDatabases()
-        if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0) {
-            const firstDb = response.data[0].id
+        // 处理不同的响应格式（Axios包装 vs 直接响应）
+        const apiResponse = (response as any).data || response
+        if (apiResponse.success && apiResponse.data) {
+          setDatabases(apiResponse.data)
+          if (apiResponse.data.length > 0) {
+            const firstDb = apiResponse.data[0].id
             setImportFormData(prev => ({ ...prev, database: firstDb }))
             setExportFormData(prev => ({ ...prev, database: firstDb }))
             fetchTables(firstDb)
           }
         } else {
-          setError(response.message)
+          const errorMessage = apiResponse.message || '获取数据库列表失败'
+          setError(`获取数据库列表失败: ${errorMessage}`)
+          console.error('获取数据库列表API响应错误:', response)
         }
       } catch (err) {
         setError('获取数据库列表失败')
@@ -131,16 +135,30 @@ export default function ImportExportPage() {
 
     fetchDatabases()
   }, [])
-  
+
   const fetchTables = async (databaseId: string) => {
-    if (!databaseId) return
-    
+    if (!databaseId) {
+      setTables([]) // 清空表列表
+      return
+    }
+
     try {
       setLoading(prev => ({ ...prev, tables: true }))
-      const response = await databaseApi.getTables({ database: databaseId })
-      if (response.success) {
-        const filteredTables = response.data.filter((table: any) => table.database === databaseId)
-        setTables(filteredTables)
+      setError(null) // 清除之前的错误
+      setTables([]) // 先清空表列表，避免显示旧数据
+
+      const response = await databaseApi.getTables()
+      // 处理不同的响应格式（Axios包装 vs 直接响应）
+      const apiResponse = (response as any).data || response
+      if (apiResponse.success && apiResponse.data) {
+        // 等待数据完全返回后再处理
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // 过滤当前数据库的表
+        const filteredTables = apiResponse.data.filter((table: any) =>
+          table.database === databaseId || table.databaseId === databaseId
+        )
+        setTables(filteredTables.length > 0 ? filteredTables : apiResponse.data)
         if (filteredTables.length > 0) {
           setImportFormData(prev => ({ ...prev, table: filteredTables[0].name }))
           setExportFormData(prev => ({ ...prev, table: filteredTables[0].name }))
@@ -149,11 +167,14 @@ export default function ImportExportPage() {
           setExportFormData(prev => ({ ...prev, table: "" }))
         }
       } else {
-        setError(response.message)
+        const errorMessage = apiResponse.message || '获取表列表失败'
+        setError(`获取表列表失败: ${errorMessage}`)
+        console.error('API响应错误:', response)
       }
-    } catch (err) {
-      setError('获取表列表失败')
-      console.error(err)
+    } catch (err: any) {
+      const errorMessage = err?.message || err?.toString() || '未知错误'
+      setError(`获取表列表失败: ${errorMessage}`)
+      console.error('获取表列表异常:', err)
     } finally {
       setLoading(prev => ({ ...prev, tables: false }))
     }
@@ -167,8 +188,8 @@ export default function ImportExportPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null
-    setImportFormData(prev => ({ 
-      ...prev, 
+    setImportFormData(prev => ({
+      ...prev,
       file,
       name: file ? `导入 ${file.name}` : prev.name
     }))
@@ -184,7 +205,7 @@ export default function ImportExportPage() {
       setIsImporting(true)
       setImportProgress(0)
       setError(null)
-      
+
       // 模拟导入进度
       const interval = setInterval(() => {
         setImportProgress((prev) => {
@@ -207,7 +228,7 @@ export default function ImportExportPage() {
       setIsImporting(false)
     }
   }
-  
+
   const createImportTask = async () => {
     try {
       const response = await dataModelApi.importData(importFormData.database, importFormData.table, {
@@ -217,7 +238,7 @@ export default function ImportExportPage() {
         truncateTable: importFormData.truncateTable,
         ignoreErrors: importFormData.ignoreErrors
       })
-      
+
       if (response.success) {
         // 添加新任务到列表
         setTasks(prev => [response.data, ...prev])
@@ -242,9 +263,9 @@ export default function ImportExportPage() {
   }
 
   const handleStartExport = async () => {
-    if (!exportFormData.database || 
-        (exportFormData.source === "table" && !exportFormData.table) || 
-        (exportFormData.source === "query" && !exportFormData.query)) {
+    if (!exportFormData.database ||
+      (exportFormData.source === "table" && !exportFormData.table) ||
+      (exportFormData.source === "query" && !exportFormData.query)) {
       setError('请填写所有必要信息')
       return
     }
@@ -253,7 +274,7 @@ export default function ImportExportPage() {
       setIsExporting(true)
       setExportProgress(0)
       setError(null)
-      
+
       // 模拟导出进度
       const interval = setInterval(() => {
         setExportProgress((prev) => {
@@ -276,7 +297,7 @@ export default function ImportExportPage() {
       setIsExporting(false)
     }
   }
-  
+
   const createExportTask = async () => {
     try {
       const response = await dataModelApi.exportData(exportFormData.database, {
@@ -288,7 +309,7 @@ export default function ImportExportPage() {
         includeHeader: exportFormData.includeHeader,
         compress: exportFormData.compress
       })
-      
+
       if (response.success) {
         // 添加新任务到列表
         setTasks(prev => [response.data, ...prev])
@@ -307,10 +328,10 @@ export default function ImportExportPage() {
       console.error(err)
     }
   }
-  
+
   const handleDeleteTask = async () => {
     if (!taskToDelete) return
-    
+
     try {
       setLoading(prev => ({ ...prev, tasks: true }))
       // 模拟删除任务
@@ -326,7 +347,7 @@ export default function ImportExportPage() {
       setLoading(prev => ({ ...prev, tasks: false }))
     }
   }
-  
+
   const handleViewTaskDetails = (task: any) => {
     setSelectedTask(task)
     setIsTaskDetailsOpen(true)
@@ -342,23 +363,23 @@ export default function ImportExportPage() {
       }))
     }
   }, [exportFormData.format])
-  
+
   // 过滤任务
   const filteredTasks = tasks.filter(task => {
-    const matchesSearch = 
+    const matchesSearch =
       task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.source.toLowerCase().includes(searchQuery.toLowerCase()) ||
       task.target.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     const matchesStatus = statusFilter === 'all' || task.status === statusFilter
-    const matchesType = typeFilter === 'all' || 
+    const matchesType = typeFilter === 'all' ||
       (typeFilter === 'import' && task.id.startsWith('import')) ||
       (typeFilter === 'export' && task.id.startsWith('export'))
-    
+
     return matchesSearch && matchesStatus && matchesType
   })
-  
+
   // 分离导入和导出任务
   const importTasks = tasks.filter(task => task.id.startsWith('import'))
   const exportTasks = tasks.filter(task => task.id.startsWith('export'))
@@ -374,15 +395,19 @@ export default function ImportExportPage() {
           <Button variant="outline" onClick={async () => {
             try {
               setLoading(prev => ({ ...prev, tasks: true }))
+              setError(null) // 清除之前的错误
               const response = await dataModelApi.getImportExportTasks()
-              if (response.success) {
-                setTasks(response.data)
+              if (response.success && response.data) {
+                setTasks(response.data || [])
               } else {
-                setError(response.message)
+                const errorMessage = response.message || '刷新任务列表失败'
+                setError(`刷新任务列表失败: ${errorMessage}`)
+                console.error('刷新任务列表API响应错误:', response)
               }
-            } catch (err) {
-              setError('刷新任务列表失败')
-              console.error(err)
+            } catch (err: any) {
+              const errorMessage = err?.message || err?.toString() || '未知错误'
+              setError(`刷新任务列表失败: ${errorMessage}`)
+              console.error('刷新任务列表异常:', err)
             } finally {
               setLoading(prev => ({ ...prev, tasks: false }))
             }
@@ -418,9 +443,9 @@ export default function ImportExportPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="import-name">任务名称</Label>
-                  <Input 
-                    id="import-name" 
-                    placeholder="输入导入任务名称" 
+                  <Input
+                    id="import-name"
+                    placeholder="输入导入任务名称"
                     value={importFormData.name}
                     onChange={(e) => setImportFormData(prev => ({ ...prev, name: e.target.value }))}
                   />
@@ -428,8 +453,8 @@ export default function ImportExportPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="import-database">目标数据库</Label>
-                  <Select 
-                    value={importFormData.database} 
+                  <Select
+                    value={importFormData.database}
                     onValueChange={handleDatabaseChange}
                     disabled={loading.databases}
                   >
@@ -450,19 +475,19 @@ export default function ImportExportPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="import-table">目标表</Label>
-                  <Select 
-                    value={importFormData.table} 
+                  <Select
+                    value={importFormData.table}
                     onValueChange={(value) => setImportFormData(prev => ({ ...prev, table: value }))}
                     disabled={loading.tables || !importFormData.database || tables.length === 0}
                   >
                     <SelectTrigger id="import-table">
                       <SelectValue placeholder={
-                        loading.tables 
-                          ? "加载中..." 
-                          : !importFormData.database 
-                            ? "请先选择数据库" 
-                            : tables.length === 0 
-                              ? "无可用表" 
+                        loading.tables
+                          ? "加载中..."
+                          : !importFormData.database
+                            ? "请先选择数据库"
+                            : tables.length === 0
+                              ? "无可用表"
                               : "选择表"
                       } />
                     </SelectTrigger>
@@ -478,7 +503,7 @@ export default function ImportExportPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="import-format">文件格式</Label>
-                  <Select 
+                  <Select
                     value={importFormData.format}
                     onValueChange={(value) => setImportFormData(prev => ({ ...prev, format: value }))}
                   >
@@ -498,17 +523,17 @@ export default function ImportExportPage() {
               <div className="space-y-2">
                 <Label htmlFor="import-file">选择文件</Label>
                 <div className="flex items-center gap-2">
-                  <Input 
-                    id="import-file" 
-                    type="file" 
-                    className="flex-1" 
+                  <Input
+                    id="import-file"
+                    type="file"
+                    className="flex-1"
                     onChange={handleFileChange}
                     accept={
                       importFormData.format === "csv" ? ".csv" :
-                      importFormData.format === "json" ? ".json" :
-                      importFormData.format === "excel" ? ".xlsx,.xls" :
-                      importFormData.format === "sql" ? ".sql" : 
-                      undefined
+                        importFormData.format === "json" ? ".json" :
+                          importFormData.format === "excel" ? ".xlsx,.xls" :
+                            importFormData.format === "sql" ? ".sql" :
+                              undefined
                     }
                   />
                 </div>
@@ -523,10 +548,10 @@ export default function ImportExportPage() {
                 <Label>导入选项</Label>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="import-header" 
+                    <Checkbox
+                      id="import-header"
                       checked={importFormData.hasHeader}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setImportFormData(prev => ({ ...prev, hasHeader: checked === true }))
                       }
                     />
@@ -538,10 +563,10 @@ export default function ImportExportPage() {
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="import-truncate" 
+                    <Checkbox
+                      id="import-truncate"
                       checked={importFormData.truncateTable}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setImportFormData(prev => ({ ...prev, truncateTable: checked === true }))
                       }
                     />
@@ -553,10 +578,10 @@ export default function ImportExportPage() {
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="import-ignore-errors" 
+                    <Checkbox
+                      id="import-ignore-errors"
                       checked={importFormData.ignoreErrors}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setImportFormData(prev => ({ ...prev, ignoreErrors: checked === true }))
                       }
                     />
@@ -582,8 +607,8 @@ export default function ImportExportPage() {
               )}
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={isImporting}
                 onClick={() => {
                   setImportFormData({
@@ -600,8 +625,8 @@ export default function ImportExportPage() {
               >
                 重置
               </Button>
-              <Button 
-                onClick={handleStartImport} 
+              <Button
+                onClick={handleStartImport}
                 disabled={isImporting || !importFormData.database || !importFormData.table || !importFormData.file}
               >
                 {isImporting ? (
@@ -630,9 +655,9 @@ export default function ImportExportPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="export-name">任务名称</Label>
-                  <Input 
-                    id="export-name" 
-                    placeholder="输入导出任务名称" 
+                  <Input
+                    id="export-name"
+                    placeholder="输入导出任务名称"
                     value={exportFormData.name}
                     onChange={(e) => setExportFormData(prev => ({ ...prev, name: e.target.value }))}
                   />
@@ -640,8 +665,8 @@ export default function ImportExportPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="export-database">源数据库</Label>
-                  <Select 
-                    value={exportFormData.database} 
+                  <Select
+                    value={exportFormData.database}
                     onValueChange={handleDatabaseChange}
                     disabled={loading.databases}
                   >
@@ -661,7 +686,7 @@ export default function ImportExportPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="export-source">数据源</Label>
-                <Select 
+                <Select
                   value={exportFormData.source}
                   onValueChange={(value) => setExportFormData(prev => ({ ...prev, source: value }))}
                 >
@@ -678,19 +703,19 @@ export default function ImportExportPage() {
               {exportFormData.source === "table" ? (
                 <div className="space-y-2">
                   <Label htmlFor="export-table">选择表</Label>
-                  <Select 
-                    value={exportFormData.table} 
+                  <Select
+                    value={exportFormData.table}
                     onValueChange={(value) => setExportFormData(prev => ({ ...prev, table: value }))}
                     disabled={loading.tables || !exportFormData.database || tables.length === 0}
                   >
                     <SelectTrigger id="export-table">
                       <SelectValue placeholder={
-                        loading.tables 
-                          ? "加载中..." 
-                          : !exportFormData.database 
-                            ? "请先选择数据库" 
-                            : tables.length === 0 
-                              ? "无可用表" 
+                        loading.tables
+                          ? "加载中..."
+                          : !exportFormData.database
+                            ? "请先选择数据库"
+                            : tables.length === 0
+                              ? "无可用表"
                               : "选择表"
                       } />
                     </SelectTrigger>
@@ -706,9 +731,9 @@ export default function ImportExportPage() {
               ) : (
                 <div className="space-y-2">
                   <Label htmlFor="export-query">SQL 查询</Label>
-                  <Textarea 
-                    id="export-query" 
-                    placeholder="输入 SQL 查询语句" 
+                  <Textarea
+                    id="export-query"
+                    placeholder="输入 SQL 查询语句"
                     value={exportFormData.query}
                     onChange={(e) => setExportFormData(prev => ({ ...prev, query: e.target.value }))}
                     className="min-h-[100px] font-mono"
@@ -722,7 +747,7 @@ export default function ImportExportPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="export-format">文件格式</Label>
-                  <Select 
+                  <Select
                     value={exportFormData.format}
                     onValueChange={(value) => setExportFormData(prev => ({ ...prev, format: value }))}
                   >
@@ -740,9 +765,9 @@ export default function ImportExportPage() {
 
                 <div className="space-y-2">
                   <Label htmlFor="export-filename">文件名</Label>
-                  <Input 
-                    id="export-filename" 
-                    placeholder="输入导出文件名" 
+                  <Input
+                    id="export-filename"
+                    placeholder="输入导出文件名"
                     value={exportFormData.filename}
                     onChange={(e) => setExportFormData(prev => ({ ...prev, filename: e.target.value }))}
                   />
@@ -753,10 +778,10 @@ export default function ImportExportPage() {
                 <Label>导出选项</Label>
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="export-header" 
+                    <Checkbox
+                      id="export-header"
                       checked={exportFormData.includeHeader}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setExportFormData(prev => ({ ...prev, includeHeader: checked === true }))
                       }
                     />
@@ -768,10 +793,10 @@ export default function ImportExportPage() {
                     </label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="export-compress" 
+                    <Checkbox
+                      id="export-compress"
                       checked={exportFormData.compress}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setExportFormData(prev => ({ ...prev, compress: checked === true }))
                       }
                     />
@@ -797,8 +822,8 @@ export default function ImportExportPage() {
               )}
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 disabled={isExporting}
                 onClick={() => {
                   setExportFormData(prev => ({
@@ -814,12 +839,12 @@ export default function ImportExportPage() {
               >
                 重置
               </Button>
-              <Button 
-                onClick={handleStartExport} 
+              <Button
+                onClick={handleStartExport}
                 disabled={
-                  isExporting || 
-                  !exportFormData.database || 
-                  (exportFormData.source === "table" && !exportFormData.table) || 
+                  isExporting ||
+                  !exportFormData.database ||
+                  (exportFormData.source === "table" && !exportFormData.table) ||
                   (exportFormData.source === "query" && !exportFormData.query)
                 }
               >
@@ -843,10 +868,10 @@ export default function ImportExportPage() {
           <div className="flex flex-col md:flex-row items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索任务..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索任务..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -896,8 +921,8 @@ export default function ImportExportPage() {
                 <FileText className="h-12 w-12 text-muted-foreground mb-2" />
                 <h3 className="text-lg font-medium">暂无任务数据</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {tasks.length === 0 
-                    ? "尚未创建任何导入或导出任务" 
+                  {tasks.length === 0
+                    ? "尚未创建任何导入或导出任务"
                     : "没有符合筛选条件的任务"}
                 </p>
                 <div className="flex gap-2 mt-4">
@@ -943,7 +968,7 @@ export default function ImportExportPage() {
                       <TableCell>
                         <Badge
                           variant={
-                            task.status === "完成" ? "success" : task.status === "进行中" ? "default" : "destructive"
+                            task.status === "完成" ? "secondary" : task.status === "进行中" ? "default" : "destructive"
                           }
                         >
                           {task.status === "完成" && <CheckCircle className="mr-1 h-3 w-3" />}
@@ -981,7 +1006,7 @@ export default function ImportExportPage() {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600"
                               onClick={() => {
                                 setTaskToDelete(task.id)
@@ -1044,7 +1069,7 @@ export default function ImportExportPage() {
                   <div>
                     <Badge
                       variant={
-                        selectedTask.status === "完成" ? "success" : selectedTask.status === "进行中" ? "default" : "destructive"
+                        selectedTask.status === "完成" ? "secondary" : selectedTask.status === "进行中" ? "default" : "destructive"
                       }
                     >
                       {selectedTask.status === "完成" && <CheckCircle className="mr-1 h-3 w-3" />}
@@ -1124,7 +1149,7 @@ export default function ImportExportPage() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Alert variant="warning">
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>警告</AlertTitle>
               <AlertDescription>

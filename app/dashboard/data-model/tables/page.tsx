@@ -56,15 +56,16 @@ export default function DataModelTablesPage() {
   const [newTableData, setNewTableData] = useState({
     name: "",
     fields: [
-      { name: "id", type: "integer", length: null, nullable: false, default: "自增", primaryKey: true }
+      { name: "id", type: "integer", length: null as string | null, nullable: false, default: "自增", primaryKey: true }
     ]
   })
   const [newFieldData, setNewFieldData] = useState({
     name: "",
     type: "varchar",
-    length: "",
+    length: "" as string | null,
     nullable: false,
-    default: ""
+    default: "",
+    primaryKey: false
   })
 
   // 获取数据库列表
@@ -73,13 +74,17 @@ export default function DataModelTablesPage() {
       try {
         setLoading(prev => ({ ...prev, databases: true }))
         const response = await databaseApi.getDatabases()
-        if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0 && !selectedDatabase) {
-            setSelectedDatabase(response.data[0].id)
+        // 处理不同的响应格式（Axios包装 vs 直接响应）
+        const apiResponse = (response as any).data || response
+        if (apiResponse.success && apiResponse.data) {
+          setDatabases(apiResponse.data)
+          if (apiResponse.data.length > 0 && !selectedDatabase) {
+            setSelectedDatabase(apiResponse.data[0].id)
           }
         } else {
-          setError(response.message)
+          const errorMessage = apiResponse.message || '获取数据库列表失败'
+          setError(`获取数据库列表失败: ${errorMessage}`)
+          console.error('获取数据库列表API响应错误:', response)
         }
       } catch (err) {
         setError('获取数据库列表失败')
@@ -94,23 +99,41 @@ export default function DataModelTablesPage() {
 
   // 获取表列表
   useEffect(() => {
-    if (!selectedDatabase) return
+    if (!selectedDatabase) {
+      setTables([]) // 清空表列表
+      return
+    }
 
     const fetchTables = async () => {
       try {
         setLoading(prev => ({ ...prev, tables: true }))
-        const response = await databaseApi.getTables({ database: selectedDatabase })
-        if (response.success) {
-          setTables(response.data)
-          if (response.data.length > 0 && !selectedTable) {
-            setSelectedTable(response.data[0].name)
+        setError(null) // 清除之前的错误
+        setTables([]) // 先清空表列表，避免显示旧数据
+
+        const response = await databaseApi.getTables()
+        // 处理不同的响应格式（Axios包装 vs 直接响应）
+        const apiResponse = (response as any).data || response
+        if (apiResponse.success && apiResponse.data) {
+          // 等待数据完全返回后再处理
+          await new Promise(resolve => setTimeout(resolve, 100)) // 短暂延迟确保状态更新
+
+          // 如果API返回所有表，过滤当前数据库的表
+          const filteredTables = apiResponse.data.filter((table: any) =>
+            table.database === selectedDatabase || table.databaseId === selectedDatabase
+          )
+          setTables(filteredTables.length > 0 ? filteredTables : apiResponse.data)
+          if (apiResponse.data.length > 0 && !selectedTable) {
+            setSelectedTable(apiResponse.data[0].name)
           }
         } else {
-          setError(response.message)
+          const errorMessage = apiResponse.message || '获取表列表失败'
+          setError(`获取表列表失败: ${errorMessage}`)
+          console.error('API响应错误:', response)
         }
-      } catch (err) {
-        setError('获取表列表失败')
-        console.error(err)
+      } catch (err: any) {
+        const errorMessage = err?.message || err?.toString() || '未知错误'
+        setError(`获取表列表失败: ${errorMessage}`)
+        console.error('获取表列表异常:', err)
       } finally {
         setLoading(prev => ({ ...prev, tables: false }))
       }
@@ -144,18 +167,21 @@ export default function DataModelTablesPage() {
   }, [selectedDatabase, selectedTable])
 
   const handleAddField = () => {
+    if (!newFieldData.name) return
+
     setNewTableData(prev => ({
       ...prev,
       fields: [...prev.fields, { ...newFieldData }]
     }))
-    
+
     // 重置新字段表单
     setNewFieldData({
       name: "",
       type: "varchar",
       length: "",
       nullable: false,
-      default: ""
+      default: "",
+      primaryKey: false
     })
   }
 
@@ -164,7 +190,7 @@ export default function DataModelTablesPage() {
     if (newTableData.fields[index].primaryKey) {
       return
     }
-    
+
     setNewTableData(prev => ({
       ...prev,
       fields: prev.fields.filter((_, i) => i !== index)
@@ -180,9 +206,9 @@ export default function DataModelTablesPage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+
       const response = await dataModelApi.createTable(selectedDatabase, newTableData)
-      
+
       if (response.success) {
         // 添加新表到列表
         setTables(prev => [...prev, response.data.table])
@@ -213,9 +239,9 @@ export default function DataModelTablesPage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+
       const response = await dataModelApi.dropTable(selectedDatabase, tableToDelete)
-      
+
       if (response.success) {
         // 从列表中移除表
         setTables(prev => prev.filter(table => table.name !== tableToDelete))
@@ -236,7 +262,7 @@ export default function DataModelTablesPage() {
   }
 
   // 过滤表
-  const filteredTables = tables.filter(table => 
+  const filteredTables = tables.filter(table =>
     table.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
@@ -270,18 +296,18 @@ export default function DataModelTablesPage() {
                   <Input
                     id="table-name"
                     value={newTableData.name}
-                    onChange={(e) => setNewTableData({...newTableData, name: e.target.value})}
+                    onChange={(e) => setNewTableData({ ...newTableData, name: e.target.value })}
                     placeholder="输入表名"
                     className="col-span-3"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
                     <Label>字段</Label>
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       onClick={() => setNewTableData({
                         ...newTableData,
@@ -293,7 +319,7 @@ export default function DataModelTablesPage() {
                       重置字段
                     </Button>
                   </div>
-                  
+
                   <div className="rounded-md border">
                     <TableComponent>
                       <TableHeader>
@@ -310,23 +336,23 @@ export default function DataModelTablesPage() {
                         {newTableData.fields.map((field, index) => (
                           <TableRow key={index}>
                             <TableCell>
-                              <Input 
-                                value={field.name} 
+                              <Input
+                                value={field.name}
                                 onChange={(e) => {
                                   const updatedFields = [...newTableData.fields];
                                   updatedFields[index].name = e.target.value;
-                                  setNewTableData({...newTableData, fields: updatedFields});
+                                  setNewTableData({ ...newTableData, fields: updatedFields });
                                 }}
                                 disabled={field.primaryKey}
                               />
                             </TableCell>
                             <TableCell>
-                              <Select 
+                              <Select
                                 value={field.type}
                                 onValueChange={(value) => {
                                   const updatedFields = [...newTableData.fields];
                                   updatedFields[index].type = value;
-                                  setNewTableData({...newTableData, fields: updatedFields});
+                                  setNewTableData({ ...newTableData, fields: updatedFields });
                                 }}
                                 disabled={field.primaryKey}
                               >
@@ -347,43 +373,43 @@ export default function DataModelTablesPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                value={field.length || ""} 
+                              <Input
+                                value={field.length || ""}
                                 onChange={(e) => {
                                   const updatedFields = [...newTableData.fields];
-                                  updatedFields[index].length = e.target.value;
-                                  setNewTableData({...newTableData, fields: updatedFields});
+                                  updatedFields[index].length = e.target.value || null;
+                                  setNewTableData({ ...newTableData, fields: updatedFields });
                                 }}
                                 placeholder={field.type === 'varchar' ? "如: 255" : field.type === 'decimal' ? "如: 10,2" : ""}
                                 disabled={field.primaryKey || !['varchar', 'decimal'].includes(field.type)}
                               />
                             </TableCell>
                             <TableCell>
-                              <Checkbox 
-                                checked={field.nullable} 
+                              <Checkbox
+                                checked={field.nullable}
                                 onCheckedChange={(checked) => {
                                   const updatedFields = [...newTableData.fields];
                                   updatedFields[index].nullable = checked === true;
-                                  setNewTableData({...newTableData, fields: updatedFields});
+                                  setNewTableData({ ...newTableData, fields: updatedFields });
                                 }}
                                 disabled={field.primaryKey}
                               />
                             </TableCell>
                             <TableCell>
-                              <Input 
-                                value={field.default || ""} 
+                              <Input
+                                value={field.default || ""}
                                 onChange={(e) => {
                                   const updatedFields = [...newTableData.fields];
                                   updatedFields[index].default = e.target.value;
-                                  setNewTableData({...newTableData, fields: updatedFields});
+                                  setNewTableData({ ...newTableData, fields: updatedFields });
                                 }}
                                 placeholder="默认值"
                                 disabled={field.primaryKey}
                               />
                             </TableCell>
                             <TableCell>
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 onClick={() => handleRemoveField(index)}
                                 disabled={field.primaryKey}
@@ -397,18 +423,18 @@ export default function DataModelTablesPage() {
                     </TableComponent>
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label>添加新字段</Label>
                   <div className="grid grid-cols-5 gap-2">
-                    <Input 
-                      placeholder="字段名" 
+                    <Input
+                      placeholder="字段名"
                       value={newFieldData.name}
-                      onChange={(e) => setNewFieldData({...newFieldData, name: e.target.value})}
+                      onChange={(e) => setNewFieldData({ ...newFieldData, name: e.target.value })}
                     />
-                    <Select 
+                    <Select
                       value={newFieldData.type}
-                      onValueChange={(value) => setNewFieldData({...newFieldData, type: value})}
+                      onValueChange={(value) => setNewFieldData({ ...newFieldData, type: value })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="类型" />
@@ -425,17 +451,17 @@ export default function DataModelTablesPage() {
                         <SelectItem value="json">JSON</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input 
+                    <Input
                       placeholder={newFieldData.type === 'varchar' ? "长度 (如: 255)" : newFieldData.type === 'decimal' ? "精度 (如: 10,2)" : ""}
-                      value={newFieldData.length}
-                      onChange={(e) => setNewFieldData({...newFieldData, length: e.target.value})}
+                      value={newFieldData.length || ""}
+                      onChange={(e) => setNewFieldData({ ...newFieldData, length: e.target.value as string | null })}
                       disabled={!['varchar', 'decimal'].includes(newFieldData.type)}
                     />
                     <div className="flex items-center gap-2">
-                      <Checkbox 
-                        id="field-nullable" 
+                      <Checkbox
+                        id="field-nullable"
                         checked={newFieldData.nullable}
-                        onCheckedChange={(checked) => setNewFieldData({...newFieldData, nullable: checked === true})}
+                        onCheckedChange={(checked) => setNewFieldData({ ...newFieldData, nullable: checked === true })}
                       />
                       <Label htmlFor="field-nullable">可空</Label>
                     </div>
@@ -453,20 +479,39 @@ export default function DataModelTablesPage() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-          
+
           <Button variant="outline" onClick={async () => {
+            if (!selectedDatabase) {
+              setError('请先选择数据库')
+              return
+            }
+
             try {
               setLoading(prev => ({ ...prev, tables: true }))
               setError(null)
-              const response = await databaseApi.getTables({ database: selectedDatabase })
-              if (response.success) {
-                setTables(response.data)
+              setTables([]) // 先清空表列表，显示加载状态
+
+              const response = await databaseApi.getTables()
+              // 处理不同的响应格式（Axios包装 vs 直接响应）
+              const apiResponse = (response as any).data || response
+              if (apiResponse.success && apiResponse.data) {
+                // 等待数据完全返回后再处理
+                await new Promise(resolve => setTimeout(resolve, 100))
+
+                // 如果API返回所有表，过滤当前数据库的表
+                const filteredTables = apiResponse.data.filter((table: any) =>
+                  table.database === selectedDatabase || table.databaseId === selectedDatabase
+                )
+                setTables(filteredTables.length > 0 ? filteredTables : apiResponse.data)
               } else {
-                setError(response.message)
+                const errorMessage = apiResponse.message || '刷新表列表失败'
+                setError(`刷新表列表失败: ${errorMessage}`)
+                console.error('刷新表列表API响应错误:', response)
               }
-            } catch (err) {
-              setError('刷新表列表失败')
-              console.error(err)
+            } catch (err: any) {
+              const errorMessage = err?.message || err?.toString() || '未知错误'
+              setError(`刷新表列表失败: ${errorMessage}`)
+              console.error('刷新表列表异常:', err)
             } finally {
               setLoading(prev => ({ ...prev, tables: false }))
             }
@@ -497,16 +542,16 @@ export default function DataModelTablesPage() {
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="search" 
-                  placeholder="搜索表..." 
-                  className="pl-8" 
+                <Input
+                  type="search"
+                  placeholder="搜索表..."
+                  className="pl-8"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={() => setSearchQuery("")}
               >
@@ -515,8 +560,8 @@ export default function DataModelTablesPage() {
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Select 
-                value={selectedDatabase || ""} 
+              <Select
+                value={selectedDatabase || ""}
                 onValueChange={setSelectedDatabase}
               >
                 <SelectTrigger className="w-[220px]">
@@ -537,8 +582,8 @@ export default function DataModelTablesPage() {
             <CardHeader>
               <CardTitle>表列表</CardTitle>
               <CardDescription>
-                {selectedDatabase ? 
-                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` : 
+                {selectedDatabase ?
+                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` :
                   "请先选择一个数据库"}
               </CardDescription>
             </CardHeader>
@@ -566,8 +611,8 @@ export default function DataModelTablesPage() {
                       {tables.length === 0 ? "该数据库中没有表，请创建新表" : "尝试使用其他搜索条件"}
                     </p>
                     {tables.length === 0 && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="mt-4"
                         onClick={() => setIsCreateTableOpen(true)}
                       >
@@ -627,7 +672,7 @@ export default function DataModelTablesPage() {
                                 查询数据
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => {
                                   setTableToDelete(table.name)
@@ -656,14 +701,14 @@ export default function DataModelTablesPage() {
                 <div>
                   <CardTitle>表结构</CardTitle>
                   <CardDescription>
-                    {selectedTable ? 
-                      `${selectedTable} 表的结构` : 
+                    {selectedTable ?
+                      `${selectedTable} 表的结构` :
                       "请先选择一个表"}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select 
-                    value={selectedDatabase || ""} 
+                  <Select
+                    value={selectedDatabase || ""}
                     onValueChange={setSelectedDatabase}
                   >
                     <SelectTrigger className="w-[180px]">
@@ -677,17 +722,17 @@ export default function DataModelTablesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select 
-                    value={selectedTable || ""} 
+                  <Select
+                    value={selectedTable || ""}
                     onValueChange={setSelectedTable}
                     disabled={!selectedDatabase || tables.length === 0}
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder={
-                        !selectedDatabase 
-                          ? "请先选择数据库" 
-                          : tables.length === 0 
-                            ? "无可用表" 
+                        !selectedDatabase
+                          ? "请先选择数据库"
+                          : tables.length === 0
+                            ? "无可用表"
                             : "选择表"
                       } />
                     </SelectTrigger>
@@ -699,12 +744,12 @@ export default function DataModelTablesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="icon"
                     onClick={async () => {
                       if (!selectedDatabase || !selectedTable) return
-                      
+
                       try {
                         setLoading(prev => ({ ...prev, structure: true }))
                         setError(null)
@@ -782,20 +827,20 @@ export default function DataModelTablesPage() {
                 {tableStructure.length > 0 && `共 ${tableStructure.length} 个字段`}
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setIsEditTableOpen(true)}
                   disabled={!selectedTable || tableStructure.length === 0}
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   添加字段
                 </Button>
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     // 导出表结构为 SQL
                     if (!tableStructure.length) return
-                    
+
                     let sql = `CREATE TABLE ${selectedTable} (\n`
                     tableStructure.forEach((field, index) => {
                       sql += `  ${field.name} ${field.type}`
@@ -806,7 +851,7 @@ export default function DataModelTablesPage() {
                       else sql += "\n"
                     })
                     sql += ");"
-                    
+
                     // 创建下载链接
                     const blob = new Blob([sql], { type: 'text/plain' })
                     const url = URL.createObjectURL(blob)
@@ -835,14 +880,14 @@ export default function DataModelTablesPage() {
                 <div>
                   <CardTitle>索引管理</CardTitle>
                   <CardDescription>
-                    {selectedTable ? 
-                      `${selectedTable} 表的索引` : 
+                    {selectedTable ?
+                      `${selectedTable} 表的索引` :
                       "请先选择一个表"}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select 
-                    value={selectedDatabase || ""} 
+                  <Select
+                    value={selectedDatabase || ""}
                     onValueChange={setSelectedDatabase}
                   >
                     <SelectTrigger className="w-[180px]">
@@ -856,17 +901,17 @@ export default function DataModelTablesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select 
-                    value={selectedTable || ""} 
+                  <Select
+                    value={selectedTable || ""}
                     onValueChange={setSelectedTable}
                     disabled={!selectedDatabase || tables.length === 0}
                   >
                     <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder={
-                        !selectedDatabase 
-                          ? "请先选择数据库" 
-                          : tables.length === 0 
-                            ? "无可用表" 
+                        !selectedDatabase
+                          ? "请先选择数据库"
+                          : tables.length === 0
+                            ? "无可用表"
                             : "选择表"
                       } />
                     </SelectTrigger>
@@ -878,7 +923,7 @@ export default function DataModelTablesPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Button 
+                  <Button
                     disabled={!selectedDatabase || !selectedTable}
                   >
                     <Plus className="mr-2 h-4 w-4" />

@@ -36,7 +36,7 @@ import { Node } from "@/lib/types"
 
 export default function ClusterNodesPage() {
   const [activeTab, setActiveTab] = useState("nodes")
-  const [selectedNode, setSelectedNode] = useState<string | null>(null)
+  const [selectedNode, setSelectedNode] = useState<number | null>(null)
   const [nodes, setNodes] = useState<Node[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -47,27 +47,69 @@ export default function ClusterNodesPage() {
   const [newNodeData, setNewNodeData] = useState({
     name: "",
     ip: "",
+    port: "",
+    username: "",
+    password: "",
     role: "数据节点",
   })
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
-  const [nodeToDelete, setNodeToDelete] = useState<string | null>(null)
-  const [isRestarting, setIsRestarting] = useState<string | null>(null)
-  const [isStarting, setIsStarting] = useState<string | null>(null)
-  const [isStopping, setIsStopping] = useState<string | null>(null)
+  const [nodeToDelete, setNodeToDelete] = useState<number | null>(null)
+  const [isRestarting, setIsRestarting] = useState<number | null>(null)
+  const [isStarting, setIsStarting] = useState<number | null>(null)
+  const [isStopping, setIsStopping] = useState<number | null>(null)
 
   useEffect(() => {
     const fetchNodes = async () => {
       try {
         setLoading(true)
-        const response = await clusterApi.getNodes()
-        if (response.success) {
-          setNodes(response.data)
+        setError(null) // 重置错误状态
+
+        // 设置30秒超时
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('请求超时')), 30000)
+        })
+
+        const apiPromise = clusterApi.getNodes()
+
+        // 使用Promise.race实现超时控制
+        const response = await Promise.race([apiPromise, timeoutPromise])
+
+        console.log('API响应详情:', response)
+        console.log('response.data结构:', response.data)
+
+        // 响应拦截器处理后，数据在response.data中，而实际业务数据在response.data.data中
+        const apiResponse = response.data as any; // 这是经过响应拦截器处理的{code, message, data, success}格式
+
+        console.log('响应数据结构检查:', {
+          hasData: !!apiResponse,
+          dataType: typeof apiResponse,
+          hasSuccess: apiResponse && 'success' in apiResponse,
+          successValue: apiResponse?.success,
+          hasCode: apiResponse && 'code' in apiResponse,
+          codeValue: apiResponse?.code,
+          hasDataField: apiResponse && 'data' in apiResponse,
+          dataFieldValue: apiResponse?.data,
+          dataFieldType: typeof apiResponse?.data,
+          isDataArray: Array.isArray(apiResponse?.data)
+        })
+
+        if (apiResponse && apiResponse.success === true) {
+          console.log('API调用成功，节点列表:', apiResponse.data)
+          const nodes = apiResponse.data || []
+          setNodes(nodes)
+          setError(null) // 成功时清除错误
         } else {
-          setError(response.message)
+          console.log('API调用失败:', apiResponse?.message)
+          setError(apiResponse?.message || '获取节点数据失败')
         }
+
       } catch (err) {
-        setError('获取节点数据失败')
-        console.error(err)
+        console.error('API调用异常:', err)
+        if (err instanceof Error && err.message === '请求超时') {
+          setError('请求超时，请检查网络连接或稍后重试')
+        } else {
+          setError('获取节点数据失败')
+        }
       } finally {
         setLoading(false)
       }
@@ -76,14 +118,43 @@ export default function ClusterNodesPage() {
     fetchNodes()
   }, [])
 
-  const handleViewNode = (nodeId: string) => {
-    setSelectedNode(nodeId)
-    setActiveTab("details")
+  const handleViewNode = async (nodeId: number) => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      console.log('获取节点详情, ID:', nodeId)
+      const response = await clusterApi.getNodeById(nodeId)
+      console.log('节点详情API响应:', response)
+
+      // 响应拦截器处理后，数据在response.data中，而实际业务数据在response.data.data中
+      const apiResponse = response.data as any;
+
+      if (apiResponse && apiResponse.success === true) {
+        console.log('获取节点详情成功:', apiResponse.data)
+        // 更新节点列表中的详细信息
+        setNodes(prevNodes =>
+          prevNodes.map(node =>
+            node.id === nodeId ? { ...node, ...apiResponse.data } : node
+          )
+        )
+        setSelectedNode(nodeId)
+        setActiveTab("details")
+      } else {
+        console.log('获取节点详情失败:', apiResponse?.message)
+        setError(apiResponse?.message || '获取节点详情失败')
+      }
+    } catch (err) {
+      console.error('获取节点详情异常:', err)
+      setError('获取节点详情失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAddNode = async () => {
-    if (!newNodeData.name || !newNodeData.ip) {
-      setError('节点名称和IP地址不能为空')
+    if (!newNodeData.name || !newNodeData.ip || !newNodeData.port || !newNodeData.username || !newNodeData.password) {
+      setError('节点名称、IP地址、端口号、账号和密码不能为空')
       return
     }
 
@@ -94,6 +165,9 @@ export default function ClusterNodesPage() {
       const response = await clusterApi.createNode({
         name: newNodeData.name,
         ip: newNodeData.ip,
+        port: newNodeData.port,
+        username: newNodeData.username,
+        password: newNodeData.password,
         role: newNodeData.role,
         status: "离线", // 新节点默认为离线状态
         cpu: 0,
@@ -101,12 +175,15 @@ export default function ClusterNodesPage() {
         disk: 0
       })
 
-      if (response.success) {
+      if (response.success && response.data) {
         setNodes([...nodes, response.data])
         setIsAddNodeOpen(false)
         setNewNodeData({
           name: "",
           ip: "",
+          port: "",
+          username: "",
+          password: "",
           role: "数据节点"
         })
       } else {
@@ -130,7 +207,7 @@ export default function ClusterNodesPage() {
       const response = await clusterApi.deleteNode(nodeToDelete)
 
       if (response.success) {
-        setNodes(nodes.filter(node => node.id !== nodeToDelete))
+        setNodes(nodes.filter(node => node.id.toString() !== nodeToDelete?.toString()))
         if (selectedNode === nodeToDelete) {
           setSelectedNode(null)
         }
@@ -147,7 +224,7 @@ export default function ClusterNodesPage() {
     }
   }
 
-  const handleStartNode = async (nodeId: string) => {
+  const handleStartNode = async (nodeId: number) => {
     try {
       setIsStarting(nodeId)
       setError(null)
@@ -293,7 +370,12 @@ export default function ClusterNodesPage() {
           <p className="text-muted-foreground">管理集群中的节点</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isAddNodeOpen} onOpenChange={setIsAddNodeOpen}>
+          <Dialog open={isAddNodeOpen} onOpenChange={(open) => {
+            setIsAddNodeOpen(open)
+            if (open) {
+              setError(null) // 打开弹窗时清除错误信息
+            }
+          }}>
             <DialogTrigger asChild>
               <Button>
                 <Server className="mr-2 h-4 w-4" />
@@ -305,10 +387,20 @@ export default function ClusterNodesPage() {
                 <DialogTitle>添加新节点</DialogTitle>
                 <DialogDescription>将新节点添加到集群中</DialogDescription>
               </DialogHeader>
+
+              {/* 在弹窗中显示错误信息 */}
+              {error && (
+                <Alert variant="destructive" className="my-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>错误</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="node-name" className="text-right">
-                    节点名称
+                    节点名称 <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="node-name"
@@ -316,11 +408,12 @@ export default function ClusterNodesPage() {
                     onChange={(e) => setNewNodeData({ ...newNodeData, name: e.target.value })}
                     placeholder="输入节点名称"
                     className="col-span-3"
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="node-ip" className="text-right">
-                    IP 地址
+                    IP 地址 <span className="text-red-500">*</span>
                   </Label>
                   <Input
                     id="node-ip"
@@ -328,6 +421,47 @@ export default function ClusterNodesPage() {
                     onChange={(e) => setNewNodeData({ ...newNodeData, ip: e.target.value })}
                     placeholder="输入IP地址"
                     className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="node-port" className="text-right">
+                    端口号 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="node-port"
+                    value={newNodeData.port}
+                    onChange={(e) => setNewNodeData({ ...newNodeData, port: e.target.value })}
+                    placeholder="输入端口号"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="node-username" className="text-right">
+                    账号 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="node-username"
+                    value={newNodeData.username}
+                    onChange={(e) => setNewNodeData({ ...newNodeData, username: e.target.value })}
+                    placeholder="输入登录账号"
+                    className="col-span-3"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="node-password" className="text-right">
+                    密码 <span className="text-red-500">*</span>
+                  </Label>
+                  <Input
+                    id="node-password"
+                    type="password"
+                    value={newNodeData.password}
+                    onChange={(e) => setNewNodeData({ ...newNodeData, password: e.target.value })}
+                    placeholder="输入登录密码"
+                    className="col-span-3"
+                    required
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -444,7 +578,10 @@ export default function ClusterNodesPage() {
                     <Button
                       variant="outline"
                       className="mt-4"
-                      onClick={() => setIsAddNodeOpen(true)}
+                      onClick={() => {
+                        setError(null)  // 清除错误信息
+                        setIsAddNodeOpen(true)
+                      }}
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       添加第一个节点
@@ -505,48 +642,6 @@ export default function ClusterNodesPage() {
                           <DropdownMenuLabel>节点操作</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleViewNode(node.id)}>查看详情</DropdownMenuItem>
-                          {node.status === "在线" ? (
-                            <DropdownMenuItem onClick={() => handleStopNode(node.id)} disabled={isStopping === node.id}>
-                              {isStopping === node.id ? (
-                                <>
-                                  <Pause className="mr-2 h-4 w-4 animate-pulse" />
-                                  停止中...
-                                </>
-                              ) : (
-                                <>
-                                  <Pause className="mr-2 h-4 w-4" />
-                                  停止节点
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => handleStartNode(node.id)} disabled={isStarting === node.id}>
-                              {isStarting === node.id ? (
-                                <>
-                                  <Play className="mr-2 h-4 w-4 animate-pulse" />
-                                  启动中...
-                                </>
-                              ) : (
-                                <>
-                                  <Play className="mr-2 h-4 w-4" />
-                                  启动节点
-                                </>
-                              )}
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleRestartNode(node.id)} disabled={isRestarting === node.id}>
-                            {isRestarting === node.id ? (
-                              <>
-                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                重启中...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                重启节点
-                              </>
-                            )}
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-red-600"
@@ -583,63 +678,6 @@ export default function ClusterNodesPage() {
                       <Badge variant={node.status === "在线" ? "success" : "destructive"}>{node.status}</Badge>
                     </div>
                     <div className="flex gap-2">
-                      {node.status === "在线" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStopNode(node.id)}
-                          disabled={isStopping === node.id}
-                        >
-                          {isStopping === node.id ? (
-                            <>
-                              <Pause className="mr-2 h-4 w-4 animate-pulse" />
-                              停止中...
-                            </>
-                          ) : (
-                            <>
-                              <Pause className="mr-2 h-4 w-4" />
-                              停止节点
-                            </>
-                          )}
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleStartNode(node.id)}
-                          disabled={isStarting === node.id}
-                        >
-                          {isStarting === node.id ? (
-                            <>
-                              <Play className="mr-2 h-4 w-4 animate-pulse" />
-                              启动中...
-                            </>
-                          ) : (
-                            <>
-                              <Play className="mr-2 h-4 w-4" />
-                              启动节点
-                            </>
-                          )}
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRestartNode(node.id)}
-                        disabled={isRestarting === node.id}
-                      >
-                        {isRestarting === node.id ? (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                            重启中...
-                          </>
-                        ) : (
-                          <>
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            重启节点
-                          </>
-                        )}
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

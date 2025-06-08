@@ -24,14 +24,21 @@ export interface Snapshot {
 }
 
 export interface Node {
-    id: string
+    id: number
     name: string
     ip: string
+    port?: string
+    username?: string
+    password?: string
     role: string
     status: string
     cpu: number
     memory: number
     disk: number
+    createDate?: string
+    updateDate?: string
+    createdBy?: string
+    updatedBy?: string
 }
 
 export interface Database {
