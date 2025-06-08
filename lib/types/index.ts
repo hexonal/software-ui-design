@@ -34,16 +34,6 @@ export interface Node {
     disk: number
 }
 
-export interface Shard {
-    id: string
-    range: string
-    nodeId: string
-    status: string
-    size: string
-    usage: number
-    replicas: number
-}
-
 export interface Database {
     id: string
     name: string
