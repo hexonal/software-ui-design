@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { getDatabaseOverviewStats, getDatabaseTypesDistribution, getDatabaseStorageData } from "@/lib/api/database"
 
 export default function DatabaseOverviewPage() {
   // 数据状态
@@ -40,7 +41,6 @@ export default function DatabaseOverviewPage() {
         setLoading(prev => ({ ...prev, stats: true }))
         setError(null)
 
-        const { getDatabaseOverviewStats } = await import('@/lib/api/database')
         const response = await getDatabaseOverviewStats()
         if (response.success) {
           setDatabaseStats(response.data)
@@ -66,7 +66,6 @@ export default function DatabaseOverviewPage() {
         setLoading(prev => ({ ...prev, types: true }))
         setError(null)
 
-        const { getDatabaseTypesDistribution } = await import('@/lib/api/database')
         const response = await getDatabaseTypesDistribution()
         if (response.success) {
           setDatabaseTypes(response.data)
@@ -92,7 +91,6 @@ export default function DatabaseOverviewPage() {
         setLoading(prev => ({ ...prev, storage: true }))
         setError(null)
 
-        const { getDatabaseStorageData } = await import('@/lib/api/database')
         const response = await getDatabaseStorageData()
         if (response.success) {
           setStorageData(response.data)

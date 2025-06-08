@@ -1,27 +1,6 @@
 // 数据库和系统相关类型定义
 
-export interface Volume {
-    id: string
-    name: string
-    size: number
-    type: string
-    status: string
-    attachedTo: string | null
-    createdAt: Date
-    iops: number
-    throughput: string
-    usedSpace: number
-}
 
-export interface Snapshot {
-    id: string
-    volumeId: string
-    volumeName: string
-    description: string
-    size: number
-    status: string
-    createdAt: Date
-}
 
 export interface Node {
     id: number

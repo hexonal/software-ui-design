@@ -234,7 +234,7 @@ export default function DashboardPage() {
         />
         <NavigationCard
           title="存储管理"
-          description="管理文件、对象和块存储"
+          description="管理文件存储和对象存储"
           icon={HardDrive}
           href="/dashboard/storage"
         />

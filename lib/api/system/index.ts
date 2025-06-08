@@ -11,6 +11,15 @@ export const updateSystemSettings = async (data: any): Promise<ApiResponse<any>>
   return api.put('/dfm/system/settings', data)
 }
 
+// 修改管理员密码
+export const changeAdminPassword = async (passwordData: {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}): Promise<ApiResponse<any>> => {
+  return api.post('/dfm/system/change-password', passwordData)
+}
+
 // 获取系统日志
 export const getSystemLogs = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
   return api.get('/dfm/system/logs', { params })

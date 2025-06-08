@@ -43,6 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { getBuckets, getObjects, getLifecyclePolicies } from "@/lib/api/storage"
 
 // 类型定义
 interface StorageBucket {
@@ -95,7 +96,6 @@ export default function ObjectStoragePage() {
         setError(null)
 
         // 调用实际的API
-        const { getBuckets } = await import('@/lib/api/storage')
         const response = await getBuckets()
         if (response.success) {
           setBuckets(response.data.map(bucket => ({
@@ -125,7 +125,6 @@ export default function ObjectStoragePage() {
         setError(null)
 
         // 调用实际的API
-        const { getObjects } = await import('@/lib/api/storage')
         const response = await getObjects()
         if (response.success) {
           setObjects(response.data.map(obj => ({
@@ -155,7 +154,6 @@ export default function ObjectStoragePage() {
         setError(null)
 
         // 调用实际的API
-        const { getLifecyclePolicies } = await import('@/lib/api/storage')
         const response = await getLifecyclePolicies()
         if (response.success) {
           setLifecyclePolicies(response.data)

@@ -30,7 +30,7 @@ import {
   Package,
   HardDriveIcon as HardDisk,
   FileText,
-  Bell,
+
   Key,
 } from "lucide-react"
 
@@ -70,7 +70,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Package,
   HardDisk,
   FileText,
-  Bell,
+
   Key,
 }
 
@@ -229,17 +229,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               "仪表板"}
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm">
-              <Bell className="mr-2 h-4 w-4" />
-              通知
-              <Badge className="ml-2" variant="secondary">
-                5
-              </Badge>
-            </Button>
-            <Button variant="outline" size="sm">
-              <Settings className="mr-2 h-4 w-4" />
-              设置
-            </Button>
           </div>
         </header>
         <main className="p-4 md:p-6">{children}</main>

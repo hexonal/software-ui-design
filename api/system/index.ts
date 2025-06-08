@@ -43,6 +43,54 @@ export const updateSystemSettings = async (settings: any): Promise<ApiResponse<a
 
 /**
  * @openapi
+ * /system/change-password:
+ *   post:
+ *     summary: 修改管理员密码
+ *     tags:
+ *       - System
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               currentPassword:
+ *                 type: string
+ *                 description: 当前密码
+ *               newPassword:
+ *                 type: string
+ *                 description: 新密码
+ *               confirmPassword:
+ *                 type: string
+ *                 description: 确认新密码
+ *             required:
+ *               - currentPassword
+ *               - newPassword
+ *               - confirmPassword
+ *     responses:
+ *       200:
+ *         description: 密码修改结果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ */
+export const changeAdminPassword = async (passwordData: {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
+}): Promise<ApiResponse<any>> => {
+  return api.post('/dfm/system/change-password', passwordData)
+}
+
+/**
+ * @openapi
  * /system/logs:
  *   get:
  *     summary: 获取系统日志
@@ -364,23 +412,3 @@ export const deleteAlertRule = async (id: string): Promise<ApiResponse<boolean>>
   return api.delete(`/dfm/system/alert-rules/${id}`)
 }
 
-/**
- * @openapi
- * /system/alert-channels:
- *   get:
- *     summary: 获取告警渠道列表
- *     tags:
- *       - System
- *     responses:
- *       200:
- *         description: 告警渠道列表
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/AlertChannel'
- */
-export const getAlertChannels = async (): Promise<ApiResponse<any[]>> => {
-  return api.get('/dfm/system/alert-channels')
-}

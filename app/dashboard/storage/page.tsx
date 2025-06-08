@@ -22,6 +22,12 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import {
+  getStorageOverviewStats,
+  getStorageTypesDistribution,
+  getStorageNodes,
+  getStoragePerformanceData
+} from "@/lib/api/storage"
 
 export default function StorageOverviewPage() {
   // 数据状态
@@ -44,7 +50,6 @@ export default function StorageOverviewPage() {
         setLoading(prev => ({ ...prev, stats: true }))
         setError(null)
 
-        const { getStorageOverviewStats } = await import('@/lib/api/storage')
         const response = await getStorageOverviewStats()
         if (response.success) {
           setStorageStats(response.data)
@@ -70,7 +75,6 @@ export default function StorageOverviewPage() {
         setLoading(prev => ({ ...prev, types: true }))
         setError(null)
 
-        const { getStorageTypesDistribution } = await import('@/lib/api/storage')
         const response = await getStorageTypesDistribution()
         if (response.success) {
           setStorageTypes(response.data)
@@ -96,7 +100,6 @@ export default function StorageOverviewPage() {
         setLoading(prev => ({ ...prev, nodes: true }))
         setError(null)
 
-        const { getStorageNodes } = await import('@/lib/api/storage')
         const response = await getStorageNodes()
         if (response.success) {
           setStorageNodes(response.data)
@@ -122,7 +125,6 @@ export default function StorageOverviewPage() {
         setLoading(prev => ({ ...prev, performance: true }))
         setError(null)
 
-        const { getStoragePerformanceData } = await import('@/lib/api/storage')
         const response = await getStoragePerformanceData()
         if (response.success) {
           setPerformanceData(response.data)
@@ -211,29 +213,7 @@ export default function StorageOverviewPage() {
             )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">块存储</CardTitle>
-            <HardDisk className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading.stats ? (
-              <div className="animate-pulse">
-                <div className="h-8 bg-gray-200 rounded mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded mb-2"></div>
-                <div className="h-2 bg-gray-200 rounded"></div>
-              </div>
-            ) : storageStats ? (
-              <>
-                <div className="text-2xl font-bold">{storageStats.blockStorage?.used || '0TB'}</div>
-                <p className="text-xs text-muted-foreground">已使用 {storageStats.blockStorage?.usagePercent || 0}%</p>
-                <Progress value={storageStats.blockStorage?.usagePercent || 0} className="mt-2" />
-              </>
-            ) : (
-              <div className="text-sm text-muted-foreground">无数据</div>
-            )}
-          </CardContent>
-        </Card>
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">存储节点</CardTitle>

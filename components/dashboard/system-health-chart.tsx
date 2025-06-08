@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { getHealthMetrics } from "@/lib/api/system"
 
 interface SystemHealthData {
   name: string
@@ -23,7 +24,6 @@ export function SystemHealthChart() {
         setError(null)
 
         // 调用实际的API
-        const { getHealthMetrics } = await import('@/lib/api/system')
         const response = await getHealthMetrics({ timeRange: '30d' })
         if (response.success) {
           setData(response.data)

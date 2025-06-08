@@ -35,18 +35,3 @@ export const createIndex = async (databaseId: string, tableName: string, data: a
 export const dropIndex = async (databaseId: string, tableName: string, indexName: string): Promise<ApiResponse<boolean>> => {
   return api.delete(`/dfm/data-model/tables/${databaseId}/${tableName}/indexes/${indexName}`)
 }
-
-// 导入数据
-export const importData = async (databaseId: string, tableName: string, data: any): Promise<ApiResponse<any>> => {
-  return api.post(`/dfm/data-model/import/${databaseId}/${tableName}`, data)
-}
-
-// 导出数据
-export const exportData = async (databaseId: string, data: any): Promise<ApiResponse<any>> => {
-  return api.post(`/dfm/data-model/export/${data.databaseId}`, data)
-}
-
-// 获取导入导出任务列表
-export const getImportExportTasks = async (): Promise<ApiResponse<any[]>> => {
-  return api.get('/dfm/data-model/tasks')
-}

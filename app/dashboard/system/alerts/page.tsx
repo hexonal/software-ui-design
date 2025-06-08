@@ -17,7 +17,7 @@ import {
 } from "recharts"
 import {
   AlertCircle,
-  Bell,
+
   CheckCircle2,
   Clock,
   Info,
@@ -116,11 +116,9 @@ export default function AlertsPage() {
   const [error, setError] = useState<string | null>(null)
   // 新增规则和渠道的 state
   const [rules, setRules] = useState<any[]>([])
-  const [channels, setChannels] = useState<any[]>([])
+
   const [rulesLoading, setRulesLoading] = useState(true)
-  const [channelsLoading, setChannelsLoading] = useState(true)
   const [rulesError, setRulesError] = useState<string | null>(null)
-  const [channelsError, setChannelsError] = useState<string | null>(null)
   // 规则弹窗相关 state
   const [ruleDialogOpen, setRuleDialogOpen] = useState(false)
   const [ruleDialogMode, setRuleDialogMode] = useState<'add' | 'edit'>('add')
@@ -132,7 +130,6 @@ export default function AlertsPage() {
     severity: 'medium',
     enabled: true,
     target: '',
-    notificationChannels: [],
   })
   const [ruleDeleteId, setRuleDeleteId] = useState<string | null>(null)
   const [ruleSubmitting, setRuleSubmitting] = useState(false)
@@ -181,26 +178,7 @@ export default function AlertsPage() {
     fetchRules()
   }, [])
 
-  // 获取渠道数据
-  useEffect(() => {
-    const fetchChannels = async () => {
-      try {
-        setChannelsLoading(true)
-        const response = await systemApi.getAlertChannels()
-        if (response.success) {
-          setChannels(response.data || [])
-        } else {
-          setChannelsError('未知错误')
-        }
-      } catch (err) {
-        setChannelsError('获取渠道数据失败')
-        console.error(err)
-      } finally {
-        setChannelsLoading(false)
-      }
-    }
-    fetchChannels()
-  }, [])
+
 
   // Filter alerts based on search query and severity filter
   const filteredActiveAlerts = alerts.filter((alert) => {
@@ -284,7 +262,6 @@ export default function AlertsPage() {
       severity: 'medium',
       enabled: true,
       target: '',
-      notificationChannels: [],
     })
     setEditingRule(null)
     setRuleDialogOpen(true)
@@ -337,13 +314,9 @@ export default function AlertsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">告警管理</h1>
-          <p className="text-muted-foreground">监控和管理系统告警，配置告警规则和通知渠道</p>
+          <p className="text-muted-foreground">监控和管理系统告警，配置告警规则</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <Bell className="mr-2 h-4 w-4" />
-            通知设置
-          </Button>
           <Button variant="default" size="sm">
             <Plus className="mr-2 h-4 w-4" />
             创建告警规则
@@ -451,7 +424,7 @@ export default function AlertsPage() {
                     </TabsTrigger>
                     <TabsTrigger value="history">历史告警</TabsTrigger>
                     <TabsTrigger value="rules">告警规则</TabsTrigger>
-                    <TabsTrigger value="channels">通知渠道</TabsTrigger>
+
                   </TabsList>
                 </div>
 
@@ -627,7 +600,7 @@ export default function AlertsPage() {
                           <TableHead>条件</TableHead>
                           <TableHead>严重程度</TableHead>
                           <TableHead>目标</TableHead>
-                          <TableHead>通知渠道</TableHead>
+
                           <TableHead>状态</TableHead>
                           <TableHead>操作</TableHead>
                         </TableRow>
@@ -635,7 +608,7 @@ export default function AlertsPage() {
                       <TableBody>
                         {rulesLoading ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8">
+                            <TableCell colSpan={6} className="text-center py-8">
                               <div className="flex flex-col items-center justify-center">
                                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
                                 <p className="text-muted-foreground">加载中...</p>
@@ -644,7 +617,7 @@ export default function AlertsPage() {
                           </TableRow>
                         ) : rules.length === 0 ? (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8">
+                            <TableCell colSpan={6} className="text-center py-8">
                               <div className="flex flex-col items-center justify-center">
                                 <Info className="h-8 w-8 text-muted-foreground mb-2" />
                                 <p className="text-muted-foreground">没有规则数据</p>
@@ -674,15 +647,7 @@ export default function AlertsPage() {
                                   </div>
                                 </TableCell>
                                 <TableCell>{rule.target}</TableCell>
-                                <TableCell>
-                                  <div className="flex flex-wrap gap-1">
-                                    {rule.notificationChannels.map((channel: string, idx: number) => (
-                                      <Badge key={idx} variant="outline">
-                                        {channel}
-                                      </Badge>
-                                    ))}
-                                  </div>
-                                </TableCell>
+
                                 <TableCell>
                                   <Switch checked={rule.enabled} />
                                 </TableCell>
@@ -705,75 +670,7 @@ export default function AlertsPage() {
                   </div>
                 </TabsContent>
 
-                <TabsContent value="channels" className="p-0">
-                  <div className="p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="text-lg font-medium">通知渠道配置</h3>
-                      <p className="text-sm text-muted-foreground">配置告警通知的接收方式和接收人</p>
-                    </div>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      添加渠道
-                    </Button>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>渠道名称</TableHead>
-                          <TableHead>类型</TableHead>
-                          <TableHead>接收人</TableHead>
-                          <TableHead>状态</TableHead>
-                          <TableHead>操作</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {channelsLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
-                              <div className="flex flex-col items-center justify-center">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
-                                <p className="text-muted-foreground">加载中...</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : channels.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8">
-                              <div className="flex flex-col items-center justify-center">
-                                <Info className="h-8 w-8 text-muted-foreground mb-2" />
-                                <p className="text-muted-foreground">没有渠道数据</p>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          channels.map((channel) => (
-                            <TableRow key={channel.id}>
-                              <TableCell>
-                                <div className="font-medium">{channel.name}</div>
-                              </TableCell>
-                              <TableCell>{channel.type}</TableCell>
-                              <TableCell>{channel.recipients}</TableCell>
-                              <TableCell>
-                                <Switch checked={channel.enabled} />
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="ghost" size="icon">
-                                    <Settings className="h-4 w-4" />
-                                  </Button>
-                                  <Button variant="ghost" size="icon">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
+
               </Tabs>
             </CardContent>
           </Card>
@@ -895,10 +792,7 @@ export default function AlertsPage() {
               <label className="block text-sm font-medium mb-1">目标</label>
               <Input value={ruleForm.target} onChange={e => setRuleForm((f: any) => ({ ...f, target: e.target.value }))} />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">通知渠道（逗号分隔）</label>
-              <Input value={ruleForm.notificationChannels.join(',')} onChange={e => setRuleForm((f: any) => ({ ...f, notificationChannels: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }))} />
-            </div>
+
             <div className="flex items-center gap-2">
               <Switch checked={ruleForm.enabled} onCheckedChange={v => setRuleForm((f: any) => ({ ...f, enabled: v }))} />
               <span>启用</span>

@@ -37,7 +37,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API
-import { storageApi } from "@/api"
+import * as storageApi from "@/lib/api/storage"
 
 export default function FileStoragePage() {
   const [activeTab, setActiveTab] = useState("browse")
@@ -53,14 +53,18 @@ export default function FileStoragePage() {
     const fetchFiles = async () => {
       try {
         setLoading(true)
+        setError(null)
         const response = await storageApi.getFiles(currentPath)
         if (response.success) {
-          setFiles(response.data)
+          // 确保data是数组，如果不是则设为空数组
+          setFiles(Array.isArray(response.data) ? response.data : [])
         } else {
           setError(response.message)
+          setFiles([])
         }
       } catch (err) {
         setError('获取文件数据失败')
+        setFiles([])
         console.error(err)
       } finally {
         setLoading(false)
@@ -225,10 +229,10 @@ export default function FileStoragePage() {
                   ) : files.length === 0 ? (
                     <div className="py-8 text-center">当前目录为空</div>
                   ) : (
-                    files.map((file) => (
-                      <div key={file.id} className="grid grid-cols-6 items-center px-4 py-3 text-sm">
+                    files.map((file, index) => (
+                      <div key={file.name + index} className="grid grid-cols-6 items-center px-4 py-3 text-sm">
                         <div className="font-medium flex items-center">
-                          {file.type === "folder" ? (
+                          {file.isDirectory || file.type === "directory" ? (
                             <FolderIcon className="mr-2 h-4 w-4 text-blue-500" />
                           ) : (
                             <FileIcon className="mr-2 h-4 w-4 text-gray-500" />
@@ -237,12 +241,12 @@ export default function FileStoragePage() {
                         </div>
                         <div>
                           <Badge variant="outline">
-                            {file.type === "folder" ? "文件夹" : file.name.split(".").pop()?.toUpperCase()}
+                            {file.isDirectory || file.type === "directory" ? "文件夹" : (file.name.split(".").pop()?.toUpperCase() || "文件")}
                           </Badge>
                         </div>
-                        <div>{file.size}</div>
-                        <div>{file.items}</div>
-                        <div>{file.modified}</div>
+                        <div>{file.size ? (file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(1)} MB` : file.size > 1024 ? `${(file.size / 1024).toFixed(1)} KB` : `${file.size} B`) : '-'}</div>
+                        <div>-</div>
+                        <div>{file.modifiedTime ? new Date(file.modifiedTime).toLocaleString() : '-'}</div>
                         <div className="flex justify-end">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -254,7 +258,7 @@ export default function FileStoragePage() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuLabel>文件操作</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              {file.type === "folder" ? (
+                              {file.isDirectory || file.type === "directory" ? (
                                 <DropdownMenuItem>打开文件夹</DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem>预览文件</DropdownMenuItem>
@@ -281,7 +285,7 @@ export default function FileStoragePage() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-between">
-              <div className="text-sm text-muted-foreground">显示 {files.length} 个项目</div>
+              <div className="text-sm text-muted-foreground">显示 {files?.length || 0} 个项目</div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">
                   上一页
