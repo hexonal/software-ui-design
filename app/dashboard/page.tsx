@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Activity, Database, HardDrive, AlertTriangle, Server, FileText } from "lucide-react"
+import { Activity, Database, HardDrive, Server } from "lucide-react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
 
 import { SystemHealthChart } from "@/components/dashboard/system-health-chart"
 import { StatusCard } from "@/components/dashboard/status-card"
@@ -12,67 +11,17 @@ import { NavigationCard } from "@/components/dashboard/navigation-card"
 
 // 修正API导入
 import { systemApi } from "@/lib/api"
-import type { ApiResponse, SystemStatusResponse, StatusItem } from "@/lib/api/types"
+import type { SystemStatusResponse } from "@/lib/api/types"
 
 export default function DashboardPage() {
-  const [alerts, setAlerts] = useState<any[]>([])
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse>({
     health: { value: "-", description: "加载中", status: "default" },
     storage: { value: "-", description: "加载中", status: "default" },
     nodes: { value: "-", description: "加载中", status: "default" },
     databases: { value: "-", description: "加载中", status: "default" }
   })
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchAlerts = async () => {
-      try {
-        setLoading(true)
-        console.log('开始获取告警数据...')
-        const response = await systemApi.getSystemAlerts()
-        console.log('告警API响应:', response)
-
-        // TestController的alerts接口直接返回JSON数组，通过响应拦截器包装
-        const apiResponse = response as any
-        const data = apiResponse.data as ApiResponse<any[]>
-
-        console.log('告警数据解析:', {
-          hasData: !!data,
-          success: data?.success,
-          code: data?.code,
-          dataType: typeof data?.data,
-          dataLength: Array.isArray(data?.data) ? data.data.length : 'not array',
-          data: data?.data
-        })
-
-        // 处理两种可能的数据格式
-        let alertsData: any[] = []
-        if (data && data.success && Array.isArray(data.data)) {
-          // 标准包装格式
-          alertsData = data.data
-        } else if (Array.isArray(data?.data)) {
-          // 直接数组格式
-          alertsData = data.data
-        } else if (Array.isArray(data)) {
-          // 完全直接的数组格式
-          alertsData = data
-        }
-
-        setAlerts(alertsData)
-        console.log('告警数据设置成功:', alertsData)
-
-        if (alertsData.length === 0) {
-          console.warn('未获取到告警数据')
-        }
-      } catch (err: any) {
-        console.error('获取告警数据异常:', err)
-        setError(err.message || '获取告警数据失败')
-      } finally {
-        setLoading(false)
-      }
-    }
-
     const fetchStatus = async () => {
       try {
         console.log('开始获取系统状态...')
@@ -127,12 +76,8 @@ export default function DashboardPage() {
       }
     }
 
-    fetchAlerts()
     fetchStatus()
   }, [])
-
-  // Get the 5 most recent alerts
-  const recentAlerts = alerts.slice(0, 5)
 
   return (
     <div className="flex flex-col gap-4">
@@ -167,8 +112,8 @@ export default function DashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
+      <div className="grid gap-4 md:grid-cols-1">
+        <Card>
           <CardHeader>
             <CardTitle>系统健康状态</CardTitle>
             <CardDescription>过去 30 天的系统健康状态趋势</CardDescription>
@@ -177,72 +122,27 @@ export default function DashboardPage() {
             <SystemHealthChart />
           </CardContent>
         </Card>
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>系统告警摘要</CardTitle>
-            <CardDescription>最近 5 条重要告警</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {loading ? (
-              <div className="flex justify-center items-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              </div>
-            ) : error ? (
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>错误</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            ) : recentAlerts.length === 0 ? (
-              <div className="text-center py-4">
-                <p className="text-muted-foreground">暂无告警</p>
-              </div>
-            ) : (
-              recentAlerts.map((alert) => {
-                let IconComponent = FileText;
-                let variant: "default" | "destructive" | undefined = "default";
-
-                if (alert.severity === "critical") {
-                  IconComponent = AlertTriangle;
-                  variant = "destructive";
-                } else if (alert.severity === "high") {
-                  IconComponent = AlertTriangle;
-                  variant = "destructive";
-                } else if (alert.severity === "medium") {
-                  IconComponent = Activity;
-                }
-
-                return (
-                  <Alert key={alert.id} variant={variant}>
-                    <IconComponent className="h-4 w-4" />
-                    <AlertTitle>{alert.title}</AlertTitle>
-                    <AlertDescription>{alert.message}</AlertDescription>
-                  </Alert>
-                );
-              })
-            )}
-          </CardContent>
-        </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {/* Navigation section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <NavigationCard
+          title="集群管理"
+          description="监控和管理分布式集群节点"
+          icon={Server}
+          href="/dashboard/cluster/nodes"
+        />
         <NavigationCard
           title="数据库管理"
-          description="管理关系型、时序、向量和地理空间数据库"
+          description="管理关系型、时序、地理空间等数据库"
           icon={Database}
-          href="/dashboard/database"
+          href="/dashboard/database/relational"
         />
         <NavigationCard
           title="存储管理"
           description="管理文件存储和对象存储"
           icon={HardDrive}
-          href="/dashboard/storage"
-        />
-        <NavigationCard
-          title="系统管理"
-          description="系统设置、日志管理和扩容管理"
-          icon={Server}
-          href="/dashboard/system"
+          href="/dashboard/storage/file"
         />
       </div>
     </div>

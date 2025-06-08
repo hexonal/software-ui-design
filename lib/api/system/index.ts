@@ -25,21 +25,6 @@ export const getSystemLogs = async (params?: QueryParams): Promise<ApiResponse<a
   return api.get('/dfm/system/logs', { params })
 }
 
-// 获取系统告警
-export const getSystemAlerts = async (params?: QueryParams): Promise<ApiResponse<any[]>> => {
-  return api.get('/dfm/system/alerts', { params })
-}
-
-// 确认告警
-export const acknowledgeAlert = async (id: string): Promise<ApiResponse<boolean>> => {
-  return api.put(`/dfm/system/alerts/${id}/acknowledge`)
-}
-
-// 解决告警
-export const resolveAlert = async (id: string): Promise<ApiResponse<boolean>> => {
-  return api.put(`/dfm/system/alerts/${id}/resolve`)
-}
-
 // 获取系统性能数据
 export const getSystemPerformance = async (timeRange?: string): Promise<ApiResponse<any>> => {
   return api.get('/dfm/system/performance', { params: { timeRange } })
