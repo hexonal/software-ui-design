@@ -185,12 +185,12 @@ api.interceptors.response.use(
     const response = error.response
 
     if (response) {
-      console.error('响应拦截器 - 错误响应详情:', {
-        status: response.status,
-        statusText: response.statusText,
-        data: response.data,
-        headers: response.headers
-      })
+      // console.error('响应拦截器 - 错误响应详情:', {
+      //   status: response.status,
+      //   statusText: response.statusText,
+      //   data: response.data,
+      //   headers: response.headers
+      // })
 
       // 尝试从错误响应中提取有用信息
       let errorMessage = '请求失败'

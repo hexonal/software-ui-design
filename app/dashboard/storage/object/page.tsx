@@ -43,7 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { getBuckets, getObjects, getLifecyclePolicies } from "@/lib/api/storage"
+import { getBuckets, getObjects, getLifecyclePolicies, LifecyclePolicy } from "@/lib/api/storage"
 
 // 类型定义
 interface StorageBucket {
@@ -80,7 +80,7 @@ export default function ObjectStoragePage() {
   // 数据状态
   const [buckets, setBuckets] = useState<StorageBucket[]>([])
   const [objects, setObjects] = useState<StorageObject[]>([])
-  const [lifecyclePolicies, setLifecyclePolicies] = useState<any[]>([])
+  const [lifecyclePolicies, setLifecyclePolicies] = useState<LifecyclePolicy[]>([])
   const [loading, setLoading] = useState({
     buckets: true,
     objects: true,
@@ -155,15 +155,29 @@ export default function ObjectStoragePage() {
 
         // 调用实际的API
         const response = await getLifecyclePolicies()
+        console.log('生命周期策略 API 响应:', response) // 调试信息
+
         if (response.success) {
-          setLifecyclePolicies(response.data)
+          // 确保 response.data 是数组
+          if (Array.isArray(response.data)) {
+            setLifecyclePolicies(response.data)
+          } else {
+            console.warn('生命周期策略数据不是数组格式:', response.data)
+            setLifecyclePolicies([]) // 设置为空数组
+            setError('生命周期策略数据格式错误')
+          }
         } else {
-          setError(response.message || '获取生命周期策略失败')
+          // 如果后端API未实现，使用空数组而不是显示错误
+          console.warn('获取生命周期策略失败，使用空数组:', response.message)
+          setLifecyclePolicies([])
+          // 暂时不设置错误，因为后端可能还未实现
+          // setError(response.message || '获取生命周期策略失败')
         }
 
       } catch (err) {
         console.error('获取生命周期策略失败:', err)
         setError('获取生命周期策略失败')
+        setLifecyclePolicies([]) // 确保在错误时设置为空数组
       } finally {
         setLoading(prev => ({ ...prev, lifecycle: false }))
       }
@@ -663,7 +677,7 @@ export default function ObjectStoragePage() {
                 </Card>
               ))}
             </div>
-          ) : lifecyclePolicies.length === 0 ? (
+          ) : !Array.isArray(lifecyclePolicies) || lifecyclePolicies.length === 0 ? (
             // 空数据状态
             <Card>
               <CardContent className="pt-6">
@@ -677,25 +691,25 @@ export default function ObjectStoragePage() {
           ) : (
             // 策略列表
             <div className="grid gap-4 md:grid-cols-2">
-              {lifecyclePolicies.map((policy) => (
+              {(Array.isArray(lifecyclePolicies) ? lifecyclePolicies : []).map((policy) => (
                 <Card key={policy.id}>
                   <CardHeader>
-                    <CardTitle>{policy.name}</CardTitle>
-                    <CardDescription>{policy.description}</CardDescription>
+                    <CardTitle>{policy.name || '未命名策略'}</CardTitle>
+                    <CardDescription>{policy.description || '无描述'}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-sm">应用存储桶:</span>
-                        <span className="text-sm font-medium">{policy.bucketName}</span>
+                        <span className="text-sm font-medium">{policy.bucketName || '未指定'}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">对象前缀:</span>
-                        <span className="text-sm font-medium">{policy.prefix}</span>
+                        <span className="text-sm font-medium">{policy.prefix || '无'}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-sm">{policy.action === 'transition' ? '转换天数:' : '过期天数:'}</span>
-                        <span className="text-sm font-medium">{policy.days}天</span>
+                        <span className="text-sm font-medium">{policy.days || 0}天</span>
                       </div>
                       {policy.action === 'transition' && policy.targetStorageClass && (
                         <div className="flex items-center justify-between">
