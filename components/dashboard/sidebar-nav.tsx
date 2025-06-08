@@ -26,14 +26,27 @@ export function SidebarNav({ items }: SidebarNavProps) {
   const pathname = usePathname()
   const [openItems, setOpenItems] = useState<number[]>([])
 
+  console.log('SidebarNav 收到的 items:', items)
+
   const toggleItem = (index: number) => {
     setOpenItems((current) => (current.includes(index) ? current.filter((i) => i !== index) : [...current, index]))
   }
 
+  if (!items || items.length === 0) {
+    console.log('SidebarNav: 没有菜单项数据')
+    return (
+      <div className="space-y-1 p-2">
+        <div className="text-gray-500 text-sm">正在加载导航菜单...</div>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-1 p-2 overflow-y-auto h-[calc(100vh-4rem)]">
+    <div className="space-y-1">
       {items.map((item, index) => {
-        if (item.items) {
+        console.log(`处理菜单项 ${index}:`, item)
+
+        if (item.items && item.items.length > 0) {
           const isOpen = openItems.includes(index)
           const isActive = item.items.some((subItem) =>
             subItem.exact ? pathname === subItem.href : pathname.startsWith(subItem.href || ""),
@@ -80,7 +93,7 @@ export function SidebarNav({ items }: SidebarNavProps) {
             key={index}
             href={item.href || "#"}
             className={cn(
-              "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+              "flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors w-full",
               (item.exact ? pathname === item.href : pathname.startsWith(item.href || ""))
                 ? "bg-gray-100 font-medium text-gray-900"
                 : "text-gray-500 hover:bg-gray-100 hover:text-gray-900",

@@ -76,7 +76,7 @@ export interface SystemOverviewData {
  */
 export async function getHealthMetrics(request: GetHealthMetricsRequest = {}) {
   try {
-    const response = await api.post('/system/health/metrics', {
+    const response = await api.post('/dfm/system/health/metrics', {
       timeRange: request.timeRange || '30d',
       interval: request.interval || '1d',
       metrics: request.metrics || ['cpu', 'memory', 'disk', 'network']
@@ -101,7 +101,7 @@ export async function getHealthMetrics(request: GetHealthMetricsRequest = {}) {
  */
 export async function getSystemOverview() {
   try {
-    const response = await api.post('/system/overview', {})
+    const response = await api.post('/dfm/system/overview', {})
     return {
       success: true,
       data: response.data.data as SystemOverviewData,
@@ -122,7 +122,7 @@ export async function getSystemOverview() {
  */
 export async function getRealtimeStatus() {
   try {
-    const response = await api.post('/system/realtime', {})
+    const response = await api.post('/dfm/system/realtime', {})
     return {
       success: true,
       data: response.data.data,
@@ -143,7 +143,7 @@ export async function getRealtimeStatus() {
  */
 export async function getPerformanceHistory(timeRange: string = '24h') {
   try {
-    const response = await api.post('/system/performance/history', { timeRange })
+    const response = await api.post('/dfm/system/performance/history', { timeRange })
     return {
       success: true,
       data: response.data.data,
@@ -168,7 +168,7 @@ export async function getSystemEvents(params?: {
   limit?: number
 }) {
   try {
-    const response = await api.post('/system/events', {
+    const response = await api.post('/dfm/system/events', {
       level: params?.level || 'info',
       timeRange: params?.timeRange || '24h',
       limit: params?.limit || 100

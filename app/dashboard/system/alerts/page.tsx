@@ -49,8 +49,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 // 导入 API
 import { systemApi } from "@/api"
-// 新增导入
-const { getAlertRules, getAlertChannels } = systemApi
 
 // Alert severity types with corresponding colors and icons
 const severityConfig = {
@@ -146,8 +144,8 @@ export default function AlertsPage() {
         setLoading(true)
         const response = await systemApi.getSystemAlerts()
         if (response.success) {
-          setAlerts(response.data)
-          setAlertHistory(response.data)
+          setAlerts(response.data || [])
+          setAlertHistory(response.data || [])
         } else {
           setError('未知错误')
         }
@@ -167,9 +165,9 @@ export default function AlertsPage() {
     const fetchRules = async () => {
       try {
         setRulesLoading(true)
-        const response = await getAlertRules()
+        const response = await systemApi.getAlertRules()
         if (response.success) {
-          setRules(response.data)
+          setRules(response.data || [])
         } else {
           setRulesError('未知错误')
         }
@@ -188,9 +186,9 @@ export default function AlertsPage() {
     const fetchChannels = async () => {
       try {
         setChannelsLoading(true)
-        const response = await getAlertChannels()
+        const response = await systemApi.getAlertChannels()
         if (response.success) {
-          setChannels(response.data)
+          setChannels(response.data || [])
         } else {
           setChannelsError('未知错误')
         }
@@ -233,10 +231,10 @@ export default function AlertsPage() {
       const response = await systemApi.acknowledgeAlert(alertId)
       if (response.success) {
         // 更新本地状态
-        setAlerts(alerts.map(alert => 
+        setAlerts(alerts.map(alert =>
           alert.id === alertId ? { ...alert, acknowledged: true } : alert
         ))
-        setAlertHistory(alertHistory.map(alert => 
+        setAlertHistory(alertHistory.map(alert =>
           alert.id === alertId ? { ...alert, acknowledged: true } : alert
         ))
       } else {
@@ -260,10 +258,10 @@ export default function AlertsPage() {
       const response = await systemApi.resolveAlert(alertId)
       if (response.success) {
         // 更新本地状态
-        setAlerts(alerts.map(alert => 
+        setAlerts(alerts.map(alert =>
           alert.id === alertId ? { ...alert, resolved: true, resolvedAt: new Date() } : alert
         ))
-        setAlertHistory(alertHistory.map(alert => 
+        setAlertHistory(alertHistory.map(alert =>
           alert.id === alertId ? { ...alert, resolved: true, resolvedAt: new Date() } : alert
         ))
         setShowAlertDetails(false)
@@ -307,12 +305,12 @@ export default function AlertsPage() {
       if (ruleDialogMode === 'add') {
         await systemApi.addAlertRule(ruleForm)
       } else if (ruleDialogMode === 'edit' && editingRule) {
-        await systemApi.updateAlertRule(ruleForm)
+        await systemApi.updateAlertRule(editingRule.id, ruleForm)
       }
       setRuleDialogOpen(false)
       // 重新拉取规则
-      const response = await getAlertRules()
-      if (response.success) setRules(response.data)
+      const response = await systemApi.getAlertRules()
+      if (response.success) setRules(response.data || [])
     } catch (err) {
       alert('操作失败')
     } finally {
@@ -327,8 +325,8 @@ export default function AlertsPage() {
       await systemApi.deleteAlertRule(ruleDeleteId)
       setRuleDeleteId(null)
       // 重新拉取规则
-      const response = await getAlertRules()
-      if (response.success) setRules(response.data)
+      const response = await systemApi.getAlertRules()
+      if (response.success) setRules(response.data || [])
     } catch (err) {
       alert('删除失败')
     }

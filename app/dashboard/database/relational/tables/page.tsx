@@ -50,7 +50,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Table as TableComponent, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 // 导入 API
-import { databaseApi, dataModelApi } from "@/api"
+import { databaseApi, dataModelApi, relationalApi } from "@/api"
 import { Table as TableType } from "@/lib/types"
 
 export default function RelationalTablesPage() {
@@ -119,7 +119,7 @@ export default function RelationalTablesPage() {
     const fetchDatabases = async () => {
       try {
         setLoading(prev => ({ ...prev, databases: true }))
-        const response = await databaseApi.relationalApi.getRelationalDatabases()
+        const response = await relationalApi.getRelationalDatabases()
         if (response.success) {
           setDatabases(response.data)
           if (response.data.length > 0 && !selectedDatabase) {

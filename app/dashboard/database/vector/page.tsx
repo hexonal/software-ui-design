@@ -66,23 +66,83 @@ export default function VectorDatabasePage() {
     indexType: "HNSW"
   })
 
+  // 错误处理帮助函数
+  const getErrorMessage = (apiResponse: any, defaultMessage: string): string => {
+    if (!apiResponse) return defaultMessage
+
+    // 检查是否是空对象
+    if (typeof apiResponse === 'object' && Object.keys(apiResponse).length === 0) {
+      return "API返回空响应"
+    }
+
+    // 优先获取message字段
+    if (apiResponse.message && typeof apiResponse.message === 'string') {
+      return apiResponse.message
+    }
+
+    // 检查其他常见的错误字段
+    if (apiResponse.error && typeof apiResponse.error === 'string') {
+      return apiResponse.error
+    }
+
+    if (apiResponse.msg && typeof apiResponse.msg === 'string') {
+      return apiResponse.msg
+    }
+
+    return defaultMessage
+  }
+
+  const getNetworkErrorMessage = (err: any, operationName: string): string => {
+    if (err?.response?.data?.message) {
+      return err.response.data.message
+    }
+    if (err?.message) {
+      return `${operationName}失败: ${err.message}`
+    }
+    return `${operationName}失败: 网络错误`
+  }
+
   // 获取向量集合
   useEffect(() => {
     const fetchCollections = async () => {
       try {
         setLoading(true)
+        setError(null)
+        console.log("开始获取向量集合...")
         const response = await vectorApi.getVectorCollections()
-        if (response.success) {
-          setCollections(response.data)
-          if (response.data.length > 0 && !selectedCollection) {
-            setSelectedCollection(response.data[0].id)
+        console.log("向量集合API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理向量集合API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("向量集合API调用成功，结果:", apiResponse.data)
+          const collectionsData = apiResponse.data || []
+          // 确保data是数组
+          const validCollections = Array.isArray(collectionsData) ? collectionsData : []
+          setCollections(validCollections)
+          if (validCollections.length > 0 && !selectedCollection) {
+            setSelectedCollection(validCollections[0].id)
           }
         } else {
-          setError(response.message)
+          console.error("向量集合API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取向量集合数据失败")
+          setError(errorMsg)
         }
       } catch (err) {
-        setError('获取向量集合数据失败')
-        console.error(err)
+        console.error("向量集合API调用出错:", err)
+        const errorMsg = getNetworkErrorMessage(err, "获取向量集合")
+        setError(errorMsg)
       } finally {
         setLoading(false)
       }
@@ -97,15 +157,36 @@ export default function VectorDatabasePage() {
 
     const fetchIndexConfig = async () => {
       try {
+        setError(null)
+        console.log("开始获取索引配置...")
         const response = await vectorApi.getVectorIndexConfig(selectedCollection)
-        if (response.success) {
-          setIndexConfig(response.data)
+        console.log("索引配置API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理索引配置API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("索引配置API调用成功，结果:", apiResponse.data)
+          setIndexConfig(apiResponse.data || {})
         } else {
-          setError(response.message)
+          console.error("索引配置API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取索引配置失败")
+          setError(errorMsg)
         }
       } catch (err) {
-        setError('获取索引配置失败')
-        console.error(err)
+        console.error("索引配置API调用出错:", err)
+        const errorMsg = getNetworkErrorMessage(err, "获取索引配置")
+        setError(errorMsg)
       }
     }
 
@@ -121,20 +202,40 @@ export default function VectorDatabasePage() {
     try {
       setSearchLoading(true)
       setError(null)
-      
+      console.log("开始执行向量搜索...")
+
       // 使用 API 执行向量搜索
-      const response = await vectorApi.searchVectors(selectedCollection, searchQuery, {
+      const response = await vectorApi.searchVectors(selectedCollection, {
+        query: searchQuery,
         similarity: similarity
       })
-      
-      if (response.success) {
-        setSearchResults(response.data)
+      console.log("向量搜索API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理向量搜索API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("向量搜索API调用成功，结果:", apiResponse.data)
+        setSearchResults(apiResponse.data || null)
       } else {
-        setError(response.message)
+        console.error("向量搜索API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "执行向量搜索失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('执行向量搜索失败')
-      console.error(err)
+      console.error("向量搜索API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "执行向量搜索")
+      setError(errorMsg)
     } finally {
       setSearchLoading(false)
     }
@@ -154,15 +255,36 @@ export default function VectorDatabasePage() {
     try {
       setLoading(true)
       setError(null)
-      
+      console.log("开始创建向量集合...")
+
       const response = await vectorApi.createVectorCollection({
         name: newCollectionData.name,
         dimensions: newCollectionData.dimensions,
         indexType: newCollectionData.indexType
       })
-      
-      if (response.success) {
-        setCollections([...collections, response.data])
+      console.log("创建向量集合API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建向量集合API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建向量集合API调用成功，结果:", apiResponse.data)
+        const newCollection = apiResponse.data || {
+          name: newCollectionData.name,
+          dimensions: newCollectionData.dimensions,
+          indexType: newCollectionData.indexType
+        }
+        setCollections([...collections, newCollection])
         setIsCreateCollectionOpen(false)
         setNewCollectionData({
           name: "",
@@ -170,11 +292,14 @@ export default function VectorDatabasePage() {
           indexType: "HNSW"
         })
       } else {
-        setError(response.message)
+        console.error("创建向量集合API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建向量集合失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('创建向量集合失败')
-      console.error(err)
+      console.error("创建向量集合API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "创建向量集合")
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -186,22 +311,42 @@ export default function VectorDatabasePage() {
     try {
       setLoading(true)
       setError(null)
-      
+      console.log("开始删除向量集合...")
+
       const response = await vectorApi.deleteVectorCollection(collectionToDelete)
-      
-      if (response.success) {
+      console.log("删除向量集合API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理删除向量集合API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("删除向量集合API调用成功")
         setCollections(collections.filter(c => c.id !== collectionToDelete))
         if (selectedCollection === collectionToDelete) {
-          setSelectedCollection(collections.length > 1 ? collections.find(c => c.id !== collectionToDelete)?.id : null)
+          const remainingCollections = collections.filter(c => c.id !== collectionToDelete)
+          setSelectedCollection(remainingCollections.length > 0 ? remainingCollections[0]?.id || null : null)
         }
         setIsConfirmDeleteOpen(false)
         setCollectionToDelete(null)
       } else {
-        setError(response.message)
+        console.error("删除向量集合API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "删除向量集合失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('删除向量集合失败')
-      console.error(err)
+      console.error("删除向量集合API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "删除向量集合")
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -213,18 +358,37 @@ export default function VectorDatabasePage() {
     try {
       setIsSavingIndex(true)
       setError(null)
-      
+      console.log("开始更新索引配置...")
+
       const response = await vectorApi.updateVectorIndexConfig(selectedCollection, indexConfig)
-      
-      if (response.success) {
-        setIndexConfig(response.data)
+      console.log("更新索引配置API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理更新索引配置API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("更新索引配置API调用成功，结果:", apiResponse.data)
+        setIndexConfig(apiResponse.data || indexConfig)
         setIsEditingIndex(false)
       } else {
-        setError(response.message)
+        console.error("更新索引配置API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "更新索引配置失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('更新索引配置失败')
-      console.error(err)
+      console.error("更新索引配置API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "更新索引配置")
+      setError(errorMsg)
     } finally {
       setIsSavingIndex(false)
     }
@@ -236,7 +400,7 @@ export default function VectorDatabasePage() {
     try {
       setIsRebuildingIndex(true)
       setError(null)
-      
+
       // 模拟重建索引
       setTimeout(() => {
         setIsRebuildingIndex(false)
@@ -248,7 +412,7 @@ export default function VectorDatabasePage() {
   }
 
   // 过滤集合
-  const filteredCollections = collections.filter(collection => 
+  const filteredCollections = collections.filter(collection =>
     collection.name.toLowerCase().includes(collectionSearchQuery.toLowerCase()) ||
     collection.id.toLowerCase().includes(collectionSearchQuery.toLowerCase())
   )
@@ -281,7 +445,7 @@ export default function VectorDatabasePage() {
                   <Input
                     id="collection-name"
                     value={newCollectionData.name}
-                    onChange={(e) => setNewCollectionData({...newCollectionData, name: e.target.value})}
+                    onChange={(e) => setNewCollectionData({ ...newCollectionData, name: e.target.value })}
                     placeholder="输入集合名称"
                     className="col-span-3"
                   />
@@ -294,7 +458,7 @@ export default function VectorDatabasePage() {
                     id="collection-dimensions"
                     type="number"
                     value={newCollectionData.dimensions}
-                    onChange={(e) => setNewCollectionData({...newCollectionData, dimensions: parseInt(e.target.value) || 0})}
+                    onChange={(e) => setNewCollectionData({ ...newCollectionData, dimensions: parseInt(e.target.value) || 0 })}
                     placeholder="输入向量维度"
                     className="col-span-3"
                   />
@@ -305,7 +469,7 @@ export default function VectorDatabasePage() {
                   </Label>
                   <Select
                     value={newCollectionData.indexType}
-                    onValueChange={(value) => setNewCollectionData({...newCollectionData, indexType: value})}
+                    onValueChange={(value) => setNewCollectionData({ ...newCollectionData, indexType: value })}
                   >
                     <SelectTrigger id="collection-index-type" className="col-span-3">
                       <SelectValue placeholder="选择索引类型" />
@@ -348,38 +512,65 @@ export default function VectorDatabasePage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索向量集合..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索向量集合..."
+                className="pl-8"
                 value={collectionSearchQuery}
                 onChange={(e) => setCollectionSearchQuery(e.target.value)}
               />
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={() => setCollectionSearchQuery("")}
             >
               <Filter className="h-4 w-4" />
               <span className="sr-only">重置筛选</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={async () => {
                 try {
                   setLoading(true)
                   setError(null)
+                  console.log("刷新向量集合数据...")
                   const response = await vectorApi.getVectorCollections()
-                  if (response.success) {
-                    setCollections(response.data)
+                  console.log("刷新向量集合API响应:", response)
+
+                  // 优化响应处理逻辑
+                  const apiResponse = response.data as any;
+                  console.log("处理刷新向量集合API响应:", {
+                    apiResponse,
+                    hasSuccess: 'success' in apiResponse,
+                    success: apiResponse?.success,
+                    hasData: 'data' in apiResponse,
+                    data: apiResponse?.data,
+                    code: apiResponse?.code,
+                    isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+                  })
+
+                  // 增强响应验证：检查多种成功条件
+                  if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                    console.log("刷新向量集合API调用成功，结果:", apiResponse.data)
+                    const collectionsData = apiResponse.data || []
+                    // 确保数据是数组格式
+                    if (Array.isArray(collectionsData)) {
+                      setCollections(collectionsData)
+                    } else {
+                      console.warn("向量集合数据不是数组格式:", collectionsData)
+                      setCollections([])
+                    }
                   } else {
-                    setError(response.message)
+                    console.error("刷新向量集合API响应表示失败:", apiResponse)
+                    const errorMsg = getErrorMessage(apiResponse, "刷新向量集合失败")
+                    setError(errorMsg)
                   }
                 } catch (err) {
-                  setError('刷新向量集合数据失败')
-                  console.error(err)
+                  console.error("刷新向量集合API调用出错:", err)
+                  const errorMsg = getNetworkErrorMessage(err, "刷新向量集合")
+                  setError(errorMsg)
                 } finally {
                   setLoading(false)
                 }
@@ -412,8 +603,8 @@ export default function VectorDatabasePage() {
                     {collections.length === 0 ? "暂无向量集合数据" : "没有匹配的向量集合"}
                   </p>
                   {collections.length === 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsCreateCollectionOpen(true)}
                     >
@@ -458,7 +649,7 @@ export default function VectorDatabasePage() {
                             搜索向量
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setCollectionToDelete(collection.id)
@@ -487,8 +678,8 @@ export default function VectorDatabasePage() {
                   <CardDescription>管理向量集合的索引</CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Select 
-                    value={selectedCollection || ""} 
+                  <Select
+                    value={selectedCollection || ""}
                     onValueChange={setSelectedCollection}
                   >
                     <SelectTrigger className="w-[220px]">
@@ -529,11 +720,11 @@ export default function VectorDatabasePage() {
                             <Label>M 参数 (邻居数量)</Label>
                             <span className="text-sm font-medium">{indexConfig.parameters.M}</span>
                           </div>
-                          <Slider 
-                            value={[indexConfig.parameters.M]} 
-                            min={4} 
-                            max={64} 
-                            step={4} 
+                          <Slider
+                            value={[indexConfig.parameters.M]}
+                            min={4}
+                            max={64}
+                            step={4}
                             onValueChange={(value) => setIndexConfig({
                               ...indexConfig,
                               parameters: {
@@ -550,11 +741,11 @@ export default function VectorDatabasePage() {
                             <Label>ef_construction 参数</Label>
                             <span className="text-sm font-medium">{indexConfig.parameters.efConstruction}</span>
                           </div>
-                          <Slider 
-                            value={[indexConfig.parameters.efConstruction]} 
-                            min={64} 
-                            max={512} 
-                            step={64} 
+                          <Slider
+                            value={[indexConfig.parameters.efConstruction]}
+                            min={64}
+                            max={512}
+                            step={64}
                             onValueChange={(value) => setIndexConfig({
                               ...indexConfig,
                               parameters: {
@@ -573,11 +764,11 @@ export default function VectorDatabasePage() {
                             <Label>ef_search 参数</Label>
                             <span className="text-sm font-medium">{indexConfig.parameters.efSearch}</span>
                           </div>
-                          <Slider 
-                            value={[indexConfig.parameters.efSearch]} 
-                            min={16} 
-                            max={256} 
-                            step={16} 
+                          <Slider
+                            value={[indexConfig.parameters.efSearch]}
+                            min={16}
+                            max={256}
+                            step={16}
                             onValueChange={(value) => setIndexConfig({
                               ...indexConfig,
                               parameters: {
@@ -622,8 +813,8 @@ export default function VectorDatabasePage() {
                   <div className="mt-4 flex justify-between gap-2">
                     {isEditingIndex ? (
                       <>
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           onClick={() => {
                             // 重置为默认值
                             setIndexConfig({
@@ -639,13 +830,13 @@ export default function VectorDatabasePage() {
                           重置为默认值
                         </Button>
                         <div className="flex gap-2">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => setIsEditingIndex(false)}
                           >
                             取消
                           </Button>
-                          <Button 
+                          <Button
                             onClick={handleUpdateIndexConfig}
                             disabled={isSavingIndex}
                           >
@@ -665,7 +856,7 @@ export default function VectorDatabasePage() {
                       </>
                     ) : (
                       <>
-                        <Button 
+                        <Button
                           variant="outline"
                           onClick={handleRebuildIndex}
                           disabled={isRebuildingIndex}
@@ -703,8 +894,8 @@ export default function VectorDatabasePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
-                <Select 
-                  value={selectedCollection || ""} 
+                <Select
+                  value={selectedCollection || ""}
                   onValueChange={setSelectedCollection}
                 >
                   <SelectTrigger className="w-[220px]">
@@ -747,8 +938,8 @@ export default function VectorDatabasePage() {
               </div>
 
               <div className="flex justify-end">
-                <Button 
-                  onClick={handleSearch} 
+                <Button
+                  onClick={handleSearch}
                   disabled={searchLoading || !selectedCollection || !searchQuery.trim()}
                 >
                   {searchLoading ? (

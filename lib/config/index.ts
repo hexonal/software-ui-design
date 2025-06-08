@@ -1,13 +1,11 @@
 // 应用配置
 export const config = {
   api: {
-    // API基础URL
-    baseUrl: typeof window !== 'undefined' && (window as any).location
-      ? `${(window as any).location.protocol}//${(window as any).location.hostname}:8080`
-      : 'http://localhost:8080',
+    // API基础URL - 直接访问后端
+    baseUrl: 'http://localhost:8080',
 
-    // 请求超时时间
-    timeout: 10000,
+    // 请求超时时间 - 增加到30秒
+    timeout: 30000,
   },
 
   // JWT配置

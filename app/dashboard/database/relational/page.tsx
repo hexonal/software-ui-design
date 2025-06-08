@@ -47,7 +47,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Table as TableComponent, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 // 导入 API
-import { databaseApi } from "@/api"
+import { databaseApi, relationalApi } from "@/api"
 
 export default function RelationalDatabasePage() {
   const [activeTab, setActiveTab] = useState("databases")
@@ -58,6 +58,8 @@ export default function RelationalDatabasePage() {
   const [isLoading, setIsLoading] = useState(false)
   const [databases, setDatabases] = useState<any[]>([])
   const [loadingDatabases, setLoadingDatabases] = useState(true)
+  const [initialLoading, setInitialLoading] = useState(true)
+  const [loadingProgress, setLoadingProgress] = useState(0)
   const [isCreateDatabaseOpen, setIsCreateDatabaseOpen] = useState(false)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [databaseToDelete, setDatabaseToDelete] = useState<string | null>(null)
@@ -74,20 +76,62 @@ export default function RelationalDatabasePage() {
     const fetchDatabases = async () => {
       try {
         setLoadingDatabases(true)
-        const response = await databaseApi.relationalApi.getRelationalDatabases()
-        if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0) {
-            setSelectedDatabase(response.data[0].id)
+        setInitialLoading(true)
+        setLoadingProgress(0)
+
+        // 模拟长时间加载过程，显示进度
+        const progressInterval = setInterval(() => {
+          setLoadingProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval)
+              return 90
+            }
+            return prev + Math.random() * 15
+          })
+        }, 2000)
+
+        console.log("开始获取数据库列表...")
+        const response = await relationalApi.getRelationalDatabases()
+        console.log("API响应:", response)
+        console.log("响应数据结构检查:", {
+          hasData: !!response.data,
+          dataType: typeof response.data,
+          dataKeys: response.data ? Object.keys(response.data) : [],
+          hasSuccess: response.data && 'success' in response.data,
+          successValue: response.data && typeof response.data === 'object' && 'success' in response.data ? (response.data as any).success : undefined,
+          hasCode: response.data && 'code' in response.data,
+          codeValue: response.data && typeof response.data === 'object' && 'code' in response.data ? (response.data as any).code : undefined,
+          hasDataField: response.data && 'data' in response.data,
+          dataFieldValue: response.data && typeof response.data === 'object' && 'data' in response.data ? (response.data as any).data : undefined
+        })
+
+        // 清除进度条间隔
+        clearInterval(progressInterval)
+        setLoadingProgress(100)
+
+        // 响应拦截器处理后，数据在response.data中，而实际业务数据在response.data.data中
+        const apiResponse = response.data as any; // 这是经过响应拦截器处理的{code, message, data, success}格式
+        if (apiResponse && apiResponse.success === true) {
+          console.log("API调用成功，数据库列表:", apiResponse.data)
+          const databases = apiResponse.data || []
+          setDatabases(databases)
+          if (databases.length > 0) {
+            setSelectedDatabase(databases[0].id)
           }
         } else {
-          setError(response.message || "获取数据库列表失败")
+          console.error("API响应表示失败:", apiResponse)
+          setError(apiResponse?.message || "获取数据库列表失败")
         }
       } catch (err) {
         console.error("获取数据库列表出错:", err)
-        setError("获取数据库列表时发生错误")
+        setError(`获取数据库列表时发生错误: ${err instanceof Error ? err.message : '未知错误'}`)
       } finally {
-        setLoadingDatabases(false)
+        // 延迟一秒让用户看到100%完成状态
+        setTimeout(() => {
+          setLoadingDatabases(false)
+          setInitialLoading(false)
+          setLoadingProgress(0)
+        }, 1000)
       }
     }
 
@@ -99,7 +143,7 @@ export default function RelationalDatabasePage() {
       setError("请先选择数据库")
       return
     }
-    
+
     if (!sqlQuery.trim()) {
       setError("查询语句不能为空")
       return
@@ -108,10 +152,10 @@ export default function RelationalDatabasePage() {
     try {
       setIsExecutingQuery(true)
       setError(null)
-      
+
       // 使用 API 执行查询
-      const response = await databaseApi.relationalApi.executeSQLQuery(selectedDatabase, sqlQuery)
-      
+      const response = await relationalApi.executeSQLQuery(selectedDatabase, sqlQuery)
+
       if (response.success) {
         setQueryResult(response.data)
       } else {
@@ -134,14 +178,14 @@ export default function RelationalDatabasePage() {
     try {
       // 将查询结果转换为 CSV 格式
       const headers = queryResult.columns.join(',')
-      const rows = queryResult.rows.map((row: any) => 
+      const rows = queryResult.rows.map((row: any) =>
         queryResult.columns.map((col: string) => `"${row[col]}"`).join(',')
       ).join('\n')
       const csvContent = `${headers}\n${rows}`
-      
+
       // 创建 Blob 对象
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-      
+
       // 创建下载链接并触发下载
       const url = URL.createObjectURL(blob)
       const link = document.createElement('a')
@@ -161,19 +205,20 @@ export default function RelationalDatabasePage() {
       setError("数据库名称不能为空")
       return
     }
-    
+
     try {
       setIsLoading(true)
       setError(null)
-      
+
       // 使用 API 创建数据库
       const response = await databaseApi.createDatabase({
         name: newDatabaseData.name,
         charset: newDatabaseData.charset,
         collation: newDatabaseData.collation,
-        type: "relational"
+        size: "0 MB", // 新创建的数据库初始大小
+        tables: 0 // 新创建的数据库初始表数量
       })
-      
+
       if (response.success) {
         // 添加新创建的数据库到列表
         setDatabases([...databases, response.data])
@@ -199,14 +244,14 @@ export default function RelationalDatabasePage() {
     if (!databaseToDelete) {
       return
     }
-    
+
     try {
       setIsLoading(true)
       setError(null)
-      
+
       // 使用 API 删除数据库
       const response = await databaseApi.deleteDatabase(databaseToDelete)
-      
+
       if (response.success) {
         // 从列表中移除已删除的数据库
         setDatabases(databases.filter(db => db.id !== databaseToDelete))
@@ -227,10 +272,51 @@ export default function RelationalDatabasePage() {
   }
 
   // 过滤数据库
-  const filteredDatabases = databases.filter(db => 
+  const filteredDatabases = databases.filter(db =>
     db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     db.id.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  // 如果是初始加载状态，显示全屏加载界面
+  if (initialLoading) {
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="max-w-md w-full mx-4">
+          <Card>
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4 w-16 h-16 relative">
+                <Database className="w-16 h-16 text-primary animate-pulse" />
+              </div>
+              <CardTitle>正在加载关系型数据库</CardTitle>
+              <CardDescription>
+                系统正在初始化数据库连接，这可能需要约50秒的时间
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>加载进度</span>
+                  <span>{Math.round(loadingProgress)}%</span>
+                </div>
+                <div className="w-full bg-secondary rounded-full h-2">
+                  <div
+                    className="bg-primary h-2 rounded-full transition-all duration-500 ease-out"
+                    style={{ width: `${loadingProgress}%` }}
+                  />
+                </div>
+              </div>
+              <div className="text-center text-sm text-muted-foreground">
+                <div className="flex items-center justify-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                  正在建立数据库连接...
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -251,7 +337,7 @@ export default function RelationalDatabasePage() {
               <DialogHeader>
                 <DialogTitle>创建新数据库</DialogTitle>
                 <DialogDescription>
-                  创建一个新的关系型数据库实例。请填写以下信息。
+                  创建一个新的关系型数据库。请填写以下信息。
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -262,7 +348,7 @@ export default function RelationalDatabasePage() {
                   <Input
                     id="db-name"
                     value={newDatabaseData.name}
-                    onChange={(e) => setNewDatabaseData({...newDatabaseData, name: e.target.value})}
+                    onChange={(e) => setNewDatabaseData({ ...newDatabaseData, name: e.target.value })}
                     placeholder="输入数据库名称"
                     className="col-span-3"
                     required
@@ -272,9 +358,9 @@ export default function RelationalDatabasePage() {
                   <Label htmlFor="db-charset" className="text-right">
                     字符集
                   </Label>
-                  <Select 
+                  <Select
                     value={newDatabaseData.charset}
-                    onValueChange={(value) => setNewDatabaseData({...newDatabaseData, charset: value})}
+                    onValueChange={(value) => setNewDatabaseData({ ...newDatabaseData, charset: value })}
                   >
                     <SelectTrigger id="db-charset" className="col-span-3">
                       <SelectValue placeholder="选择字符集" />
@@ -291,9 +377,9 @@ export default function RelationalDatabasePage() {
                   <Label htmlFor="db-collation" className="text-right">
                     排序规则
                   </Label>
-                  <Select 
+                  <Select
                     value={newDatabaseData.collation}
-                    onValueChange={(value) => setNewDatabaseData({...newDatabaseData, collation: value})}
+                    onValueChange={(value) => setNewDatabaseData({ ...newDatabaseData, collation: value })}
                   >
                     <SelectTrigger id="db-collation" className="col-span-3">
                       <SelectValue placeholder="选择排序规则" />
@@ -352,38 +438,45 @@ export default function RelationalDatabasePage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索数据库..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索数据库..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={() => setSearchQuery("")}
             >
               <Filter className="h-4 w-4" />
               <span className="sr-only">重置筛选</span>
             </Button>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={async () => {
                 try {
                   setLoadingDatabases(true)
                   setError(null)
-                  const response = await databaseApi.relationalApi.getRelationalDatabases()
-                  if (response.success) {
-                    setDatabases(response.data)
+                  console.log("刷新数据库列表...")
+                  const response = await relationalApi.getRelationalDatabases()
+                  console.log("刷新API响应:", response)
+
+                  // 使用与主要fetchDatabases相同的处理逻辑
+                  const apiResponse = response.data as any;
+                  if (apiResponse && apiResponse.success === true) {
+                    console.log("刷新成功，数据库列表:", apiResponse.data)
+                    setDatabases(apiResponse.data || [])
                   } else {
-                    setError(response.message || "刷新数据库列表失败")
+                    console.error("刷新API响应表示失败:", apiResponse)
+                    setError(apiResponse?.message || "刷新数据库列表失败")
                   }
                 } catch (err) {
                   console.error("刷新数据库列表出错:", err)
-                  setError("刷新数据库列表时发生错误")
+                  setError(`刷新数据库列表时发生错误: ${err instanceof Error ? err.message : '未知错误'}`)
                 } finally {
                   setLoadingDatabases(false)
                 }
@@ -416,9 +509,9 @@ export default function RelationalDatabasePage() {
                     {databases.length === 0 ? "暂无数据库" : "没有匹配的数据库"}
                   </p>
                   {databases.length === 0 && (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="mt-4"
                       onClick={() => setIsCreateDatabaseOpen(true)}
                     >
@@ -471,7 +564,7 @@ export default function RelationalDatabasePage() {
                             备份
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setDatabaseToDelete(db.id)
@@ -504,8 +597,8 @@ export default function RelationalDatabasePage() {
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Select 
-                value={selectedDatabase || ""} 
+              <Select
+                value={selectedDatabase || ""}
                 onValueChange={setSelectedDatabase}
               >
                 <SelectTrigger className="w-[220px]">
@@ -534,14 +627,14 @@ export default function RelationalDatabasePage() {
             <CardHeader>
               <CardTitle>表管理</CardTitle>
               <CardDescription>
-                {selectedDatabase ? 
-                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` : 
+                {selectedDatabase ?
+                  `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的表` :
                   "请先选择一个数据库"}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full py-8"
                 onClick={() => window.location.href = "/dashboard/database/relational/tables"}
               >
@@ -576,20 +669,20 @@ export default function RelationalDatabasePage() {
                     )}
                   </SelectContent>
                 </Select>
-                
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  onClick={handleDownloadQuery} 
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDownloadQuery}
                   disabled={!queryResult}
                   title="下载查询结果"
                 >
-                   <Download className="h-4 w-4" />
-                   <span className="sr-only">下载</span>
+                  <Download className="h-4 w-4" />
+                  <span className="sr-only">下载</span>
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   size="icon"
                   onClick={() => {
                     // 清空查询结果
@@ -602,9 +695,9 @@ export default function RelationalDatabasePage() {
                   <Trash2 className="h-4 w-4" />
                   <span className="sr-only">清空</span>
                 </Button>
-                
-                <Button 
-                  variant="outline" 
+
+                <Button
+                  variant="outline"
                   size="icon"
                   onClick={() => {
                     // 保存查询语句到本地存储
@@ -684,7 +777,7 @@ export default function RelationalDatabasePage() {
                       </TableBody>
                     </TableComponent>
                   </div>
-                  
+
                   <div className="flex justify-end">
                     <Button variant="outline" size="sm" onClick={handleDownloadQuery}>
                       <Download className="mr-2 h-4 w-4" />

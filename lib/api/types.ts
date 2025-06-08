@@ -4,6 +4,7 @@ export interface ApiResponse<T> {
   message: string
   data: T | null
   success?: boolean // 可选字段，前端计算得出
+  originalData?: any // 可选字段，用于调试，保留原始响应数据
 }
 
 // 登录请求参数
@@ -55,4 +56,18 @@ export interface ApiError {
   code: string
   message: string
   details?: any
+}
+
+// 系统状态相关类型
+export interface StatusItem {
+  value: string
+  description: string
+  status: 'success' | 'warning' | 'error' | 'default'
+}
+
+export interface SystemStatusResponse {
+  health: StatusItem
+  storage: StatusItem
+  nodes: StatusItem
+  databases: StatusItem
 }

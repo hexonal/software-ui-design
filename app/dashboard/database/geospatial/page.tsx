@@ -70,23 +70,89 @@ export default function GeospatialDatabasePage() {
     srid: "EPSG:4326"
   })
 
+  // 错误处理帮助函数
+  const getErrorMessage = (apiResponse: any, defaultMessage: string): string => {
+    if (!apiResponse) {
+      return `${defaultMessage} - 未收到响应`
+    }
+
+    if (typeof apiResponse === 'object') {
+      if (apiResponse.message) {
+        return `${defaultMessage} - ${apiResponse.message}`
+      }
+      if (apiResponse.error) {
+        return `${defaultMessage} - ${apiResponse.error}`
+      }
+      if (apiResponse.msg) {
+        return `${defaultMessage} - ${apiResponse.msg}`
+      }
+      if (Object.keys(apiResponse).length === 0) {
+        return `${defaultMessage} - 服务器返回空响应`
+      }
+    }
+
+    return defaultMessage
+  }
+
+  // 网络错误处理帮助函数
+  const getNetworkErrorMessage = (err: any, operationName: string): string => {
+    if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('Network Error')) {
+      return `${operationName}失败 - 网络连接错误，请检查网络连接`
+    }
+    if (err?.code === 'TIMEOUT' || err?.message?.includes('timeout')) {
+      return `${operationName}失败 - 请求超时，请稍后重试`
+    }
+    if (err?.response?.status) {
+      return `${operationName}失败 - HTTP ${err.response.status} 错误`
+    }
+    return `${operationName}失败 - ${err?.message || '未知错误'}`
+  }
+
   // 获取地理空间数据库列表
   useEffect(() => {
     const fetchDatabases = async () => {
       try {
         setLoading(prev => ({ ...prev, databases: true }))
+        setError(null)
+        console.log("开始获取地理空间数据库列表...")
         const response = await geospatialApi.getGeospatialDatabases()
-        if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0 && !selectedDatabase) {
-            setSelectedDatabase(response.data[0].id)
+        console.log("地理空间数据库API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理地理空间数据库API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("地理空间数据库API调用成功，结果:", apiResponse.data)
+          const databasesData = apiResponse.data || []
+          // 确保数据是数组格式
+          if (Array.isArray(databasesData)) {
+            setDatabases(databasesData)
+            if (databasesData.length > 0 && !selectedDatabase) {
+              setSelectedDatabase(databasesData[0]?.id || null)
+            }
+          } else {
+            console.warn("地理空间数据库数据不是数组格式:", databasesData)
+            setDatabases([])
           }
         } else {
-          setError(response.message)
+          console.error("地理空间数据库API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取地理空间数据库失败")
+          setError(errorMsg)
         }
       } catch (err) {
-        setError('获取地理空间数据库失败')
-        console.error(err)
+        console.error("地理空间数据库API调用出错:", err)
+        const errorMsg = getNetworkErrorMessage(err, "获取地理空间数据库")
+        setError(errorMsg)
       } finally {
         setLoading(prev => ({ ...prev, databases: false }))
       }
@@ -102,18 +168,46 @@ export default function GeospatialDatabasePage() {
     const fetchTables = async () => {
       try {
         setLoading(prev => ({ ...prev, tables: true }))
+        setError(null)
+        console.log("开始获取空间表列表...")
         const response = await geospatialApi.getGeospatialTables(selectedDatabase)
-        if (response.success) {
-          setTables(response.data)
-          if (response.data.length > 0 && !selectedTable) {
-            setSelectedTable(response.data[0].name)
+        console.log("空间表API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理空间表API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("空间表API调用成功，结果:", apiResponse.data)
+          const tablesData = apiResponse.data || []
+          // 确保数据是数组格式
+          if (Array.isArray(tablesData)) {
+            setTables(tablesData)
+            if (tablesData.length > 0 && !selectedTable) {
+              setSelectedTable(tablesData[0]?.name || null)
+            }
+          } else {
+            console.warn("空间表数据不是数组格式:", tablesData)
+            setTables([])
           }
         } else {
-          setError(response.message)
+          console.error("空间表API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取空间表失败")
+          setError(errorMsg)
         }
       } catch (err) {
-        setError('获取空间表失败')
-        console.error(err)
+        console.error("空间表API调用出错:", err)
+        const errorMsg = getNetworkErrorMessage(err, "获取空间表")
+        setError(errorMsg)
       } finally {
         setLoading(prev => ({ ...prev, tables: false }))
       }
@@ -136,18 +230,38 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, query: true }))
       setError(null)
-      
+      console.log("开始执行地理空间查询...")
+
       // 使用 API 执行空间查询
       const response = await geospatialApi.executeGeospatialQuery(selectedDatabase, geoQuery)
-      
-      if (response.success) {
-        setQueryResult(response.data)
+      console.log("地理空间查询API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理地理空间查询API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("地理空间查询API调用成功，结果:", apiResponse.data)
+        // 直接使用apiResponse.data，它应该包含query、executionTime、rowCount、columns、rows等字段
+        setQueryResult(apiResponse.data || apiResponse)
       } else {
-        setError(response.message)
+        console.error("地理空间查询API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "执行空间查询失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('执行空间查询失败')
-      console.error(err)
+      console.error("地理空间查询API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "执行空间查询")
+      setError(errorMsg)
     } finally {
       setLoading(prev => ({ ...prev, query: false }))
     }
@@ -162,25 +276,45 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, databases: true }))
       setError(null)
-      
+      console.log("开始创建地理空间数据库...")
+
       const response = await geospatialApi.createGeospatialDatabase({
         name: newDatabaseData.name,
         description: newDatabaseData.description
       })
-      
-      if (response.success) {
-        setDatabases([...databases, response.data])
+      console.log("创建地理空间数据库API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建数据库API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建地理空间数据库API调用成功，结果:", apiResponse.data)
+        const newDb = apiResponse.data || { name: newDatabaseData.name, description: newDatabaseData.description }
+        setDatabases([...databases, newDb])
         setIsCreateDatabaseOpen(false)
         setNewDatabaseData({
           name: "",
           description: ""
         })
       } else {
-        setError(response.message)
+        console.error("创建地理空间数据库API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建地理空间数据库失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('创建地理空间数据库失败')
-      console.error(err)
+      console.error("创建地理空间数据库API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "创建地理空间数据库")
+      setError(errorMsg)
     } finally {
       setLoading(prev => ({ ...prev, databases: false }))
     }
@@ -200,11 +334,28 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+      console.log("开始创建空间表...")
+
       const response = await geospatialApi.createGeospatialTable(selectedDatabase, newTableData)
-      
-      if (response.success) {
-        setTables([...tables, response.data])
+      console.log("创建空间表API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建空间表API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建空间表API调用成功，结果:", apiResponse.data)
+        const newTable = apiResponse.data || { name: newTableData.name, geometryType: newTableData.geometryType, srid: newTableData.srid }
+        setTables([...tables, newTable])
         setIsCreateTableOpen(false)
         setNewTableData({
           name: "",
@@ -212,11 +363,14 @@ export default function GeospatialDatabasePage() {
           srid: "EPSG:4326"
         })
       } else {
-        setError(response.message)
+        console.error("创建空间表API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建空间表失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('创建空间表失败')
-      console.error(err)
+      console.error("创建空间表API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "创建空间表")
+      setError(errorMsg)
     } finally {
       setLoading(prev => ({ ...prev, tables: false }))
     }
@@ -228,7 +382,7 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, databases: true }))
       setError(null)
-      
+
       // 模拟删除数据库
       setTimeout(() => {
         setDatabases(databases.filter(db => db.id !== databaseToDelete))
@@ -240,7 +394,7 @@ export default function GeospatialDatabasePage() {
         setLoading(prev => ({ ...prev, databases: false }))
       }, 500)
     } catch (err) {
-      setError('删除地理空间数据库失败')
+      setError(getNetworkErrorMessage(err, '删除地理空间数据库'))
       console.error(err)
       setLoading(prev => ({ ...prev, databases: false }))
     }
@@ -252,7 +406,7 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, tables: true }))
       setError(null)
-      
+
       // 模拟删除表
       setTimeout(() => {
         setTables(tables.filter(table => table.name !== tableToDelete))
@@ -264,7 +418,7 @@ export default function GeospatialDatabasePage() {
         setLoading(prev => ({ ...prev, tables: false }))
       }, 500)
     } catch (err) {
-      setError('删除空间表失败')
+      setError(getNetworkErrorMessage(err, '删除空间表'))
       console.error(err)
       setLoading(prev => ({ ...prev, tables: false }))
     }
@@ -279,30 +433,49 @@ export default function GeospatialDatabasePage() {
     try {
       setLoading(prev => ({ ...prev, map: true }))
       setError(null)
-      
+      console.log("开始加载地图数据...")
+
       const response = await geospatialApi.getMapVisualizationData(selectedDatabase, selectedTable)
-      
-      if (response.success) {
-        setMapData(response.data)
+      console.log("地图数据API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理地图数据API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("地图数据API调用成功，结果:", apiResponse.data)
+        setMapData(apiResponse.data || apiResponse)
       } else {
-        setError(response.message)
+        console.error("地图数据API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "加载地图数据失败")
+        setError(errorMsg)
       }
     } catch (err) {
-      setError('加载地图数据失败')
-      console.error(err)
+      console.error("地图数据API调用出错:", err)
+      const errorMsg = getNetworkErrorMessage(err, "加载地图数据")
+      setError(errorMsg)
     } finally {
       setLoading(prev => ({ ...prev, map: false }))
     }
   }
 
   // 过滤数据库
-  const filteredDatabases = databases.filter(db => 
+  const filteredDatabases = databases.filter(db =>
     db.name.toLowerCase().includes(databaseSearchQuery.toLowerCase()) ||
     db.id.toLowerCase().includes(databaseSearchQuery.toLowerCase())
   )
 
   // 过滤表
-  const filteredTables = tables.filter(table => 
+  const filteredTables = tables.filter(table =>
     table.name.toLowerCase().includes(tableSearchQuery.toLowerCase())
   )
 
@@ -324,7 +497,7 @@ export default function GeospatialDatabasePage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>创建新地理空间数据库</DialogTitle>
-                <DialogDescription>创建一个新的地理空间数据库实例</DialogDescription>
+                <DialogDescription>创建一个新的地理空间数据库</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -334,7 +507,7 @@ export default function GeospatialDatabasePage() {
                   <Input
                     id="geo-db-name"
                     value={newDatabaseData.name}
-                    onChange={(e) => setNewDatabaseData({...newDatabaseData, name: e.target.value})}
+                    onChange={(e) => setNewDatabaseData({ ...newDatabaseData, name: e.target.value })}
                     placeholder="输入数据库名称"
                     className="col-span-3"
                   />
@@ -346,7 +519,7 @@ export default function GeospatialDatabasePage() {
                   <Input
                     id="geo-db-desc"
                     value={newDatabaseData.description}
-                    onChange={(e) => setNewDatabaseData({...newDatabaseData, description: e.target.value})}
+                    onChange={(e) => setNewDatabaseData({ ...newDatabaseData, description: e.target.value })}
                     placeholder="输入数据库描述"
                     className="col-span-3"
                   />
@@ -371,7 +544,7 @@ export default function GeospatialDatabasePage() {
                 setError(response.message)
               }
             } catch (err) {
-              setError('刷新地理空间数据库失败')
+              setError(getNetworkErrorMessage(err, '刷新地理空间数据库'))
               console.error(err)
             } finally {
               setLoading(prev => ({ ...prev, databases: false }))
@@ -403,16 +576,16 @@ export default function GeospatialDatabasePage() {
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索地理空间数据库..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索地理空间数据库..."
+                className="pl-8"
                 value={databaseSearchQuery}
                 onChange={(e) => setDatabaseSearchQuery(e.target.value)}
               />
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="icon"
               onClick={() => setDatabaseSearchQuery("")}
             >
@@ -442,8 +615,8 @@ export default function GeospatialDatabasePage() {
                     {databases.length === 0 ? "暂无地理空间数据库" : "没有匹配的数据库"}
                   </p>
                   {databases.length === 0 && (
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       className="mt-4"
                       onClick={() => setIsCreateDatabaseOpen(true)}
                     >
@@ -492,7 +665,7 @@ export default function GeospatialDatabasePage() {
                             地图可视化
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem 
+                          <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => {
                               setDatabaseToDelete(db.id)
@@ -517,16 +690,16 @@ export default function GeospatialDatabasePage() {
             <div className="flex items-center gap-2 flex-1">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="search" 
-                  placeholder="搜索空间表..." 
-                  className="pl-8" 
+                <Input
+                  type="search"
+                  placeholder="搜索空间表..."
+                  className="pl-8"
                   value={tableSearchQuery}
                   onChange={(e) => setTableSearchQuery(e.target.value)}
                 />
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={() => setTableSearchQuery("")}
               >
@@ -535,8 +708,8 @@ export default function GeospatialDatabasePage() {
               </Button>
             </div>
             <div className="flex items-center gap-2">
-              <Select 
-                value={selectedDatabase || ""} 
+              <Select
+                value={selectedDatabase || ""}
                 onValueChange={setSelectedDatabase}
               >
                 <SelectTrigger className="w-[220px]">
@@ -570,7 +743,7 @@ export default function GeospatialDatabasePage() {
                       <Input
                         id="table-name"
                         value={newTableData.name}
-                        onChange={(e) => setNewTableData({...newTableData, name: e.target.value})}
+                        onChange={(e) => setNewTableData({ ...newTableData, name: e.target.value })}
                         placeholder="输入表名"
                         className="col-span-3"
                       />
@@ -581,7 +754,7 @@ export default function GeospatialDatabasePage() {
                       </Label>
                       <Select
                         value={newTableData.geometryType}
-                        onValueChange={(value) => setNewTableData({...newTableData, geometryType: value})}
+                        onValueChange={(value) => setNewTableData({ ...newTableData, geometryType: value })}
                       >
                         <SelectTrigger id="geometry-type" className="col-span-3">
                           <SelectValue placeholder="选择几何类型" />
@@ -602,7 +775,7 @@ export default function GeospatialDatabasePage() {
                       </Label>
                       <Select
                         value={newTableData.srid}
-                        onValueChange={(value) => setNewTableData({...newTableData, srid: value})}
+                        onValueChange={(value) => setNewTableData({ ...newTableData, srid: value })}
                       >
                         <SelectTrigger id="srid" className="col-span-3">
                           <SelectValue placeholder="选择空间参考" />
@@ -631,8 +804,8 @@ export default function GeospatialDatabasePage() {
             <CardHeader>
               <CardTitle>空间表列表</CardTitle>
               <CardDescription>
-                {selectedDatabase 
-                  ? `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的空间表` 
+                {selectedDatabase
+                  ? `${databases.find(db => db.id === selectedDatabase)?.name || selectedDatabase} 中的空间表`
                   : "请选择一个数据库"}
               </CardDescription>
             </CardHeader>
@@ -660,8 +833,8 @@ export default function GeospatialDatabasePage() {
                       {tables.length === 0 ? "该数据库中没有空间表，请创建新表" : "尝试使用其他搜索条件"}
                     </p>
                     {tables.length === 0 && (
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="mt-4"
                         onClick={() => setIsCreateTableOpen(true)}
                       >
@@ -718,7 +891,7 @@ export default function GeospatialDatabasePage() {
                                 地图可视化
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => {
                                   setTableToDelete(table.name)
@@ -748,8 +921,8 @@ export default function GeospatialDatabasePage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
-                <Select 
-                  value={selectedDatabase || ""} 
+                <Select
+                  value={selectedDatabase || ""}
                   onValueChange={setSelectedDatabase}
                 >
                   <SelectTrigger className="w-[220px]">
@@ -763,8 +936,8 @@ export default function GeospatialDatabasePage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select 
-                  value={selectedTable || ""} 
+                <Select
+                  value={selectedTable || ""}
                   onValueChange={(value) => {
                     setSelectedTable(value)
                     setGeoQuery(`SELECT * FROM ${value} LIMIT 10;`)
@@ -773,10 +946,10 @@ export default function GeospatialDatabasePage() {
                 >
                   <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder={
-                      !selectedDatabase 
-                        ? "请先选择数据库" 
-                        : tables.length === 0 
-                          ? "无可用表" 
+                      !selectedDatabase
+                        ? "请先选择数据库"
+                        : tables.length === 0
+                          ? "无可用表"
                           : "选择表"
                     } />
                   </SelectTrigger>
@@ -804,7 +977,7 @@ export default function GeospatialDatabasePage() {
               </div>
 
               <div className="flex justify-between">
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => {
                     // 清空查询结果
@@ -820,8 +993,8 @@ export default function GeospatialDatabasePage() {
                   <Trash2 className="mr-2 h-4 w-4" />
                   清空
                 </Button>
-                <Button 
-                  onClick={handleExecuteQuery} 
+                <Button
+                  onClick={handleExecuteQuery}
                   disabled={loading.query || !selectedDatabase}
                 >
                   {loading.query ? (
@@ -869,22 +1042,22 @@ export default function GeospatialDatabasePage() {
                       </TableBody>
                     </Table>
                   </div>
-                  
+
                   <div className="flex justify-end">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         // 将查询结果转换为 CSV 格式
                         const headers = queryResult.columns.join(',')
-                        const rows = queryResult.rows.map((row: any) => 
+                        const rows = queryResult.rows.map((row: any) =>
                           queryResult.columns.map((col: string) => `"${row[col]}"`).join(',')
                         ).join('\n')
                         const csvContent = `${headers}\n${rows}`
-                        
+
                         // 创建 Blob 对象
                         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-                        
+
                         // 创建下载链接并触发下载
                         const url = URL.createObjectURL(blob)
                         const link = document.createElement('a')
@@ -913,8 +1086,8 @@ export default function GeospatialDatabasePage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                <Select 
-                  value={selectedDatabase || ""} 
+                <Select
+                  value={selectedDatabase || ""}
                   onValueChange={setSelectedDatabase}
                 >
                   <SelectTrigger className="w-[220px]">
@@ -928,17 +1101,17 @@ export default function GeospatialDatabasePage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select 
-                  value={selectedTable || ""} 
+                <Select
+                  value={selectedTable || ""}
                   onValueChange={setSelectedTable}
                   disabled={!selectedDatabase || tables.length === 0}
                 >
                   <SelectTrigger className="w-[220px]">
                     <SelectValue placeholder={
-                      !selectedDatabase 
-                        ? "请先选择数据库" 
-                        : tables.length === 0 
-                          ? "无可用表" 
+                      !selectedDatabase
+                        ? "请先选择数据库"
+                        : tables.length === 0
+                          ? "无可用表"
                           : "选择表"
                     } />
                   </SelectTrigger>
@@ -950,8 +1123,8 @@ export default function GeospatialDatabasePage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={handleLoadMapData}
                   disabled={loading.map || !selectedDatabase || !selectedTable}
                 >
@@ -1001,7 +1174,25 @@ export default function GeospatialDatabasePage() {
                           {mapData.features.length} 个要素
                         </Badge>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        if (!mapData) return
+
+                        // 创建GeoJSON内容
+                        const geoJsonContent = JSON.stringify(mapData, null, 2)
+
+                        // 创建 Blob 对象
+                        const blob = new Blob([geoJsonContent], { type: 'application/geo+json;charset=utf-8;' })
+
+                        // 创建下载链接并触发下载
+                        const url = URL.createObjectURL(blob)
+                        const link = document.createElement('a')
+                        link.href = url
+                        link.setAttribute('download', `${selectedTable || 'geospatial-data'}-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.geojson`)
+                        document.body.appendChild(link)
+                        link.click()
+                        document.body.removeChild(link)
+                        URL.revokeObjectURL(url)
+                      }}>
                         <Download className="mr-2 h-4 w-4" />
                         导出 GeoJSON
                       </Button>

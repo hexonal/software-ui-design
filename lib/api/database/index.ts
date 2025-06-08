@@ -70,7 +70,7 @@ export { relationalApi }
  */
 export async function getDatabaseOverviewStats() {
   try {
-    const response = await api.post('/database/overview/stats', {})
+    const response = await api.post('/dfm/database/overview/stats', {})
     return {
       success: true,
       data: response.data.data,
@@ -91,7 +91,7 @@ export async function getDatabaseOverviewStats() {
  */
 export async function getDatabaseTypesDistribution() {
   try {
-    const response = await api.post('/database/overview/types-distribution', {})
+    const response = await api.post('/dfm/database/overview/types-distribution', {})
     return {
       success: true,
       data: response.data.data,
@@ -112,7 +112,7 @@ export async function getDatabaseTypesDistribution() {
  */
 export async function getDatabaseStorageData() {
   try {
-    const response = await api.post('/database/overview/storage-data', {})
+    const response = await api.post('/dfm/database/overview/storage-data', {})
     return {
       success: true,
       data: response.data.data,

@@ -41,7 +41,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 
 // 导入 API
-import { systemApi } from "@/api"
+import { monitoringApi } from "@/api"
 
 export default function PerformanceMonitoringPage() {
   const [timeRange, setTimeRange] = useState("24h")
@@ -64,9 +64,9 @@ export default function PerformanceMonitoringPage() {
       setLoading(true)
       setError(null)
       setIsRefreshing(true)
-      
-      const response = await systemApi.getPerformanceData({ timeRange })
-      
+
+      const response = await monitoringApi.getPerformanceData(timeRange)
+
       if (response.success) {
         setPerformanceData(response.data)
       } else {
@@ -84,16 +84,16 @@ export default function PerformanceMonitoringPage() {
   const handleRefresh = () => {
     fetchPerformanceData()
   }
-  
+
   // 导出性能数据为CSV
   const handleExportData = () => {
     if (!performanceData) return
-    
+
     try {
       // 根据当前活动标签选择要导出的数据
       let dataToExport: any[] = []
       let filename = ""
-      
+
       if (activeTab === "system") {
         dataToExport = performanceData.systemData || performanceData
         filename = "system-performance"
@@ -104,28 +104,28 @@ export default function PerformanceMonitoringPage() {
         dataToExport = performanceData.queryPerformance || []
         filename = "query-performance"
       }
-      
+
       if (dataToExport.length === 0) {
         setError("没有可导出的数据")
         return
       }
-      
+
       // 获取所有可能的列
       const allKeys = new Set<string>()
       dataToExport.forEach(item => {
         Object.keys(item).forEach(key => allKeys.add(key))
       })
-      
+
       // 创建CSV内容
       const headers = Array.from(allKeys).join(',')
-      const rows = dataToExport.map(item => 
-        Array.from(allKeys).map(key => 
+      const rows = dataToExport.map(item =>
+        Array.from(allKeys).map(key =>
           item[key] !== undefined ? `"${item[key]}"` : '""'
         ).join(',')
       ).join('\n')
-      
+
       const csvContent = `${headers}\n${rows}`
-      
+
       // 创建下载链接
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
       const url = URL.createObjectURL(blob)
@@ -135,38 +135,38 @@ export default function PerformanceMonitoringPage() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
-      
+
     } catch (err) {
       console.error("导出数据出错:", err)
       setError("导出数据失败")
     }
   }
-  
+
   // 保存性能快照
   const handleSaveSnapshot = () => {
     if (!performanceData) return
-    
+
     try {
       const snapshot = {
         timestamp: new Date().toISOString(),
         timeRange,
         data: performanceData
       }
-      
+
       // 获取现有快照
       const existingSnapshots = JSON.parse(localStorage.getItem('performanceSnapshots') || '[]')
-      
+
       // 添加新快照
       existingSnapshots.unshift(snapshot)
-      
+
       // 限制保存的快照数量
       if (existingSnapshots.length > 10) {
         existingSnapshots.pop()
       }
-      
+
       // 保存回本地存储
       localStorage.setItem('performanceSnapshots', JSON.stringify(existingSnapshots))
-      
+
       alert('性能快照已保存')
     } catch (err) {
       console.error("保存快照出错:", err)
@@ -184,7 +184,7 @@ export default function PerformanceMonitoringPage() {
             <p className="text-muted-foreground">监控系统性能指标和资源使用情况</p>
           </div>
         </div>
-        
+
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -246,13 +246,13 @@ export default function PerformanceMonitoringPage() {
             <p className="text-xs text-muted-foreground">
               较昨日 {compareValues(performanceData?.cpu?.current, performanceData?.cpu?.yesterday)}
             </p>
-            <Progress 
-              value={performanceData?.cpu?.current || 0} 
+            <Progress
+              value={performanceData?.cpu?.current || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.cpu?.current || 0) > 80 ? "bg-red-500" : 
-                (performanceData?.cpu?.current || 0) > 60 ? "bg-amber-500" : 
-                "bg-green-500"
+                (performanceData?.cpu?.current || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.cpu?.current || 0) > 60 ? "bg-amber-500" :
+                    "bg-green-500"
               }
             />
           </CardContent>
@@ -267,13 +267,13 @@ export default function PerformanceMonitoringPage() {
             <p className="text-xs text-muted-foreground">
               较昨日 {compareValues(performanceData?.memory?.current, performanceData?.memory?.yesterday)}
             </p>
-            <Progress 
-              value={performanceData?.memory?.current || 0} 
+            <Progress
+              value={performanceData?.memory?.current || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.memory?.current || 0) > 80 ? "bg-red-500" : 
-                (performanceData?.memory?.current || 0) > 60 ? "bg-amber-500" : 
-                "bg-green-500"
+                (performanceData?.memory?.current || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.memory?.current || 0) > 60 ? "bg-amber-500" :
+                    "bg-green-500"
               }
             />
           </CardContent>
@@ -288,13 +288,13 @@ export default function PerformanceMonitoringPage() {
             <p className="text-xs text-muted-foreground">
               {performanceData?.disk?.throughput || "0 MB/s"} 吞吐量
             </p>
-            <Progress 
-              value={performanceData?.disk?.utilization || 0} 
+            <Progress
+              value={performanceData?.disk?.utilization || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.disk?.utilization || 0) > 80 ? "bg-red-500" : 
-                (performanceData?.disk?.utilization || 0) > 60 ? "bg-amber-500" : 
-                "bg-green-500"
+                (performanceData?.disk?.utilization || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.disk?.utilization || 0) > 60 ? "bg-amber-500" :
+                    "bg-green-500"
               }
             />
           </CardContent>
@@ -309,13 +309,13 @@ export default function PerformanceMonitoringPage() {
             <p className="text-xs text-muted-foreground">
               {performanceData?.network?.packets || "0"} 包/秒
             </p>
-            <Progress 
-              value={performanceData?.network?.utilization || 0} 
+            <Progress
+              value={performanceData?.network?.utilization || 0}
               className="mt-2"
               indicatorClassName={
-                (performanceData?.network?.utilization || 0) > 80 ? "bg-red-500" : 
-                (performanceData?.network?.utilization || 0) > 60 ? "bg-amber-500" : 
-                "bg-green-500"
+                (performanceData?.network?.utilization || 0) > 80 ? "bg-red-500" :
+                  (performanceData?.network?.utilization || 0) > 60 ? "bg-amber-500" :
+                    "bg-green-500"
               }
             />
           </CardContent>
@@ -328,7 +328,7 @@ export default function PerformanceMonitoringPage() {
           <TabsTrigger value="database">数据库性能</TabsTrigger>
           <TabsTrigger value="query">查询性能</TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="system" className="space-y-4">
           <Card>
             <CardHeader>
@@ -475,7 +475,7 @@ export default function PerformanceMonitoringPage() {
               </CardContent>
             </Card>
           </div>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>系统资源使用详情</CardTitle>
@@ -500,13 +500,13 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>{performanceData?.cpu?.peak || 0}%</TableCell>
                     <TableCell>
                       <Badge variant={
-                        (performanceData?.cpu?.current || 0) > 80 ? "destructive" : 
-                        (performanceData?.cpu?.current || 0) > 60 ? "warning" : 
-                        "success"
+                        (performanceData?.cpu?.current || 0) > 80 ? "destructive" :
+                          (performanceData?.cpu?.current || 0) > 60 ? "warning" :
+                            "success"
                       }>
-                        {(performanceData?.cpu?.current || 0) > 80 ? "高负载" : 
-                         (performanceData?.cpu?.current || 0) > 60 ? "中负载" : 
-                         "正常"}
+                        {(performanceData?.cpu?.current || 0) > 80 ? "高负载" :
+                          (performanceData?.cpu?.current || 0) > 60 ? "中负载" :
+                            "正常"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -517,13 +517,13 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>{performanceData?.memory?.peak || 0}%</TableCell>
                     <TableCell>
                       <Badge variant={
-                        (performanceData?.memory?.current || 0) > 80 ? "destructive" : 
-                        (performanceData?.memory?.current || 0) > 60 ? "warning" : 
-                        "success"
+                        (performanceData?.memory?.current || 0) > 80 ? "destructive" :
+                          (performanceData?.memory?.current || 0) > 60 ? "warning" :
+                            "success"
                       }>
-                        {(performanceData?.memory?.current || 0) > 80 ? "高负载" : 
-                         (performanceData?.memory?.current || 0) > 60 ? "中负载" : 
-                         "正常"}
+                        {(performanceData?.memory?.current || 0) > 80 ? "高负载" :
+                          (performanceData?.memory?.current || 0) > 60 ? "中负载" :
+                            "正常"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -534,13 +534,13 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>{performanceData?.disk?.peak || 0}%</TableCell>
                     <TableCell>
                       <Badge variant={
-                        (performanceData?.disk?.current || 0) > 80 ? "destructive" : 
-                        (performanceData?.disk?.current || 0) > 60 ? "warning" : 
-                        "success"
+                        (performanceData?.disk?.current || 0) > 80 ? "destructive" :
+                          (performanceData?.disk?.current || 0) > 60 ? "warning" :
+                            "success"
                       }>
-                        {(performanceData?.disk?.current || 0) > 80 ? "高负载" : 
-                         (performanceData?.disk?.current || 0) > 60 ? "中负载" : 
-                         "正常"}
+                        {(performanceData?.disk?.current || 0) > 80 ? "高负载" :
+                          (performanceData?.disk?.current || 0) > 60 ? "中负载" :
+                            "正常"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -551,13 +551,13 @@ export default function PerformanceMonitoringPage() {
                     <TableCell>{performanceData?.network?.peak || 0}%</TableCell>
                     <TableCell>
                       <Badge variant={
-                        (performanceData?.network?.current || 0) > 80 ? "destructive" : 
-                        (performanceData?.network?.current || 0) > 60 ? "warning" : 
-                        "success"
+                        (performanceData?.network?.current || 0) > 80 ? "destructive" :
+                          (performanceData?.network?.current || 0) > 60 ? "warning" :
+                            "success"
                       }>
-                        {(performanceData?.network?.current || 0) > 80 ? "高负载" : 
-                         (performanceData?.network?.current || 0) > 60 ? "中负载" : 
-                         "正常"}
+                        {(performanceData?.network?.current || 0) > 80 ? "高负载" :
+                          (performanceData?.network?.current || 0) > 60 ? "中负载" :
+                            "正常"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -571,10 +571,10 @@ export default function PerformanceMonitoringPage() {
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索数据库..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索数据库..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -599,11 +599,11 @@ export default function PerformanceMonitoringPage() {
               <span className="sr-only">重置筛选</span>
             </Button>
           </div>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>数据库性能指标</CardTitle>
-              <CardDescription>各数据库实例的性能指标</CardDescription>
+              <CardDescription>各数据库的性能指标</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[300px]">
@@ -635,7 +635,7 @@ export default function PerformanceMonitoringPage() {
             <Card>
               <CardHeader>
                 <CardTitle>连接数</CardTitle>
-                <CardDescription>各数据库实例的活跃连接数</CardDescription>
+                <CardDescription>各数据库的活跃连接数</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[200px]">
@@ -663,7 +663,7 @@ export default function PerformanceMonitoringPage() {
             <Card>
               <CardHeader>
                 <CardTitle>数据库负载分布</CardTitle>
-                <CardDescription>各数据库实例的负载分布情况</CardDescription>
+                <CardDescription>各数据库的负载分布情况</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="h-[200px]">
@@ -688,11 +688,11 @@ export default function PerformanceMonitoringPage() {
               </CardContent>
             </Card>
           </div>
-          
+
           <Card>
             <CardHeader>
-              <CardTitle>数据库实例性能详情</CardTitle>
-              <CardDescription>各数据库实例的详细性能指标</CardDescription>
+              <CardTitle>数据库性能详情</CardTitle>
+              <CardDescription>各数据库的详细性能指标</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
@@ -722,13 +722,13 @@ export default function PerformanceMonitoringPage() {
                       <TableCell>{db.cacheHitRate || "N/A"}%</TableCell>
                       <TableCell>
                         <Badge variant={
-                          db.latency > 50 ? "destructive" : 
-                          db.latency > 30 ? "warning" : 
-                          "success"
+                          db.latency > 50 ? "destructive" :
+                            db.latency > 30 ? "warning" :
+                              "success"
                         }>
-                          {db.latency > 50 ? "高延迟" : 
-                           db.latency > 30 ? "中延迟" : 
-                           "正常"}
+                          {db.latency > 50 ? "高延迟" :
+                            db.latency > 30 ? "中延迟" :
+                              "正常"}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -743,10 +743,10 @@ export default function PerformanceMonitoringPage() {
           <div className="flex items-center gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                type="search" 
-                placeholder="搜索查询类型..." 
-                className="pl-8" 
+              <Input
+                type="search"
+                placeholder="搜索查询类型..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -772,7 +772,7 @@ export default function PerformanceMonitoringPage() {
               <span className="sr-only">重置筛选</span>
             </Button>
           </div>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>查询性能分析</CardTitle>
@@ -830,7 +830,7 @@ export default function PerformanceMonitoringPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader>
               <CardTitle>慢查询分析</CardTitle>
@@ -858,13 +858,13 @@ export default function PerformanceMonitoringPage() {
                       <TableCell>{query.table}</TableCell>
                       <TableCell>
                         <Badge variant={
-                          query.executionTime > 1000 ? "destructive" : 
-                          query.executionTime > 500 ? "warning" : 
-                          "success"
+                          query.executionTime > 1000 ? "destructive" :
+                            query.executionTime > 500 ? "warning" :
+                              "success"
                         }>
-                          {query.executionTime > 1000 ? "严重" : 
-                           query.executionTime > 500 ? "警告" : 
-                           "正常"}
+                          {query.executionTime > 1000 ? "严重" :
+                            query.executionTime > 500 ? "警告" :
+                              "正常"}
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -882,7 +882,7 @@ export default function PerformanceMonitoringPage() {
 // 辅助函数：比较当前值与昨日值
 function compareValues(current: number, yesterday: number): string {
   if (current === undefined || yesterday === undefined) return "N/A"
-  
+
   const diff = current - yesterday
   return diff >= 0 ? `+${diff}%` : `${diff}%`
 }
@@ -911,19 +911,19 @@ function getDatabaseType(name: string): string {
 // 辅助函数：过滤数据库
 function filterDatabases(databases: any[]): any[] {
   if (!databases || !Array.isArray(databases)) return []
-  
+
   return databases.filter(db => {
     // 根据搜索查询过滤
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       db.name.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     // 根据数据库类型过滤
-    const matchesType = databaseFilter === "all" || 
+    const matchesType = databaseFilter === "all" ||
       (databaseFilter === "relational" && db.name.includes("postgres")) ||
       (databaseFilter === "timeseries" && db.name.includes("timeseries")) ||
       (databaseFilter === "vector" && db.name.includes("vector")) ||
       (databaseFilter === "geospatial" && db.name.includes("geo"))
-    
+
     return matchesSearch && matchesType
   })
 }
@@ -931,16 +931,16 @@ function filterDatabases(databases: any[]): any[] {
 // 辅助函数：过滤查询
 function filterQueries(queries: any[]): any[] {
   if (!queries || !Array.isArray(queries)) return []
-  
+
   return queries.filter(query => {
     // 根据搜索查询过滤
-    const matchesSearch = !searchQuery || 
+    const matchesSearch = !searchQuery ||
       query.name.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     // 根据查询类型过滤
-    const matchesType = queryFilter === "all" || 
+    const matchesType = queryFilter === "all" ||
       query.name === queryFilter
-    
+
     return matchesSearch && matchesType
   })
 }

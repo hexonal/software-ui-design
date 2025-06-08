@@ -233,7 +233,7 @@ export default function DatabaseOverviewPage() {
         <Card>
           <CardHeader>
             <CardTitle>数据库类型分布</CardTitle>
-            <CardDescription>各类数据库实例占比</CardDescription>
+            <CardDescription>各类数据库占比</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-80">
@@ -307,17 +307,7 @@ export default function DatabaseOverviewPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>数据库实例</CardTitle>
-          <CardDescription>所有数据库实例的详细信息</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-muted-foreground">
-            数据库实例列表功能开发中...
-          </div>
-        </CardContent>
-      </Card>
+
     </div>
   )
 }

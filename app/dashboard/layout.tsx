@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { SidebarNav } from "@/components/dashboard/sidebar-nav"
-import { getSidebarNavItems } from "@/api/system"
+import { getSidebarNavItems } from "@/lib/api/system"
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Activity,
@@ -92,22 +92,67 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     async function fetchNavItems() {
       try {
+        console.log('开始获取侧边栏导航数据...')
         const res = await getSidebarNavItems()
-        if (res.success) {
+        console.log('API响应:', res)
+
+        // res是axios响应对象，res.data是经过响应拦截器处理的ApiResponse结构
+        const apiResponse = (res as any).data
+        console.log('ApiResponse 结构:', {
+          success: apiResponse?.success,
+          code: apiResponse?.code,
+          message: apiResponse?.message,
+          dataType: typeof apiResponse?.data,
+          dataLength: Array.isArray(apiResponse?.data) ? apiResponse.data.length : 'not array',
+          data: apiResponse?.data
+        })
+
+        if (apiResponse && apiResponse.success && Array.isArray(apiResponse.data)) {
+          console.log('原始数据详细结构:')
+          apiResponse.data.forEach((item: any, index: number) => {
+            console.log(`菜单项 ${index}:`, {
+              title: item.title,
+              href: item.href,
+              icon: item.icon,
+              hasItems: !!item.items,
+              itemsLength: item.items ? item.items.length : 0,
+              items: item.items
+            })
+          })
+
           // 递归替换 icon 字段为组件
           type NavItem = { icon?: string; items?: NavItem[] } & Record<string, any>
           const mapIcons = (items: NavItem[]): any[] =>
             items.map((item) => ({
               ...item,
-              icon: item.icon ? iconMap[item.icon as string] : undefined,
-              items: item.items ? mapIcons(item.items) : undefined,
+              icon: item.icon && iconMap[item.icon as string] ? iconMap[item.icon as string] : undefined,
+              items: item.items && item.items.length > 0 ? mapIcons(item.items) : undefined,
             }))
-          setNavItems(mapIcons(res.data))
+          const mappedItems = mapIcons(apiResponse.data)
+
+          console.log('映射后的数据详细结构:')
+          mappedItems.forEach((item: any, index: number) => {
+            console.log(`映射后菜单项 ${index}:`, {
+              title: item.title,
+              href: item.href,
+              iconMapped: !!item.icon,
+              hasItems: !!item.items,
+              itemsLength: item.items ? item.items.length : 0,
+              items: item.items
+            })
+          })
+
+          setNavItems(mappedItems)
+        } else {
+          console.error('API响应格式不正确:', apiResponse)
+          setNavItems([])
         }
-      } catch (e) {
-        // 可根据需要处理错误
+      } catch (error) {
+        console.error('获取侧边栏导航失败:', error)
+        setNavItems([])
       }
     }
+
     fetchNavItems()
   }, [])
 
@@ -136,7 +181,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <span>分布式融合管理系统</span>
           </Link>
         </div>
-        <div className="space-y-1 p-2 overflow-y-auto h-[calc(100vh-4rem)]">
+        <div className="space-y-1 p-2 overflow-y-auto h-[calc(100vh-8rem)]">
           <SidebarNav items={navItems} />
         </div>
         <div className="absolute bottom-0 w-full border-t p-2">

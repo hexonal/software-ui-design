@@ -328,89 +328,13 @@ export const executeQuery = async (databaseId: string, query: string): Promise<A
 
 // =============================================== 特定数据库类型接口 ===============================================
 
-/**
- * @openapi
- * /database/relational:
- *   get:
- *     summary: 获取关系型数据库列表
- *     tags:
- *       - Database
- *     responses:
- *       200:
- *         description: 关系型数据库列表
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Database'
- */
-export const getRelationalDatabases = async (): Promise<ApiResponse<Database[]>> => {
-  return api.get('/dfm/database/relational')
-}
 
-/**
- * @openapi
- * /database/timeseries:
- *   get:
- *     summary: 获取时序数据库列表
- *     tags:
- *       - Database
- *     responses:
- *       200:
- *         description: 时序数据库列表
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Database'
- */
-export const getTimeseriesDatabases = async (): Promise<ApiResponse<Database[]>> => {
-  return api.get('/dfm/database/timeseries')
-}
 
-/**
- * @openapi
- * /database/vector:
- *   get:
- *     summary: 获取向量数据库列表
- *     tags:
- *       - Database
- *     responses:
- *       200:
- *         description: 向量数据库列表
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Database'
- */
-export const getVectorDatabases = async (): Promise<ApiResponse<Database[]>> => {
-  return api.get('/dfm/database/vector')
-}
 
-/**
- * @openapi
- * /database/geospatial:
- *   get:
- *     summary: 获取地理空间数据库列表
- *     tags:
- *       - Database
- *     responses:
- *       200:
- *         description: 地理空间数据库列表
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Database'
- */
-export const getGeospatialDatabases = async (): Promise<ApiResponse<Database[]>> => {
-  return api.get('/dfm/database/geospatial')
-}
+
+
+
+
 
 /**
  * @openapi

@@ -98,31 +98,100 @@ export default function TimeseriesDatabasePage() {
   })
   const [timeRange, setTimeRange] = useState("24h")
 
+  // 错误处理帮助函数
+  const getErrorMessage = (apiResponse: any, defaultMessage: string): string => {
+    if (!apiResponse) {
+      return "API返回空响应(null/undefined)"
+    }
+
+    if (typeof apiResponse !== 'object') {
+      return `API返回非对象响应: ${typeof apiResponse}`
+    }
+
+    if (Object.keys(apiResponse).length === 0) {
+      return "API返回空对象，可能是响应结构异常"
+    }
+
+    // 检查是否有明确的错误信息
+    if (apiResponse.message && typeof apiResponse.message === 'string') {
+      return apiResponse.message
+    }
+
+    // 检查错误码
+    if (apiResponse.code !== undefined && apiResponse.code !== 200) {
+      return `API返回错误码 ${apiResponse.code}: ${apiResponse.message || '未知错误'}`
+    }
+
+    // 兜底返回默认错误信息
+    return defaultMessage
+  }
+
+  const getNetworkErrorMessage = (err: any, operationName: string): string => {
+    let errorMsg = `${operationName}失败`
+
+    if (err && typeof err === 'object') {
+      // 处理axios或其他网络错误
+      if (err.message) {
+        errorMsg = `${operationName}失败: ${err.message}`
+      } else if (err.code !== undefined) {
+        errorMsg = `${operationName}失败: 错误码 ${err.code}`
+      } else if (err.status !== undefined) {
+        errorMsg = `${operationName}失败: HTTP ${err.status}`
+      }
+    } else if (typeof err === 'string') {
+      errorMsg = `${operationName}失败: ${err}`
+    }
+
+    return errorMsg
+  }
+
   // 获取时序数据库列表
   useEffect(() => {
     const fetchDatabases = async () => {
       try {
         setLoading((prev) => ({ ...prev, databases: true }))
         setError(null)
+        console.log("开始获取时序数据库列表...")
         const response = await timeseriesApi.getTimeseriesDatabases()
-        if (response.success) {
-          setDatabases(response.data || [])
-          if (response.data && response.data.length > 0 && !selectedDatabase) {
-            setSelectedDatabase(response.data[0].id)
+        console.log("时序数据库API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理时序数据库API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("时序数据库API调用成功，列表:", apiResponse.data)
+          const databases = Array.isArray(apiResponse.data) ? apiResponse.data : []
+          setDatabases(databases)
+          // 如果有数据库且没有选中的，默认选中第一个
+          if (databases.length > 0 && !selectedDatabase) {
+            setSelectedDatabase(databases[0].name || databases[0].id)
           }
         } else {
-          setError(response.message || "获取时序数据库失败")
+          console.error("时序数据库API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取时序数据库列表失败")
+          setError(errorMsg)
         }
       } catch (err) {
         console.error("获取时序数据库出错:", err)
-        setError("获取时序数据库失败")
+        const errorMsg = getNetworkErrorMessage(err, "获取时序数据库列表")
+        setError(errorMsg)
       } finally {
         setLoading((prev) => ({ ...prev, databases: false }))
       }
     }
 
     fetchDatabases()
-  }, [])
+  }, [selectedDatabase])
 
   // 获取时间序列列表
   useEffect(() => {
@@ -132,15 +201,36 @@ export default function TimeseriesDatabasePage() {
       try {
         setLoading((prev) => ({ ...prev, series: true }))
         setError(null)
+        console.log("开始获取时间序列列表...")
         const response = await timeseriesApi.getTimeseries(selectedDatabase)
-        if (response.success) {
-          setSeries(response.data || [])
+        console.log("时间序列API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理时间序列API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("时间序列API调用成功，列表:", apiResponse.data)
+          const series = Array.isArray(apiResponse.data) ? apiResponse.data : []
+          setSeries(series)
         } else {
-          setError(response.message || "获取时间序列失败")
+          console.error("时间序列API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取时间序列列表失败")
+          setError(errorMsg)
         }
       } catch (err) {
         console.error("获取时间序列出错:", err)
-        setError("获取时间序列失败")
+        const errorMsg = getNetworkErrorMessage(err, "获取时间序列列表")
+        setError(errorMsg)
       } finally {
         setLoading((prev) => ({ ...prev, series: false }))
       }
@@ -157,15 +247,38 @@ export default function TimeseriesDatabasePage() {
       try {
         setLoading((prev) => ({ ...prev, policies: true }))
         setError(null)
+        console.log("开始获取保留策略列表...")
         const response = await timeseriesApi.getRetentionPolicies(selectedDatabase)
-        if (response.success) {
-          setRetentionPolicies(response.data || [])
+        console.log("保留策略API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理保留策略API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          responseType: typeof apiResponse,
+          responseKeys: Object.keys(apiResponse || {}),
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证：检查多种成功条件
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("保留策略API调用成功，列表:", apiResponse.data)
+          const policies = Array.isArray(apiResponse.data) ? apiResponse.data : []
+          setRetentionPolicies(policies)
         } else {
-          setError(response.message || "获取保留策略失败")
+          console.error("保留策略API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取保留策略列表失败")
+          setError(errorMsg)
         }
       } catch (err) {
         console.error("获取保留策略出错:", err)
-        setError("获取保留策略失败")
+        const errorMsg = getNetworkErrorMessage(err, "获取保留策略列表")
+        setError(errorMsg)
       } finally {
         setLoading((prev) => ({ ...prev, policies: false }))
       }
@@ -182,15 +295,35 @@ export default function TimeseriesDatabasePage() {
       try {
         setLoading((prev) => ({ ...prev, metrics: true }))
         setError(null)
+        console.log("开始获取性能指标...")
         const response = await timeseriesApi.getTimeseriesDatabaseMetrics(selectedDatabase, timeRange)
-        if (response.success) {
-          setPerformanceMetrics(response.data)
+        console.log("性能指标API响应:", response)
+
+        // 优化响应处理逻辑
+        const apiResponse = response.data as any;
+        console.log("处理性能指标API响应:", {
+          apiResponse,
+          hasSuccess: 'success' in apiResponse,
+          success: apiResponse?.success,
+          hasData: 'data' in apiResponse,
+          data: apiResponse?.data,
+          code: apiResponse?.code,
+          isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+        })
+
+        // 增强响应验证
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          console.log("性能指标API调用成功，数据:", apiResponse.data)
+          setPerformanceMetrics(apiResponse.data || {})
         } else {
-          setError(response.message || "获取数据库性能指标失败")
+          console.error("性能指标API响应表示失败:", apiResponse)
+          const errorMsg = getErrorMessage(apiResponse, "获取数据库性能指标失败")
+          setError(errorMsg)
         }
       } catch (err) {
         console.error("获取数据库性能指标出错:", err)
-        setError("获取数据库性能指标失败")
+        const errorMsg = getNetworkErrorMessage(err, "获取数据库性能指标")
+        setError(errorMsg)
       } finally {
         setLoading((prev) => ({ ...prev, metrics: false }))
       }
@@ -209,15 +342,35 @@ export default function TimeseriesDatabasePage() {
     try {
       setLoading((prev) => ({ ...prev, query: true }))
       setError(null)
+      console.log("开始执行时序查询...")
       const response = await timeseriesApi.executeTimeseriesQuery(selectedDatabase, timeseriesQuery)
-      if (response.success) {
-        setQueryResult(response.data)
+      console.log("时序查询API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理时序查询API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("时序查询API调用成功，结果:", apiResponse.data)
+        setQueryResult(apiResponse.data || {})
       } else {
-        setError(response.message || "执行查询失败")
+        console.error("时序查询API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "执行查询失败")
+        setError(errorMsg)
       }
     } catch (err) {
       console.error("执行查询出错:", err)
-      setError("执行查询失败")
+      const errorMsg = getNetworkErrorMessage(err, "执行查询")
+      setError(errorMsg)
     } finally {
       setLoading((prev) => ({ ...prev, query: false }))
     }
@@ -233,23 +386,44 @@ export default function TimeseriesDatabasePage() {
     try {
       setLoading((prev) => ({ ...prev, databases: true }))
       setError(null)
+      console.log("开始创建时序数据库...")
       const response = await timeseriesApi.createTimeseriesDatabase({
         name: newDatabaseData.name,
         retention: newDatabaseData.retention,
       })
-      if (response.success) {
-        setDatabases([...databases, response.data])
+      console.log("创建时序数据库API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建数据库API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建时序数据库API调用成功，结果:", apiResponse.data)
+        const newDb = apiResponse.data || { name: newDatabaseData.name, id: Date.now().toString() }
+        setDatabases(prevDatabases => [...prevDatabases, newDb])
         setIsCreateDatabaseOpen(false)
         setNewDatabaseData({
           name: "",
           retention: "30天",
         })
       } else {
-        setError(response.message || "创建数据库失败")
+        console.error("创建时序数据库API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建数据库失败")
+        setError(errorMsg)
       }
     } catch (err) {
       console.error("创建数据库出错:", err)
-      setError("创建数据库失败")
+      const errorMsg = getNetworkErrorMessage(err, "创建数据库")
+      setError(errorMsg)
     } finally {
       setLoading((prev) => ({ ...prev, databases: false }))
     }
@@ -270,9 +444,27 @@ export default function TimeseriesDatabasePage() {
     try {
       setLoading((prev) => ({ ...prev, series: true }))
       setError(null)
+      console.log("开始创建时间序列...")
       const response = await timeseriesApi.createTimeseries(selectedDatabase, newSeriesData)
-      if (response.success) {
-        setSeries([...series, response.data])
+      console.log("创建时间序列API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建时间序列API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建时间序列API调用成功，结果:", apiResponse.data)
+        const newSeries = apiResponse.data || { name: newSeriesData.name, type: newSeriesData.type, tags: newSeriesData.tags, points: 0 }
+        setSeries([...series, newSeries])
         setIsCreateSeriesOpen(false)
         setNewSeriesData({
           name: "",
@@ -280,11 +472,14 @@ export default function TimeseriesDatabasePage() {
           tags: [{ key: "host", value: "server01" }],
         })
       } else {
-        setError(response.message || "创建时间序列失败")
+        console.error("创建时间序列API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建时间序列失败")
+        setError(errorMsg)
       }
     } catch (err) {
       console.error("创建时间序列出错:", err)
-      setError("创建时间序列失败")
+      const errorMsg = getNetworkErrorMessage(err, "创建时间序列")
+      setError(errorMsg)
     } finally {
       setLoading((prev) => ({ ...prev, series: false }))
     }
@@ -305,9 +500,32 @@ export default function TimeseriesDatabasePage() {
     try {
       setLoading((prev) => ({ ...prev, policies: true }))
       setError(null)
+      console.log("开始创建保留策略...")
       const response = await timeseriesApi.createRetentionPolicy(selectedDatabase, newPolicyData)
-      if (response.success) {
-        setRetentionPolicies([...retentionPolicies, response.data])
+      console.log("创建保留策略API响应:", response)
+
+      // 优化响应处理逻辑
+      const apiResponse = response.data as any;
+      console.log("处理创建保留策略API响应:", {
+        apiResponse,
+        hasSuccess: 'success' in apiResponse,
+        success: apiResponse?.success,
+        hasData: 'data' in apiResponse,
+        data: apiResponse?.data,
+        code: apiResponse?.code,
+        isValidResponse: apiResponse && (apiResponse.success === true || apiResponse.code === 200)
+      })
+
+      // 增强响应验证：检查多种成功条件
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        console.log("创建保留策略API调用成功，结果:", apiResponse.data)
+        const newPolicy = apiResponse.data || {
+          name: newPolicyData.name,
+          duration: newPolicyData.duration,
+          replication: newPolicyData.replication,
+          default: newPolicyData.default
+        }
+        setRetentionPolicies(prevPolicies => [...prevPolicies, newPolicy])
         setIsCreatePolicyOpen(false)
         setNewPolicyData({
           name: "",
@@ -316,11 +534,14 @@ export default function TimeseriesDatabasePage() {
           default: false,
         })
       } else {
-        setError(response.message || "创建保留策略失败")
+        console.error("创建保留策略API响应表示失败:", apiResponse)
+        const errorMsg = getErrorMessage(apiResponse, "创建保留策略失败")
+        setError(errorMsg)
       }
     } catch (err) {
       console.error("创建保留策略出错:", err)
-      setError("创建保留策略失败")
+      const errorMsg = getNetworkErrorMessage(err, "创建保留策略")
+      setError(errorMsg)
     } finally {
       setLoading((prev) => ({ ...prev, policies: false }))
     }
@@ -372,7 +593,7 @@ export default function TimeseriesDatabasePage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>创建新时序数据库</DialogTitle>
-                <DialogDescription>创建一个新的时序数据库实例</DialogDescription>
+                <DialogDescription>创建一个新的时序数据库</DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -679,11 +900,14 @@ export default function TimeseriesDatabasePage() {
                         <div className="font-medium">{s.name}</div>
                         <div>
                           <div className="flex flex-wrap gap-1">
-                            {s.tags.map((tag, tagIndex) => (
+                            {s.tags && Array.isArray(s.tags) && s.tags.map((tag, tagIndex) => (
                               <Badge key={tagIndex} variant="outline">
                                 {tag.key}={tag.value}
                               </Badge>
                             ))}
+                            {(!s.tags || !Array.isArray(s.tags) || s.tags.length === 0) && (
+                              <span className="text-muted-foreground text-xs">无标签</span>
+                            )}
                           </div>
                         </div>
                         <div>{s.type}</div>
@@ -772,48 +996,60 @@ export default function TimeseriesDatabasePage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between text-sm">
                     <div>
-                      查询结果: <span className="font-medium">{queryResult.pointCount} 个数据点</span>
+                      查询结果: <span className="font-medium">{queryResult.rowCount || 0} 个数据点</span>
                     </div>
                     <div>
-                      执行时间: <span className="font-medium">{queryResult.executionTime}</span>
+                      执行时间: <span className="font-medium">{queryResult.executionTime || '未知'}</span>
                     </div>
                   </div>
 
-                  <div className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart
-                        data={queryResult.data}
-                        margin={{
-                          top: 5,
-                          right: 30,
-                          left: 20,
-                          bottom: 5,
-                        }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="time" />
-                        <YAxis />
-                        <Tooltip />
-                        <Legend />
-                        <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} />
-                      </LineChart>
-                    </ResponsiveContainer>
-                  </div>
+                  {/* 检查是否有rows数据且为数组 */}
+                  {queryResult.rows && Array.isArray(queryResult.rows) && queryResult.rows.length > 0 && (
+                    <>
+                      <div className="h-[300px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={queryResult.rows}
+                            margin={{
+                              top: 5,
+                              right: 30,
+                              left: 20,
+                              bottom: 5,
+                            }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="time" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="value" stroke="#8884d8" activeDot={{ r: 8 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
 
-                  <div className="rounded-md border">
-                    <div className="grid grid-cols-2 border-b bg-muted/50 px-4 py-3 text-sm font-medium">
-                      <div>时间</div>
-                      <div>值</div>
-                    </div>
-                    <div className="divide-y max-h-[200px] overflow-auto">
-                      {queryResult.data.map((point: any, index: number) => (
-                        <div key={index} className="grid grid-cols-2 items-center px-4 py-2 text-sm">
-                          <div>{point.time}</div>
-                          <div>{point.value}</div>
+                      <div className="rounded-md border">
+                        <div className="grid grid-cols-2 border-b bg-muted/50 px-4 py-3 text-sm font-medium">
+                          <div>时间</div>
+                          <div>值</div>
                         </div>
-                      ))}
+                        <div className="divide-y max-h-[200px] overflow-auto">
+                          {queryResult.rows.map((point: any, index: number) => (
+                            <div key={index} className="grid grid-cols-2 items-center px-4 py-2 text-sm">
+                              <div>{point.time || `行 ${index + 1}`}</div>
+                              <div>{point.value || JSON.stringify(point)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* 如果没有数据显示提示 */}
+                  {(!queryResult.rows || !Array.isArray(queryResult.rows) || queryResult.rows.length === 0) && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      查询执行成功，但没有返回数据
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </CardContent>

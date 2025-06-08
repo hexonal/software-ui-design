@@ -255,3 +255,132 @@ export const getSystemStatus = async (): Promise<ApiResponse<any>> => {
 export const getSidebarNav = async (): Promise<ApiResponse<any[]>> => {
   return api.get('/dfm/system/sidebar-nav')
 }
+
+// =============================================== 告警规则管理接口 ===============================================
+
+/**
+ * @openapi
+ * /system/alert-rules:
+ *   get:
+ *     summary: 获取告警规则列表
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *         description: 告警规则列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AlertRule'
+ */
+export const getAlertRules = async (): Promise<ApiResponse<any[]>> => {
+  return api.get('/dfm/system/alert-rules')
+}
+
+/**
+ * @openapi
+ * /system/alert-rules:
+ *   post:
+ *     summary: 添加告警规则
+ *     tags:
+ *       - System
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AlertRule'
+ *     responses:
+ *       200:
+ *         description: 添加成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlertRule'
+ */
+export const addAlertRule = async (ruleData: any): Promise<ApiResponse<any>> => {
+  return api.post('/dfm/system/alert-rules', ruleData)
+}
+
+/**
+ * @openapi
+ * /system/alert-rules/{id}:
+ *   put:
+ *     summary: 更新告警规则
+ *     tags:
+ *       - System
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AlertRule'
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlertRule'
+ */
+export const updateAlertRule = async (id: string, ruleData: any): Promise<ApiResponse<any>> => {
+  return api.put(`/dfm/system/alert-rules/${id}`, ruleData)
+}
+
+/**
+ * @openapi
+ * /system/alert-rules/{id}:
+ *   delete:
+ *     summary: 删除告警规则
+ *     tags:
+ *       - System
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ */
+export const deleteAlertRule = async (id: string): Promise<ApiResponse<boolean>> => {
+  return api.delete(`/dfm/system/alert-rules/${id}`)
+}
+
+/**
+ * @openapi
+ * /system/alert-channels:
+ *   get:
+ *     summary: 获取告警渠道列表
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *         description: 告警渠道列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/AlertChannel'
+ */
+export const getAlertChannels = async (): Promise<ApiResponse<any[]>> => {
+  return api.get('/dfm/system/alert-channels')
+}
