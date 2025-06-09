@@ -40,7 +40,7 @@ next-env.d.ts
 !.vscode/settings.json
 
 # Logs
-logs
+#logs
 *.log
 
 # Build artifacts
