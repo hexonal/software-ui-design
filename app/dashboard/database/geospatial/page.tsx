@@ -170,7 +170,20 @@ export default function GeospatialDatabasePage() {
         setLoading(prev => ({ ...prev, tables: true }))
         setError(null)
         console.log("开始获取空间表列表...")
-        const response = await geospatialApi.getGeospatialTables(selectedDatabase)
+
+        // 修复：根据selectedDatabase（ID）找到对应的数据库名称
+        const selectedDb = databases.find(db => db.id === selectedDatabase)
+        const databaseName = selectedDb?.name
+
+        if (!databaseName) {
+          console.error("无法找到数据库名称，selectedDatabase:", selectedDatabase, "databases:", databases)
+          setError("无法找到对应的数据库名称")
+          setLoading(prev => ({ ...prev, tables: false }))
+          return
+        }
+
+        console.log("使用数据库名称:", databaseName, "而不是ID:", selectedDatabase)
+        const response = await geospatialApi.getGeospatialTables(databaseName)
         console.log("空间表API响应:", response)
 
         // 优化响应处理逻辑
@@ -214,7 +227,7 @@ export default function GeospatialDatabasePage() {
     }
 
     fetchTables()
-  }, [selectedDatabase])
+  }, [selectedDatabase, databases])
 
   const handleExecuteQuery = async () => {
     if (!selectedDatabase) {
@@ -232,8 +245,19 @@ export default function GeospatialDatabasePage() {
       setError(null)
       console.log("开始执行地理空间查询...")
 
+      // 修复：根据selectedDatabase（ID）找到对应的数据库名称
+      const selectedDb = databases.find(db => db.id === selectedDatabase)
+      const databaseName = selectedDb?.name
+
+      if (!databaseName) {
+        setError("无法找到对应的数据库名称")
+        setLoading(prev => ({ ...prev, query: false }))
+        return
+      }
+
+      console.log("使用数据库名称:", databaseName, "而不是ID:", selectedDatabase)
       // 使用 API 执行空间查询
-      const response = await geospatialApi.executeGeospatialQuery(selectedDatabase, geoQuery)
+      const response = await geospatialApi.executeGeospatialQuery(databaseName, geoQuery)
       console.log("地理空间查询API响应:", response)
 
       // 优化响应处理逻辑
@@ -336,7 +360,18 @@ export default function GeospatialDatabasePage() {
       setError(null)
       console.log("开始创建空间表...")
 
-      const response = await geospatialApi.createGeospatialTable(selectedDatabase, newTableData)
+      // 修复：根据selectedDatabase（ID）找到对应的数据库名称
+      const selectedDb = databases.find(db => db.id === selectedDatabase)
+      const databaseName = selectedDb?.name
+
+      if (!databaseName) {
+        setError("无法找到对应的数据库名称")
+        setLoading(prev => ({ ...prev, tables: false }))
+        return
+      }
+
+      console.log("使用数据库名称:", databaseName, "而不是ID:", selectedDatabase)
+      const response = await geospatialApi.createGeospatialTable(databaseName, newTableData)
       console.log("创建空间表API响应:", response)
 
       // 优化响应处理逻辑
@@ -435,7 +470,18 @@ export default function GeospatialDatabasePage() {
       setError(null)
       console.log("开始加载地图数据...")
 
-      const response = await geospatialApi.getMapVisualizationData(selectedDatabase, selectedTable)
+      // 修复：根据selectedDatabase（ID）找到对应的数据库名称
+      const selectedDb = databases.find(db => db.id === selectedDatabase)
+      const databaseName = selectedDb?.name
+
+      if (!databaseName) {
+        setError("无法找到对应的数据库名称")
+        setLoading(prev => ({ ...prev, map: false }))
+        return
+      }
+
+      console.log("使用数据库名称:", databaseName, "而不是ID:", selectedDatabase)
+      const response = await geospatialApi.getMapVisualizationData(databaseName, selectedTable)
       console.log("地图数据API响应:", response)
 
       // 优化响应处理逻辑
