@@ -42,10 +42,13 @@ export default function DatabaseOverviewPage() {
         setError(null)
 
         const response = await getDatabaseOverviewStats()
-        if (response.success) {
-          setDatabaseStats(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setDatabaseStats(apiResponse.data)
         } else {
-          setError(response.message || '获取数据库统计信息失败')
+          setError(apiResponse?.message || '获取数据库统计信息失败')
         }
 
       } catch (err) {
@@ -67,10 +70,13 @@ export default function DatabaseOverviewPage() {
         setError(null)
 
         const response = await getDatabaseTypesDistribution()
-        if (response.success) {
-          setDatabaseTypes(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setDatabaseTypes(apiResponse.data)
         } else {
-          setError(response.message || '获取数据库类型分布失败')
+          setError(apiResponse?.message || '获取数据库类型分布失败')
         }
 
       } catch (err) {
@@ -92,10 +98,13 @@ export default function DatabaseOverviewPage() {
         setError(null)
 
         const response = await getDatabaseStorageData()
-        if (response.success) {
-          setStorageData(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setStorageData(apiResponse.data)
         } else {
-          setError(response.message || '获取数据库存储数据失败')
+          setError(apiResponse?.message || '获取数据库存储数据失败')
         }
 
       } catch (err) {

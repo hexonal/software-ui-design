@@ -97,13 +97,16 @@ export default function ObjectStoragePage() {
 
         // 调用实际的API
         const response = await getBuckets()
-        if (response.success) {
-          setBuckets(response.data.map(bucket => ({
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setBuckets(apiResponse.data.map(bucket => ({
             ...bucket,
             createdAt: new Date(bucket.createdAt)
           })))
         } else {
-          setError(response.message || '获取存储桶失败')
+          setError(apiResponse?.message || '获取存储桶失败')
         }
 
       } catch (err) {
@@ -126,13 +129,16 @@ export default function ObjectStoragePage() {
 
         // 调用实际的API
         const response = await getObjects()
-        if (response.success) {
-          setObjects(response.data.map(obj => ({
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setObjects(apiResponse.data.map(obj => ({
             ...obj,
             lastModified: new Date(obj.lastModified)
           })))
         } else {
-          setError(response.message || '获取对象失败')
+          setError(apiResponse?.message || '获取对象失败')
         }
 
       } catch (err) {
@@ -157,12 +163,14 @@ export default function ObjectStoragePage() {
         const response = await getLifecyclePolicies()
         console.log('生命周期策略 API 响应:', response) // 调试信息
 
-        if (response.success) {
-          // 确保 response.data 是数组
-          if (Array.isArray(response.data)) {
-            setLifecyclePolicies(response.data)
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          // 确保 apiResponse.data 是数组
+          if (Array.isArray(apiResponse.data)) {
+            setLifecyclePolicies(apiResponse.data)
           } else {
-            console.warn('生命周期策略数据不是数组格式:', response.data)
+            console.warn('生命周期策略数据不是数组格式:', apiResponse.data)
             setLifecyclePolicies([]) // 设置为空数组
             setError('生命周期策略数据格式错误')
           }

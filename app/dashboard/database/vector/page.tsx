@@ -128,8 +128,16 @@ export default function VectorDatabasePage() {
         if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
           console.log("向量集合API调用成功，结果:", apiResponse.data)
           const collectionsData = apiResponse.data || []
-          // 确保data是数组
-          const validCollections = Array.isArray(collectionsData) ? collectionsData : []
+          // 确保data是数组且过滤掉无效项，同时补齐缺失字段
+          const validCollections = Array.isArray(collectionsData)
+            ? collectionsData.filter(collection => collection && collection.id).map(collection => ({
+              ...collection,
+              name: collection.name || '未命名集合',
+              dimensions: collection.dimensions || 0,
+              vectors: collection.vectors || 0,
+              indexType: collection.indexType || 'HNSW'
+            }))
+            : []
           setCollections(validCollections)
           if (validCollections.length > 0 && !selectedCollection) {
             setSelectedCollection(validCollections[0].id)
@@ -177,7 +185,16 @@ export default function VectorDatabasePage() {
         // 增强响应验证：检查多种成功条件
         if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
           console.log("索引配置API调用成功，结果:", apiResponse.data)
-          setIndexConfig(apiResponse.data || {})
+          // 确保索引配置对象的完整性
+          const configData = apiResponse.data || {}
+          setIndexConfig({
+            type: configData.type || 'HNSW',
+            parameters: {
+              M: configData.parameters?.M || 16,
+              efConstruction: configData.parameters?.efConstruction || 128,
+              efSearch: configData.parameters?.efSearch || 64
+            }
+          })
         } else {
           console.error("索引配置API响应表示失败:", apiResponse)
           const errorMsg = getErrorMessage(apiResponse, "获取索引配置失败")
@@ -280,11 +297,16 @@ export default function VectorDatabasePage() {
       if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         console.log("创建向量集合API调用成功，结果:", apiResponse.data)
         const newCollection = apiResponse.data || {
+          id: `collection-${Date.now()}`, // 确保有ID
           name: newCollectionData.name,
           dimensions: newCollectionData.dimensions,
-          indexType: newCollectionData.indexType
+          indexType: newCollectionData.indexType,
+          vectors: 0
         }
-        setCollections([...collections, newCollection])
+        // 确保新集合有有效的id
+        if (newCollection && newCollection.id) {
+          setCollections([...collections, newCollection])
+        }
         setIsCreateCollectionOpen(false)
         setNewCollectionData({
           name: "",
@@ -331,10 +353,10 @@ export default function VectorDatabasePage() {
       // 增强响应验证：检查多种成功条件
       if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         console.log("删除向量集合API调用成功")
-        setCollections(collections.filter(c => c.id !== collectionToDelete))
+        const remainingCollections = collections.filter(c => c.id !== collectionToDelete)
+        setCollections(remainingCollections)
         if (selectedCollection === collectionToDelete) {
-          const remainingCollections = collections.filter(c => c.id !== collectionToDelete)
-          setSelectedCollection(remainingCollections.length > 0 ? remainingCollections[0]?.id || null : null)
+          setSelectedCollection(remainingCollections.length > 0 && remainingCollections[0]?.id ? remainingCollections[0].id : null)
         }
         setIsConfirmDeleteOpen(false)
         setCollectionToDelete(null)
@@ -378,7 +400,16 @@ export default function VectorDatabasePage() {
       // 增强响应验证：检查多种成功条件
       if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         console.log("更新索引配置API调用成功，结果:", apiResponse.data)
-        setIndexConfig(apiResponse.data || indexConfig)
+        // 确保更新后的索引配置对象的完整性
+        const configData = apiResponse.data || indexConfig
+        setIndexConfig({
+          type: configData.type || indexConfig.type || 'HNSW',
+          parameters: {
+            M: configData.parameters?.M || indexConfig.parameters?.M || 16,
+            efConstruction: configData.parameters?.efConstruction || indexConfig.parameters?.efConstruction || 128,
+            efSearch: configData.parameters?.efSearch || indexConfig.parameters?.efSearch || 64
+          }
+        })
         setIsEditingIndex(false)
       } else {
         console.error("更新索引配置API响应表示失败:", apiResponse)
@@ -411,10 +442,14 @@ export default function VectorDatabasePage() {
     }
   }
 
-  // 过滤集合
+  // 过滤集合 - 确保collection及其属性存在
   const filteredCollections = collections.filter(collection =>
-    collection.name.toLowerCase().includes(collectionSearchQuery.toLowerCase()) ||
-    collection.id.toLowerCase().includes(collectionSearchQuery.toLowerCase())
+    collection &&
+    collection.name &&
+    collection.id && (
+      collection.name.toLowerCase().includes(collectionSearchQuery.toLowerCase()) ||
+      collection.id.toLowerCase().includes(collectionSearchQuery.toLowerCase())
+    )
   )
 
   return (
@@ -555,9 +590,16 @@ export default function VectorDatabasePage() {
                   if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
                     console.log("刷新向量集合API调用成功，结果:", apiResponse.data)
                     const collectionsData = apiResponse.data || []
-                    // 确保数据是数组格式
+                    // 确保数据是数组格式且过滤掉无效项，同时补齐缺失字段
                     if (Array.isArray(collectionsData)) {
-                      setCollections(collectionsData)
+                      const validCollections = collectionsData.filter(collection => collection && collection.id).map(collection => ({
+                        ...collection,
+                        name: collection.name || '未命名集合',
+                        dimensions: collection.dimensions || 0,
+                        vectors: collection.vectors || 0,
+                        indexType: collection.indexType || 'HNSW'
+                      }))
+                      setCollections(validCollections)
                     } else {
                       console.warn("向量集合数据不是数组格式:", collectionsData)
                       setCollections([])
@@ -614,14 +656,14 @@ export default function VectorDatabasePage() {
                   )}
                 </div>
               ) : (
-                filteredCollections.map((collection) => (
-                  <div key={collection.id} className="grid grid-cols-6 items-center px-4 py-3 text-sm">
-                    <div className="font-medium">{collection.id}</div>
-                    <div>{collection.name}</div>
-                    <div>{collection.dimensions}</div>
-                    <div>{collection.vectors.toLocaleString()}</div>
+                filteredCollections.map((collection, index) => (
+                  <div key={collection.id || `collection-${index}`} className="grid grid-cols-6 items-center px-4 py-3 text-sm">
+                    <div className="font-medium">{collection.id || '-'}</div>
+                    <div>{collection.name || '-'}</div>
+                    <div>{collection.dimensions || '-'}</div>
+                    <div>{(collection.vectors || 0).toLocaleString()}</div>
                     <div>
-                      <Badge variant="outline">{collection.indexType}</Badge>
+                      <Badge variant="outline">{collection.indexType || 'HNSW'}</Badge>
                     </div>
                     <div className="flex justify-end">
                       <DropdownMenu>
@@ -686,9 +728,9 @@ export default function VectorDatabasePage() {
                       <SelectValue placeholder="选择向量集合" />
                     </SelectTrigger>
                     <SelectContent>
-                      {collections.map((collection) => (
-                        <SelectItem key={collection.id} value={collection.id}>
-                          {collection.name} ({collection.id})
+                      {collections.map((collection, index) => (
+                        <SelectItem key={collection.id || `select-collection-${index}`} value={collection.id || `collection-${index}`}>
+                          {collection.name || '未命名'} ({collection.id || `collection-${index}`})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -709,7 +751,7 @@ export default function VectorDatabasePage() {
                 <div className="rounded-md border p-4 bg-muted/20">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-medium">索引配置</h3>
-                    <Badge>{indexConfig.type}</Badge>
+                    <Badge>{indexConfig.type || 'HNSW'}</Badge>
                   </div>
 
                   <div className="space-y-4">
@@ -718,10 +760,10 @@ export default function VectorDatabasePage() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label>M 参数 (邻居数量)</Label>
-                            <span className="text-sm font-medium">{indexConfig.parameters.M}</span>
+                            <span className="text-sm font-medium">{indexConfig.parameters?.M || 16}</span>
                           </div>
                           <Slider
-                            value={[indexConfig.parameters.M]}
+                            value={[indexConfig.parameters?.M || 16]}
                             min={4}
                             max={64}
                             step={4}
@@ -739,10 +781,10 @@ export default function VectorDatabasePage() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label>ef_construction 参数</Label>
-                            <span className="text-sm font-medium">{indexConfig.parameters.efConstruction}</span>
+                            <span className="text-sm font-medium">{indexConfig.parameters?.efConstruction || 128}</span>
                           </div>
                           <Slider
-                            value={[indexConfig.parameters.efConstruction]}
+                            value={[indexConfig.parameters?.efConstruction || 128]}
                             min={64}
                             max={512}
                             step={64}
@@ -762,10 +804,10 @@ export default function VectorDatabasePage() {
                         <div className="space-y-2">
                           <div className="flex items-center justify-between">
                             <Label>ef_search 参数</Label>
-                            <span className="text-sm font-medium">{indexConfig.parameters.efSearch}</span>
+                            <span className="text-sm font-medium">{indexConfig.parameters?.efSearch || 64}</span>
                           </div>
                           <Slider
-                            value={[indexConfig.parameters.efSearch]}
+                            value={[indexConfig.parameters?.efSearch || 64]}
                             min={16}
                             max={256}
                             step={16}
@@ -785,19 +827,19 @@ export default function VectorDatabasePage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
                             <Label className="text-sm text-muted-foreground">索引类型</Label>
-                            <div className="font-medium">{indexConfig.type}</div>
+                            <div className="font-medium">{indexConfig.type || 'HNSW'}</div>
                           </div>
                           <div className="space-y-1">
                             <Label className="text-sm text-muted-foreground">M 参数 (邻居数量)</Label>
-                            <div className="font-medium">{indexConfig.parameters.M}</div>
+                            <div className="font-medium">{indexConfig.parameters?.M || 16}</div>
                           </div>
                           <div className="space-y-1">
                             <Label className="text-sm text-muted-foreground">ef_construction 参数</Label>
-                            <div className="font-medium">{indexConfig.parameters.efConstruction}</div>
+                            <div className="font-medium">{indexConfig.parameters?.efConstruction || 128}</div>
                           </div>
                           <div className="space-y-1">
                             <Label className="text-sm text-muted-foreground">ef_search 参数</Label>
-                            <div className="font-medium">{indexConfig.parameters.efSearch}</div>
+                            <div className="font-medium">{indexConfig.parameters?.efSearch || 64}</div>
                           </div>
                         </div>
                         <div className="mt-2 text-sm text-muted-foreground">
@@ -902,9 +944,9 @@ export default function VectorDatabasePage() {
                     <SelectValue placeholder="选择向量集合" />
                   </SelectTrigger>
                   <SelectContent>
-                    {collections.map((collection) => (
-                      <SelectItem key={collection.id} value={collection.id}>
-                        {collection.name} ({collection.id})
+                    {collections.map((collection, index) => (
+                      <SelectItem key={collection.id || `search-collection-${index}`} value={collection.id || `collection-${index}`}>
+                        {collection.name || '未命名'} ({collection.id || `collection-${index}`})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -968,16 +1010,16 @@ export default function VectorDatabasePage() {
                   </div>
 
                   <div className="space-y-2">
-                    {searchResults.map((result: any) => (
-                      <div key={result.id} className="rounded-md border p-3">
+                    {searchResults.map((result: any, index: number) => (
+                      <div key={result.id || `search-result-${index}`} className="rounded-md border p-3">
                         <div className="flex items-center justify-between">
-                          <div className="font-medium">{result.name}</div>
+                          <div className="font-medium">{result.name || '未命名结果'}</div>
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            相似度: {result.score.toFixed(2)}
+                            相似度: {(result.score || 0).toFixed(2)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{result.description}</p>
-                        <div className="text-xs text-muted-foreground mt-2">ID: {result.id}</div>
+                        <p className="text-sm text-muted-foreground mt-1">{result.description || '暂无描述'}</p>
+                        <div className="text-xs text-muted-foreground mt-2">ID: {result.id || `result-${index}`}</div>
                       </div>
                     ))}
                   </div>

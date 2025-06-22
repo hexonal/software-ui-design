@@ -63,10 +63,13 @@ export default function AccessControlPage() {
       try {
         setLoading(true)
         const response = await securityApi.getAccessPolicies()
-        if (response.success) {
-          setAccessPolicies(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setAccessPolicies(apiResponse.data)
         } else {
-          setError(response.message)
+          setError(apiResponse?.message || "获取访问策略失败")
         }
       } catch (err) {
         setError('获取访问策略数据失败')
@@ -90,8 +93,11 @@ export default function AccessControlPage() {
       setError(null)
 
       const response = await securityApi.createAccessPolicy(newPolicyData)
-      if (response.success) {
-        setAccessPolicies(prev => [...prev, response.data])
+
+      // 修复API响应处理逻辑
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+        setAccessPolicies(prev => [...prev, apiResponse.data])
         setIsAddPolicyOpen(false)
         setNewPolicyData({
           name: "",
@@ -101,7 +107,7 @@ export default function AccessControlPage() {
           access: "只读"
         })
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "创建访问策略失败")
       }
     } catch (err) {
       setError('创建访问策略失败')
@@ -119,14 +125,17 @@ export default function AccessControlPage() {
       setError(null)
 
       const response = await securityApi.updateAccessPolicy(policyToEdit.id, policyToEdit)
-      if (response.success) {
+
+      // 修复API响应处理逻辑
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         setAccessPolicies(prev => prev.map(policy =>
-          policy.id === policyToEdit.id ? response.data : policy
+          policy.id === policyToEdit.id ? (apiResponse.data || policy) : policy
         ))
         setIsEditPolicyOpen(false)
         setPolicyToEdit(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "更新访问策略失败")
       }
     } catch (err) {
       setError('更新访问策略失败')
@@ -144,12 +153,15 @@ export default function AccessControlPage() {
       setError(null)
 
       const response = await securityApi.deleteAccessPolicy(policyToDelete)
-      if (response.success) {
+
+      // 修复API响应处理逻辑
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         setAccessPolicies(prev => prev.filter(policy => policy.id !== policyToDelete))
         setIsConfirmDeleteOpen(false)
         setPolicyToDelete(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "删除访问策略失败")
       }
     } catch (err) {
       setError('删除访问策略失败')
@@ -291,10 +303,13 @@ export default function AccessControlPage() {
               setLoading(true)
               setError(null)
               const response = await securityApi.getAccessPolicies()
-              if (response.success) {
-                setAccessPolicies(response.data)
+
+              // 修复API响应处理逻辑
+              const apiResponse = response.data as any;
+              if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                setAccessPolicies(apiResponse.data || [])
               } else {
-                setError(response.message)
+                setError(apiResponse?.message || "刷新策略数据失败")
               }
             } catch (err) {
               setError('刷新策略数据失败')
@@ -430,7 +445,7 @@ export default function AccessControlPage() {
                             policy.access === "完全访问"
                               ? "destructive"
                               : policy.access === "读写"
-                                ? "warning"
+                                ? "default"
                                 : "secondary"
                           }
                         >

@@ -120,13 +120,20 @@ export default function RelationalTablesPage() {
       try {
         setLoading(prev => ({ ...prev, databases: true }))
         const response = await relationalApi.getRelationalDatabases()
-        if (response.success) {
-          setDatabases(response.data)
-          if (response.data.length > 0 && !selectedDatabase) {
-            setSelectedDatabase(response.data[0].id)
+
+        // 响应拦截器处理后，数据在response.data中
+        console.log("表管理页面获取数据库列表 API 响应:", response)
+        const apiResponse = response.data as any;
+        if (apiResponse && apiResponse.success === true) {
+          const databases = apiResponse.data || []
+          console.log("表管理页面成功获取数据库列表:", databases)
+          setDatabases(databases)
+          if (databases.length > 0 && !selectedDatabase) {
+            setSelectedDatabase(databases[0].id)
           }
         } else {
-          setError(response.message)
+          console.error("表管理页面API响应表示失败:", apiResponse)
+          setError(apiResponse?.message || '获取数据库列表失败')
         }
       } catch (err) {
         setError('获取数据库列表失败')
@@ -146,11 +153,15 @@ export default function RelationalTablesPage() {
     const fetchTables = async () => {
       try {
         setLoading(prev => ({ ...prev, tables: true }))
-        const response = await databaseApi.getTables({ database: selectedDatabase })
-        if (response.success) {
-          setTables(response.data.filter((table: any) => table.database === selectedDatabase))
+        const response = await databaseApi.getTables()
+
+        // 响应拦截器处理后，数据在response.data中
+        const apiResponse = response.data as any;
+        if (apiResponse && apiResponse.success === true) {
+          const tablesData = apiResponse.data || []
+          setTables(tablesData.filter((table: any) => table.database === selectedDatabase))
         } else {
-          setError(response.message)
+          setError(apiResponse?.message || '获取表列表失败')
         }
       } catch (err) {
         setError('获取表列表失败')

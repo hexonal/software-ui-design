@@ -366,8 +366,16 @@ export default function UserManagementPage() {
         lastLogin: new Date().toISOString().replace('T', ' ').substring(0, 19)
       })
 
-      if (response.success && response.data) {
-        setUsers(prev => [...prev, response.data].filter(user => user != null))
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('创建用户API响应:', response);
+      console.log('创建用户业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        const userData = apiResponse.data || apiResponse;
+        if (userData) {
+          setUsers(prev => [...prev, userData].filter(user => user != null))
+        }
         setIsAddUserOpen(false)
         setNewUserData({
           username: "",
@@ -377,7 +385,7 @@ export default function UserManagementPage() {
           role: ""
         })
       } else {
-        setError(response.message || '创建用户失败')
+        setError(apiResponse?.message || '创建用户失败')
       }
     } catch (err) {
       setError('创建用户失败')
@@ -404,8 +412,16 @@ export default function UserManagementPage() {
         users: 0
       })
 
-      if (response.success && response.data) {
-        setRoles(prev => [...prev, response.data].filter(role => role != null))
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('创建角色API响应:', response);
+      console.log('创建角色业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        const roleData = apiResponse.data || apiResponse;
+        if (roleData) {
+          setRoles(prev => [...prev, roleData].filter(role => role != null))
+        }
         setIsAddRoleOpen(false)
         setNewRoleData({
           name: "",
@@ -413,7 +429,7 @@ export default function UserManagementPage() {
           permissions: "有限的只读权限"
         })
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || '创建角色失败')
       }
     } catch (err) {
       setError('创建角色失败')
@@ -431,14 +447,21 @@ export default function UserManagementPage() {
       setError(null)
 
       const response = await securityApi.updateUser(userToEdit.id, userToEdit)
-      if (response.success) {
+
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('编辑用户API响应:', response);
+      console.log('编辑用户业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        const userData = apiResponse.data || userToEdit;
         setUsers(prev => prev.map(user =>
-          user.id === userToEdit.id ? (response.data || user) : user
+          user.id === userToEdit.id ? userData : user
         ))
         setIsEditUserOpen(false)
         setUserToEdit(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || '更新用户失败')
       }
     } catch (err) {
       setError('更新用户失败')
@@ -456,14 +479,21 @@ export default function UserManagementPage() {
       setError(null)
 
       const response = await securityApi.updateRole(roleToEdit.id, roleToEdit)
-      if (response.success && response.data) {
+
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('编辑角色API响应:', response);
+      console.log('编辑角色业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        const roleData = apiResponse.data || roleToEdit;
         setRoles(prev => prev.map(role =>
-          role.id === roleToEdit.id ? response.data : role
+          role.id === roleToEdit.id ? roleData : role
         ).filter(role => role != null))
         setIsEditRoleOpen(false)
         setRoleToEdit(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || '更新角色失败')
       }
     } catch (err) {
       setError('更新角色失败')
@@ -516,12 +546,18 @@ export default function UserManagementPage() {
       setError(null)
 
       const response = await securityApi.deleteUser(userToDelete)
-      if (response.success) {
+
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('删除用户API响应:', response);
+      console.log('删除用户业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         setUsers(prev => prev.filter(user => user.id !== userToDelete))
         setIsConfirmDeleteUserOpen(false)
         setUserToDelete(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || '删除用户失败')
       }
     } catch (err) {
       setError('删除用户失败')
@@ -539,12 +575,18 @@ export default function UserManagementPage() {
       setError(null)
 
       const response = await securityApi.deleteRole(roleToDelete)
-      if (response.success) {
+
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('删除角色API响应:', response);
+      console.log('删除角色业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         setRoles(prev => prev.filter(role => role.id !== roleToDelete))
         setIsConfirmDeleteRoleOpen(false)
         setRoleToDelete(null)
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || '删除角色失败')
       }
     } catch (err) {
       setError('删除角色失败')
@@ -562,12 +604,21 @@ export default function UserManagementPage() {
       const newStatus = currentStatus === "活跃" ? "锁定" : "活跃"
 
       const response = await securityApi.updateUser(userId, { status: newStatus })
-      if (response.success && response.data) {
-        setUsers(prev => prev.map(user =>
-          user.id === userId ? response.data : user
-        ).filter(user => user != null))
+
+      // 修复API响应处理逻辑 - 更宽松的判断
+      const apiResponse = response.data as any;
+      console.log('切换用户状态API响应:', response);
+      console.log('切换用户状态业务数据:', apiResponse);
+
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        const userData = apiResponse.data;
+        if (userData) {
+          setUsers(prev => prev.map(user =>
+            user.id === userId ? userData : user
+          ).filter(user => user != null))
+        }
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || `${currentStatus === "活跃" ? "锁定" : "解锁"}用户失败`)
       }
     } catch (err) {
       setError(`${currentStatus === "活跃" ? "锁定" : "解锁"}用户失败`)

@@ -538,10 +538,13 @@ export default function GeospatialDatabasePage() {
               setLoading(prev => ({ ...prev, databases: true }))
               setError(null)
               const response = await geospatialApi.getGeospatialDatabases()
-              if (response.success) {
-                setDatabases(response.data)
+
+              // 修复API响应处理逻辑 - 与页面其他地方保持一致
+              const apiResponse = response.data as any;
+              if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                setDatabases(apiResponse.data || [])
               } else {
-                setError(response.message)
+                setError(apiResponse?.message || '刷新地理空间数据库失败')
               }
             } catch (err) {
               setError(getNetworkErrorMessage(err, '刷新地理空间数据库'))

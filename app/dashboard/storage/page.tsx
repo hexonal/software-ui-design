@@ -51,10 +51,13 @@ export default function StorageOverviewPage() {
         setError(null)
 
         const response = await getStorageOverviewStats()
-        if (response.success) {
-          setStorageStats(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setStorageStats(apiResponse.data)
         } else {
-          setError(response.message || '获取存储统计信息失败')
+          setError(apiResponse?.message || '获取存储统计信息失败')
         }
 
       } catch (err) {
@@ -76,10 +79,13 @@ export default function StorageOverviewPage() {
         setError(null)
 
         const response = await getStorageTypesDistribution()
-        if (response.success) {
-          setStorageTypes(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setStorageTypes(apiResponse.data)
         } else {
-          setError(response.message || '获取存储类型分布失败')
+          setError(apiResponse?.message || '获取存储类型分布失败')
         }
 
       } catch (err) {
@@ -101,10 +107,13 @@ export default function StorageOverviewPage() {
         setError(null)
 
         const response = await getStorageNodes()
-        if (response.success) {
-          setStorageNodes(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setStorageNodes(apiResponse.data)
         } else {
-          setError(response.message || '获取存储节点列表失败')
+          setError(apiResponse?.message || '获取存储节点列表失败')
         }
 
       } catch (err) {
@@ -126,10 +135,13 @@ export default function StorageOverviewPage() {
         setError(null)
 
         const response = await getStoragePerformanceData()
-        if (response.success) {
-          setPerformanceData(response.data)
+
+        // 修复API响应处理逻辑
+        const apiResponse = response.data as any;
+        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+          setPerformanceData(apiResponse.data)
         } else {
-          setError(response.message || '获取存储性能数据失败')
+          setError(apiResponse?.message || '获取存储性能数据失败')
         }
 
       } catch (err) {

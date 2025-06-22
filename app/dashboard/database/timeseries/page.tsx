@@ -708,7 +708,10 @@ export default function TimeseriesDatabasePage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>数据库操作</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setSelectedDatabase(db.id)}>查看详情</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedDatabase(db.id)
+                            setActiveTab("performance")
+                          }}>查看详情</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => {
                             setSelectedDatabase(db.id)
                             setActiveTab("series")
@@ -1278,10 +1281,13 @@ export default function TimeseriesDatabasePage() {
                   setLoading(prev => ({ ...prev, metrics: true }));
                   setError(null);
                   const response = await timeseriesApi.getTimeseriesDatabaseMetrics(selectedDatabase, timeRange);
-                  if (response.success) {
-                    setPerformanceMetrics(response.data);
+
+                  // 修复API响应处理逻辑
+                  const apiResponse = response.data as any;
+                  if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                    setPerformanceMetrics(apiResponse.data);
                   } else {
-                    setError(response.message || "获取数据库性能指标失败");
+                    setError(apiResponse?.message || "获取数据库性能指标失败");
                   }
                 } catch (err) {
                   console.error("获取数据库性能指标出错:", err);
@@ -1324,10 +1330,13 @@ export default function TimeseriesDatabasePage() {
                       setLoading(prev => ({ ...prev, metrics: true }));
                       setError(null);
                       const response = await timeseriesApi.getTimeseriesDatabaseMetrics(selectedDatabase, timeRange);
-                      if (response.success) {
-                        setPerformanceMetrics(response.data);
+
+                      // 修复API响应处理逻辑
+                      const apiResponse = response.data as any;
+                      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                        setPerformanceMetrics(apiResponse.data);
                       } else {
-                        setError(response.message || "获取数据库性能指标失败");
+                        setError(apiResponse?.message || "获取数据库性能指标失败");
                       }
                     } catch (err) {
                       console.error("获取数据库性能指标出错:", err);

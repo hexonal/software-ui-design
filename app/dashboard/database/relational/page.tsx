@@ -153,13 +153,61 @@ export default function RelationalDatabasePage() {
       setIsExecutingQuery(true)
       setError(null)
 
+      console.log("开始执行SQL查询:", { selectedDatabase, sqlQuery })
+
       // 使用 API 执行查询
       const response = await relationalApi.executeSQLQuery(selectedDatabase, sqlQuery)
 
-      if (response.success) {
-        setQueryResult(response.data)
+      console.log("SQL查询API原始响应:", response)
+      console.log("响应数据结构检查:", {
+        hasData: !!response.data,
+        dataType: typeof response.data,
+        dataKeys: response.data ? Object.keys(response.data) : [],
+        hasSuccess: response.data && 'success' in response.data,
+        successValue: response.data && typeof response.data === 'object' && 'success' in response.data ? (response.data as any).success : undefined
+      })
+
+      // 响应拦截器处理后，数据在response.data中
+      const apiResponse = response.data as any;
+      console.log("SQL查询业务数据:", apiResponse)
+
+      // 使用更宽松的成功判断逻辑，与其他页面保持一致
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+        let queryData = apiResponse.data;
+
+        // 如果data字段不存在，尝试使用apiResponse本身作为数据
+        if (!queryData && apiResponse.columns && apiResponse.rows) {
+          queryData = apiResponse;
+        }
+
+        console.log("查询结果数据:", queryData)
+        console.log("查询结果数据结构:", {
+          dataType: typeof queryData,
+          hasColumns: queryData && 'columns' in queryData,
+          hasRows: queryData && 'rows' in queryData,
+          columnsValue: queryData?.columns,
+          rowsCount: queryData?.rows?.length,
+          rowsValue: queryData?.rows
+        })
+
+        // 验证查询结果数据结构
+        if (queryData && queryData.columns && Array.isArray(queryData.columns) && queryData.rows && Array.isArray(queryData.rows)) {
+          console.log("查询结果数据结构正确，设置到state")
+          setQueryResult(queryData)
+        } else if (queryData && queryData.columns && Array.isArray(queryData.columns)) {
+          // 如果有columns但没有rows，创建空的rows数组
+          console.log("查询结果有columns但无rows，创建空rows")
+          setQueryResult({
+            ...queryData,
+            rows: []
+          })
+        } else {
+          console.warn("查询结果数据结构异常:", queryData)
+          setError(`查询结果数据格式异常: columns=${JSON.stringify(queryData?.columns)}, rows=${JSON.stringify(queryData?.rows)}`)
+        }
       } else {
-        setError(response.message || "查询执行失败")
+        console.error("SQL查询API响应表示失败:", apiResponse)
+        setError(apiResponse?.message || "查询执行失败")
       }
     } catch (err) {
       console.error("执行查询出错:", err)
@@ -219,9 +267,11 @@ export default function RelationalDatabasePage() {
         tables: 0 // 新创建的数据库初始表数量
       })
 
-      if (response.success) {
+      // 响应拦截器处理后，数据在response.data中
+      const apiResponse = response.data as any;
+      if (apiResponse && apiResponse.success === true) {
         // 添加新创建的数据库到列表
-        setDatabases([...databases, response.data])
+        setDatabases([...databases, apiResponse.data])
         setIsCreateDatabaseOpen(false)
         // 重置表单
         setNewDatabaseData({
@@ -230,7 +280,7 @@ export default function RelationalDatabasePage() {
           collation: "en_US.UTF-8"
         })
       } else {
-        setError(response.message || "创建数据库失败")
+        setError(apiResponse?.message || "创建数据库失败")
       }
     } catch (err) {
       console.error("创建数据库出错:", err)
@@ -252,7 +302,9 @@ export default function RelationalDatabasePage() {
       // 使用 API 删除数据库
       const response = await databaseApi.deleteDatabase(databaseToDelete)
 
-      if (response.success) {
+      // 响应拦截器处理后，数据在response.data中
+      const apiResponse = response.data as any;
+      if (apiResponse && apiResponse.success === true) {
         // 从列表中移除已删除的数据库
         setDatabases(databases.filter(db => db.id !== databaseToDelete))
         if (selectedDatabase === databaseToDelete) {
@@ -261,7 +313,7 @@ export default function RelationalDatabasePage() {
         setIsConfirmDeleteOpen(false)
         setDatabaseToDelete(null)
       } else {
-        setError(response.message || "删除数据库失败")
+        setError(apiResponse?.message || "删除数据库失败")
       }
     } catch (err) {
       console.error("删除数据库出错:", err)
@@ -616,7 +668,17 @@ export default function RelationalDatabasePage() {
                   )}
                 </SelectContent>
               </Select>
-              <Button>
+              <Button
+                onClick={() => {
+                  if (!selectedDatabase) {
+                    setError("请先选择数据库")
+                    return
+                  }
+                  // 跳转到表管理页面，并传递选中的数据库ID
+                  window.location.href = `/dashboard/database/relational/tables?database=${selectedDatabase}`
+                }}
+                disabled={!selectedDatabase}
+              >
                 <Table className="mr-2 h-4 w-4" />
                 创建表
               </Button>
