@@ -175,8 +175,9 @@ export default function ClusterNodesPage() {
         disk: 0
       })
 
-      if (response.success && response.data) {
-        setNodes([...nodes, response.data])
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200) && apiResponse.data) {
+        setNodes([...nodes, apiResponse.data])
         setIsAddNodeOpen(false)
         setNewNodeData({
           name: "",
@@ -187,7 +188,7 @@ export default function ClusterNodesPage() {
           role: "数据节点"
         })
       } else {
-        setError(response.message || "添加节点失败")
+        setError(apiResponse?.message || "添加节点失败")
       }
     } catch (err) {
       console.error("添加节点出错:", err)
@@ -206,7 +207,8 @@ export default function ClusterNodesPage() {
 
       const response = await clusterApi.deleteNode(nodeToDelete)
 
-      if (response.success) {
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
         setNodes(nodes.filter(node => node.id.toString() !== nodeToDelete?.toString()))
         if (selectedNode === nodeToDelete) {
           setSelectedNode(null)
@@ -214,7 +216,7 @@ export default function ClusterNodesPage() {
         setIsConfirmDeleteOpen(false)
         setNodeToDelete(null)
       } else {
-        setError(response.message || "删除节点失败")
+        setError(apiResponse?.message || "删除节点失败")
       }
     } catch (err) {
       console.error("删除节点出错:", err)
@@ -239,12 +241,13 @@ export default function ClusterNodesPage() {
             disk: Math.floor(Math.random() * 30) + 20 // 随机生成20-50之间的磁盘使用率
           })
 
-          if (response.success) {
+          const apiResponse = response.data as any;
+          if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
             setNodes(nodes.map(node =>
-              node.id === nodeId ? response.data : node
+              node.id === nodeId ? apiResponse.data : node
             ))
           } else {
-            setError(response.message || "启动节点失败")
+            setError(apiResponse?.message || "启动节点失败")
           }
         } catch (err) {
           console.error("启动节点出错:", err)
@@ -260,7 +263,7 @@ export default function ClusterNodesPage() {
     }
   }
 
-  const handleStopNode = async (nodeId: string) => {
+  const handleStopNode = async (nodeId: number) => {
     try {
       setIsStopping(nodeId)
       setError(null)
@@ -275,12 +278,13 @@ export default function ClusterNodesPage() {
             disk: 0
           })
 
-          if (response.success) {
+          const apiResponse = response.data as any;
+          if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
             setNodes(nodes.map(node =>
-              node.id === nodeId ? response.data : node
+              node.id === nodeId ? apiResponse.data : node
             ))
           } else {
-            setError(response.message || "停止节点失败")
+            setError(apiResponse?.message || "停止节点失败")
           }
         } catch (err) {
           console.error("停止节点出错:", err)
@@ -296,7 +300,7 @@ export default function ClusterNodesPage() {
     }
   }
 
-  const handleRestartNode = async (nodeId: string) => {
+  const handleRestartNode = async (nodeId: number) => {
     try {
       setIsRestarting(nodeId)
       setError(null)
@@ -322,12 +326,13 @@ export default function ClusterNodesPage() {
                 disk: Math.floor(Math.random() * 30) + 20
               })
 
-              if (response.success) {
+              const apiResponse = response.data as any;
+              if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
                 setNodes(nodes.map(node =>
-                  node.id === nodeId ? response.data : node
+                  node.id === nodeId ? apiResponse.data : node
                 ))
               } else {
-                setError(response.message || "重启节点失败")
+                setError(apiResponse?.message || "重启节点失败")
               }
             } catch (err) {
               console.error("重启节点出错:", err)
@@ -353,7 +358,7 @@ export default function ClusterNodesPage() {
   const filteredNodes = nodes.filter(node => {
     const matchesSearch =
       node.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      node.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      node.id.toString().toLowerCase().includes(searchQuery.toLowerCase()) ||
       node.ip.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesRole = filterRole === 'all' || node.role === filterRole;

@@ -110,26 +110,26 @@ export default function DataModelTablesPage() {
         setError(null) // 清除之前的错误
         setTables([]) // 先清空表列表，避免显示旧数据
 
-        const response = await databaseApi.getTables()
+        // 传递数据库参数获取特定数据库的表
+        const response = await databaseApi.getTables({ database: selectedDatabase })
 
         // 修复API响应处理逻辑
         const apiResponse = response.data as any;
-        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
-          // 等待数据完全返回后再处理
-          await new Promise(resolve => setTimeout(resolve, 100)) // 短暂延迟确保状态更新
+        console.log('数据模型获取表列表API响应:', { response, apiResponse, selectedDatabase });
 
-          // 如果API返回所有表，过滤当前数据库的表
-          const filteredTables = apiResponse.data ? apiResponse.data.filter((table: any) =>
-            table.database === selectedDatabase || table.databaseId === selectedDatabase
-          ) : []
-          setTables(filteredTables.length > 0 ? filteredTables : (apiResponse.data || []))
-          if (apiResponse.data && apiResponse.data.length > 0 && !selectedTable) {
-            setSelectedTable(apiResponse.data[0].name)
+        if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+          const tablesData = apiResponse.data || []
+          console.log('数据模型获取到的表数据:', tablesData);
+          setTables(tablesData)
+
+          // 如果有表数据且当前没有选中表，选择第一个表
+          if (tablesData.length > 0 && !selectedTable) {
+            setSelectedTable(tablesData[0].name)
           }
         } else {
           const errorMessage = apiResponse?.message || '获取表列表失败'
+          console.error('数据模型获取表列表失败:', errorMessage, apiResponse);
           setError(`获取表列表失败: ${errorMessage}`)
-          console.error('API响应错误:', response)
         }
       } catch (err: any) {
         const errorMessage = err?.message || err?.toString() || '未知错误'
@@ -499,23 +499,21 @@ export default function DataModelTablesPage() {
               setError(null)
               setTables([]) // 先清空表列表，显示加载状态
 
-              const response = await databaseApi.getTables()
+              // 传递数据库参数获取特定数据库的表
+              const response = await databaseApi.getTables({ database: selectedDatabase })
 
               // 修复API响应处理逻辑
               const apiResponse = response.data as any;
-              if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
-                // 等待数据完全返回后再处理
-                await new Promise(resolve => setTimeout(resolve, 100))
+              console.log('刷新表列表API响应:', { response, apiResponse, selectedDatabase });
 
-                // 如果API返回所有表，过滤当前数据库的表
-                const filteredTables = apiResponse.data ? apiResponse.data.filter((table: any) =>
-                  table.database === selectedDatabase || table.databaseId === selectedDatabase
-                ) : []
-                setTables(filteredTables.length > 0 ? filteredTables : (apiResponse.data || []))
+              if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
+                const tablesData = apiResponse.data || []
+                console.log('刷新获取到的表数据:', tablesData);
+                setTables(tablesData)
               } else {
                 const errorMessage = apiResponse?.message || '刷新表列表失败'
+                console.error('刷新表列表失败:', errorMessage, apiResponse);
                 setError(`刷新表列表失败: ${errorMessage}`)
-                console.error('刷新表列表API响应错误:', response)
               }
             } catch (err: any) {
               const errorMessage = err?.message || err?.toString() || '未知错误'
@@ -763,10 +761,11 @@ export default function DataModelTablesPage() {
                         setLoading(prev => ({ ...prev, structure: true }))
                         setError(null)
                         const response = await dataModelApi.getTableStructure(selectedDatabase, selectedTable)
-                        if (response.success) {
-                          setTableStructure(response.data)
+                        const apiResponse = response.data as any;
+                        if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+                          setTableStructure(apiResponse.data)
                         } else {
-                          setError(response.message)
+                          setError(apiResponse?.message || "获取表结构失败")
                         }
                       } catch (err) {
                         setError('刷新表结构失败')

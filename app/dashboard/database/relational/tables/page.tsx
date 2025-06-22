@@ -153,19 +153,27 @@ export default function RelationalTablesPage() {
     const fetchTables = async () => {
       try {
         setLoading(prev => ({ ...prev, tables: true }))
-        const response = await databaseApi.getTables()
+        setError(null) // 清除之前的错误
+
+        // 传递数据库参数获取特定数据库的表
+        const response = await databaseApi.getTables({ database: selectedDatabase })
 
         // 响应拦截器处理后，数据在response.data中
         const apiResponse = response.data as any;
-        if (apiResponse && apiResponse.success === true) {
+        console.log('获取表列表API响应:', { response, apiResponse });
+
+        if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
           const tablesData = apiResponse.data || []
-          setTables(tablesData.filter((table: any) => table.database === selectedDatabase))
+          console.log('获取到的表数据:', tablesData);
+          setTables(tablesData)
         } else {
-          setError(apiResponse?.message || '获取表列表失败')
+          const errorMessage = apiResponse?.message || '获取表列表失败'
+          console.error('获取表列表失败:', errorMessage, apiResponse);
+          setError(errorMessage)
         }
       } catch (err) {
+        console.error('获取表列表异常:', err)
         setError('获取表列表失败')
-        console.error(err)
       } finally {
         setLoading(prev => ({ ...prev, tables: false }))
       }
@@ -258,11 +266,13 @@ export default function RelationalTablesPage() {
       }
 
       const response = await dataModelApi.createTable(selectedDatabase, tableData)
-      if (response.success) {
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         // 刷新表列表
         const tablesResponse = await databaseApi.getTables({ database: selectedDatabase })
-        if (tablesResponse.success) {
-          setTables(tablesResponse.data.filter((table: any) => table.database === selectedDatabase))
+        const tablesApiResponse = tablesResponse.data as any;
+        if (tablesApiResponse && (tablesApiResponse.success === true || tablesApiResponse.success === "true" || tablesApiResponse.code === 200)) {
+          setTables(tablesApiResponse.data.filter((table: any) => table.database === selectedDatabase))
         }
         setIsCreateTableOpen(false)
         // 重置表单
@@ -279,7 +289,7 @@ export default function RelationalTablesPage() {
           ]
         })
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "创建表失败")
       }
     } catch (err) {
       setError('创建表失败')
@@ -313,11 +323,13 @@ export default function RelationalTablesPage() {
       }
 
       const response = await dataModelApi.createIndex(selectedDatabase, selectedTable, indexData)
-      if (response.success) {
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         // 刷新索引列表
         const indexesResponse = await dataModelApi.getTableIndexes(selectedDatabase, selectedTable)
-        if (indexesResponse.success) {
-          setTableIndexes(indexesResponse.data)
+        const indexesApiResponse = indexesResponse.data as any;
+        if (indexesApiResponse && (indexesApiResponse.success === true || indexesApiResponse.success === "true" || indexesApiResponse.code === 200)) {
+          setTableIndexes(indexesApiResponse.data)
         }
         setIsCreateIndexOpen(false)
         // 重置表单
@@ -328,7 +340,7 @@ export default function RelationalTablesPage() {
           method: "BTREE"
         })
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "创建索引失败")
       }
     } catch (err) {
       setError('创建索引失败')
@@ -361,11 +373,13 @@ export default function RelationalTablesPage() {
       }
 
       const response = await dataModelApi.alterTable(selectedDatabase, selectedTable, alterData)
-      if (response.success) {
+      const apiResponse = response.data as any;
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         // 刷新表结构
         const structureResponse = await dataModelApi.getTableStructure(selectedDatabase, selectedTable)
-        if (structureResponse.success) {
-          setTableStructure(structureResponse.data)
+        const structureApiResponse = structureResponse.data as any;
+        if (structureApiResponse && (structureApiResponse.success === true || structureApiResponse.success === "true" || structureApiResponse.code === 200)) {
+          setTableStructure(structureApiResponse.data)
         }
         setIsAddFieldOpen(false)
         // 重置表单
@@ -377,7 +391,7 @@ export default function RelationalTablesPage() {
           default: ""
         })
       } else {
-        setError(response.message)
+        setError(apiResponse?.message || "添加字段失败")
       }
     } catch (err) {
       setError('添加字段失败')

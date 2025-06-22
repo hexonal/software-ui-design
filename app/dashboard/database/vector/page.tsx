@@ -38,6 +38,7 @@ import { vectorApi } from "@/api"
 export default function VectorDatabasePage() {
   const [activeTab, setActiveTab] = useState("collections")
   const [similarity, setSimilarity] = useState(0.75)
+  const [topK, setTopK] = useState(10) // 添加topK状态变量，默认返回10个结果
   const [searchQuery, setSearchQuery] = useState("一款高性能的笔记本电脑，适合开发和游戏")
   const [searchResults, setSearchResults] = useState<any>(null)
   const [collections, setCollections] = useState<any[]>([])
@@ -216,15 +217,32 @@ export default function VectorDatabasePage() {
       return
     }
 
+    if (!searchQuery.trim()) {
+      setError("搜索查询不能为空")
+      return
+    }
+
+    if (topK <= 0) {
+      setError("返回结果数量必须大于0")
+      return
+    }
+
     try {
       setSearchLoading(true)
       setError(null)
       console.log("开始执行向量搜索...")
+      console.log("搜索参数:", {
+        selectedCollection,
+        query: searchQuery,
+        similarity,
+        topK
+      })
 
       // 使用 API 执行向量搜索
       const response = await vectorApi.searchVectors(selectedCollection, {
         query: searchQuery,
-        similarity: similarity
+        similarity: similarity,
+        topK: topK
       })
       console.log("向量搜索API响应:", response)
 
@@ -979,10 +997,25 @@ export default function VectorDatabasePage() {
                 <p className="text-xs text-muted-foreground">设置最小相似度阈值，只返回相似度高于此值的结果</p>
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>返回结果数量</Label>
+                  <span className="text-sm font-medium">{topK}</span>
+                </div>
+                <Slider
+                  value={[topK]}
+                  min={1}
+                  max={100}
+                  step={1}
+                  onValueChange={(value) => setTopK(value[0])}
+                />
+                <p className="text-xs text-muted-foreground">设置最多返回多少个搜索结果，范围：1-100</p>
+              </div>
+
               <div className="flex justify-end">
                 <Button
                   onClick={handleSearch}
-                  disabled={searchLoading || !selectedCollection || !searchQuery.trim()}
+                  disabled={searchLoading || !selectedCollection || !searchQuery.trim() || topK <= 0}
                 >
                   {searchLoading ? (
                     <>
@@ -1002,7 +1035,14 @@ export default function VectorDatabasePage() {
                 <div className="space-y-2 mt-4">
                   <div className="flex items-center justify-between text-sm">
                     <div>
-                      搜索结果: <span className="font-medium">{searchResults.length} 个</span>
+                      搜索结果: <span className="font-medium">
+                        {Array.isArray(searchResults) ? searchResults.length : 0} 个
+                      </span>
+                      {topK && (
+                        <span className="text-muted-foreground ml-1">
+                          (最多 {topK} 个)
+                        </span>
+                      )}
                     </div>
                     <div>
                       执行时间: <span className="font-medium">0.045 秒</span>
@@ -1010,18 +1050,22 @@ export default function VectorDatabasePage() {
                   </div>
 
                   <div className="space-y-2">
-                    {searchResults.map((result: any, index: number) => (
+                    {Array.isArray(searchResults) ? searchResults.map((result: any, index: number) => (
                       <div key={result.id || `search-result-${index}`} className="rounded-md border p-3">
                         <div className="flex items-center justify-between">
                           <div className="font-medium">{result.name || '未命名结果'}</div>
                           <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                            相似度: {(result.score || 0).toFixed(2)}
+                            相似度: {(result.score || result.similarity || 0).toFixed(2)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{result.description || '暂无描述'}</p>
+                        <p className="text-sm text-muted-foreground mt-1">{result.description || result.content || '暂无描述'}</p>
                         <div className="text-xs text-muted-foreground mt-2">ID: {result.id || `result-${index}`}</div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        搜索结果格式异常
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

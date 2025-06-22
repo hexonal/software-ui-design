@@ -406,10 +406,39 @@ export default function TimeseriesDatabasePage() {
       })
 
       // 增强响应验证：检查多种成功条件
-      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         console.log("创建时序数据库API调用成功，结果:", apiResponse.data)
-        const newDb = apiResponse.data || { name: newDatabaseData.name, id: Date.now().toString() }
-        setDatabases(prevDatabases => [...prevDatabases, newDb])
+
+        // 创建成功后重新获取数据库列表，确保数据同步
+        try {
+          const dbResponse = await timeseriesApi.getTimeseriesDatabases()
+          const dbApiResponse = dbResponse.data as any;
+          if (dbApiResponse && (dbApiResponse.success === true || dbApiResponse.success === "true" || dbApiResponse.code === 200)) {
+            const updatedDatabases = Array.isArray(dbApiResponse.data) ? dbApiResponse.data : []
+            setDatabases(updatedDatabases)
+            console.log("重新获取数据库列表成功，更新后的列表:", updatedDatabases)
+
+            // 如果创建的数据库在列表中，自动选中它
+            const createdDb = updatedDatabases.find((db: any) => db.name === newDatabaseData.name)
+            if (createdDb) {
+              setSelectedDatabase(createdDb.name || createdDb.id)
+            }
+          }
+        } catch (refreshError) {
+          console.warn("重新获取数据库列表失败，使用备用方案:", refreshError)
+          // 备用方案：直接添加新创建的数据库
+          const newDb = apiResponse.data || {
+            name: newDatabaseData.name,
+            id: Date.now().toString(),
+            retention: newDatabaseData.retention,
+            series: 0,
+            points: 0
+          }
+          setDatabases(prevDatabases => [...prevDatabases, newDb])
+          setSelectedDatabase(newDb.name || newDb.id)
+        }
+
+        // 关闭弹窗并重置表单
         setIsCreateDatabaseOpen(false)
         setNewDatabaseData({
           name: "",
@@ -461,10 +490,32 @@ export default function TimeseriesDatabasePage() {
       })
 
       // 增强响应验证：检查多种成功条件
-      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         console.log("创建时间序列API调用成功，结果:", apiResponse.data)
-        const newSeries = apiResponse.data || { name: newSeriesData.name, type: newSeriesData.type, tags: newSeriesData.tags, points: 0 }
-        setSeries([...series, newSeries])
+
+        // 创建成功后重新获取序列列表，确保数据同步
+        try {
+          const seriesResponse = await timeseriesApi.getTimeseries(selectedDatabase)
+          const seriesApiResponse = seriesResponse.data as any;
+          if (seriesApiResponse && (seriesApiResponse.success === true || seriesApiResponse.success === "true" || seriesApiResponse.code === 200)) {
+            const updatedSeries = Array.isArray(seriesApiResponse.data) ? seriesApiResponse.data : []
+            setSeries(updatedSeries)
+            console.log("重新获取序列列表成功，更新后的列表:", updatedSeries)
+          }
+        } catch (refreshError) {
+          console.warn("重新获取序列列表失败，使用备用方案:", refreshError)
+          // 备用方案：直接添加新创建的序列
+          const newSeries = apiResponse.data || {
+            name: newSeriesData.name,
+            type: newSeriesData.type,
+            tags: newSeriesData.tags,
+            points: 0,
+            id: Date.now().toString()
+          }
+          setSeries(prevSeries => [...prevSeries, newSeries])
+        }
+
+        // 关闭弹窗并重置表单
         setIsCreateSeriesOpen(false)
         setNewSeriesData({
           name: "",
@@ -517,15 +568,32 @@ export default function TimeseriesDatabasePage() {
       })
 
       // 增强响应验证：检查多种成功条件
-      if (apiResponse && (apiResponse.success === true || apiResponse.code === 200)) {
+      if (apiResponse && (apiResponse.success === true || apiResponse.success === "true" || apiResponse.code === 200)) {
         console.log("创建保留策略API调用成功，结果:", apiResponse.data)
-        const newPolicy = apiResponse.data || {
-          name: newPolicyData.name,
-          duration: newPolicyData.duration,
-          replication: newPolicyData.replication,
-          default: newPolicyData.default
+
+        // 创建成功后重新获取策略列表，确保数据同步
+        try {
+          const policiesResponse = await timeseriesApi.getRetentionPolicies(selectedDatabase)
+          const policiesApiResponse = policiesResponse.data as any;
+          if (policiesApiResponse && (policiesApiResponse.success === true || policiesApiResponse.success === "true" || policiesApiResponse.code === 200)) {
+            const updatedPolicies = Array.isArray(policiesApiResponse.data) ? policiesApiResponse.data : []
+            setRetentionPolicies(updatedPolicies)
+            console.log("重新获取策略列表成功，更新后的列表:", updatedPolicies)
+          }
+        } catch (refreshError) {
+          console.warn("重新获取策略列表失败，使用备用方案:", refreshError)
+          // 备用方案：直接添加新创建的策略
+          const newPolicy = apiResponse.data || {
+            name: newPolicyData.name,
+            duration: newPolicyData.duration,
+            replication: newPolicyData.replication,
+            default: newPolicyData.default,
+            id: Date.now().toString()
+          }
+          setRetentionPolicies(prevPolicies => [...prevPolicies, newPolicy])
         }
-        setRetentionPolicies(prevPolicies => [...prevPolicies, newPolicy])
+
+        // 关闭弹窗并重置表单
         setIsCreatePolicyOpen(false)
         setNewPolicyData({
           name: "",
