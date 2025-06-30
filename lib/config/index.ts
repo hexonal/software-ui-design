@@ -1,8 +1,8 @@
 // 应用配置
 export const config = {
   api: {
-    // API基础URL - 使用相对路径，通过nginx代理
-    baseUrl: process.env.NEXT_PUBLIC_API_URL || '/api',
+    // API基础URL - 使用相对路径，通过nginx反向代理
+    baseUrl: process.env.NEXT_PUBLIC_API_URL || '/dfm',
 
     // 请求超时时间 - 增加到30秒
     timeout: 30000,
