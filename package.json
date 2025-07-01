@@ -4,7 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build.js",
+    "build:simple": "next build && rm -rf dist && mv out dist",
+    "build:clean": "rm -rf .next out dist && node scripts/build.js",
+    "deploy": "node scripts/deploy.js",
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
